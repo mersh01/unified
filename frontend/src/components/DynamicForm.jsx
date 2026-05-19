@@ -3,7 +3,7 @@ import { FileText, GraduationCap, Building, CreditCard, Truck, BarChart, Award }
 import { useLocation } from 'react-router-dom';
 import RatingField from './RatingField';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function DynamicForm({ user }) {
   const location = useLocation();

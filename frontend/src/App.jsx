@@ -13,7 +13,7 @@ import LocalizationManagement from './pages/LocalizationManagement';
 import NotificationsDropdown from './components/NotificationsDropdown';
 import { translate, getStoredLocale, saveLocale } from './utils/i18n';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Login wrapper component to handle path-based login type
 function LoginWrapper({ onLogin, onAdminLogin, translations, locale, availableLocales, handleLocaleChange }) {

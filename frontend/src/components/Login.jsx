@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { translate } from '../utils/i18n';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function Login({ loginType = 'citizen', onLogin, onAdminLogin, translations, locale, availableLocales, onLocaleChange }) {
   const [phoneNumber, setPhoneNumber] = useState('');

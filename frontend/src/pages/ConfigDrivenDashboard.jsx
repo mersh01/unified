@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DynamicWidget from '../components/DynamicWidget';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function ConfigDrivenDashboard({ user }) {
   const [dashboardConfig, setDashboardConfig] = useState(null);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, GraduationCap, Building, CreditCard, Truck, BarChart, Award } from 'lucide-react';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function Apply({ user }) {  // Add user prop
   const [services, setServices] = useState([]);
