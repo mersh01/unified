@@ -968,6 +968,55 @@ async def mark_notification_read(notification_id: int, current_user = Depends(Au
         print(f"Error marking notification {notification_id} as read: {e}")
         raise HTTPException(status_code=500, detail="Failed to mark notification as read")
 
+# ============ Helper to Calculate Dynamic Stats ============
+
+def calculate_application_stats(apps):
+    from .workflow_engine import workflow_engine
+    
+    total = len(apps)
+    pending = 0
+    completed = 0
+    rejected = 0
+    
+    for app in apps:
+        service_type = app.get("service_type")
+        current_state = app.get("current_state") or app.get("status") or "SUBMITTED"
+        
+        # Determine state type
+        state_type = "internal"
+        
+        # Get service config to determine workflow
+        service_config = config_engine.get_service_config(service_type) if service_type else None
+        workflow_name = service_config.get('workflow') if service_config else None
+        
+        # Look up state type from workflows definition
+        if workflow_name and workflow_name in workflow_engine.workflows:
+            wf = workflow_engine.workflows[workflow_name]
+            states = wf.get("states", {})
+            if current_state in states:
+                state_type = states[current_state].get("type", "internal")
+        else:
+            # Fallback based on typical states if no workflow config available
+            if current_state in ["COMPLETED", "RESOLVED"]:
+                state_type = "end"
+            elif current_state == "REJECTED":
+                state_type = "rejected_end"
+        
+        # Map state type to stats
+        if current_state == "REJECTED" or state_type == "rejected_end":
+            rejected += 1
+        elif state_type == "end":
+            completed += 1
+        else:
+            pending += 1
+            
+    return {
+        "total": total,
+        "pending": pending,
+        "completed": completed,
+        "rejected": rejected
+    }
+
 # ============ Admin Endpoints ============
 
 @app.get("/api/admin/dashboard")
@@ -983,11 +1032,12 @@ async def admin_dashboard(current_user = Depends(AuthHandler.get_current_user_re
         if can_access_application_by_hierarchy(current_user, app):
             filtered_apps.append(app)
     
+    stats_data = calculate_application_stats(filtered_apps)
     return {
-        "total": len(filtered_apps),
-        "pending": len([a for a in filtered_apps if a.get('status') not in ["COMPLETED", "RESOLVED", "REJECTED"]]),
-        "completed": len([a for a in filtered_apps if a.get('status') in ["COMPLETED", "RESOLVED"]]),
-        "rejected": len([a for a in filtered_apps if a.get('status') == "REJECTED"]),
+        "total": stats_data["total"],
+        "pending": stats_data["pending"],
+        "completed": stats_data["completed"],
+        "rejected": stats_data["rejected"],
         "user": current_user
     }
     
@@ -1022,14 +1072,10 @@ async def get_department_dashboard(current_user = Depends(AuthHandler.get_curren
     print(f"After department filter: {len(dept_filtered_apps)}")
     print(f"After hierarchy filter: {len(hierarchy_filtered_apps)}")
     
+    stats_data = calculate_application_stats(hierarchy_filtered_apps)
     return {
         "user": current_user,
-        "stats": {
-            "total": len(hierarchy_filtered_apps),
-            "pending": len([a for a in hierarchy_filtered_apps if a.get('status') not in ["COMPLETED", "RESOLVED", "REJECTED"]]),
-            "completed": len([a for a in hierarchy_filtered_apps if a.get('status') in ["COMPLETED", "RESOLVED"]]),
-            "rejected": len([a for a in hierarchy_filtered_apps if a.get('status') == "REJECTED"])
-        },
+        "stats": stats_data,
         "applications": hierarchy_filtered_apps[:50]
     }
 
@@ -1052,18 +1098,16 @@ async def get_dashboard_stats(current_user = Depends(AuthHandler.get_current_use
         if can_access_application_by_hierarchy(current_user, app):
             accessible_apps.append(app)
 
-    # Calculate stats
-    total = len(accessible_apps)
-    pending = len([a for a in accessible_apps if a.get('current_state') not in ['COMPLETED', 'RESOLVED', 'REJECTED']])
-    completed = len([a for a in accessible_apps if a.get('current_state') in ['COMPLETED', 'RESOLVED']])
-    rejected = len([a for a in accessible_apps if a.get('current_state') == 'REJECTED'])
+    return calculate_application_stats(accessible_apps)
 
-    return {
-        "total": total,
-        "pending": pending,
-        "completed": completed,
-        "rejected": rejected
-    }
+@app.get("/api/applications/user/{user_id}/stats")
+async def get_user_applications_stats(user_id: str, current_user = Depends(AuthHandler.get_current_user_required)):
+    """Get statistics of applications for a specific citizen user"""
+    if current_user.get('user_id') != user_id and current_user.get('username') != user_id and current_user.get('type') != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to view these stats")
+        
+    citizen_apps = get_applications_by_user(user_id)
+    return calculate_application_stats(citizen_apps)
 
 @app.get("/api/admin/dashboard/verification")
 async def get_verification_queue(current_user = Depends(AuthHandler.get_current_user_required)):
@@ -1811,7 +1855,8 @@ async def get_frontend_config(current_user = Depends(AuthHandler.get_current_use
             "id": "stats",
             "title": "Your Statistics",
             "type": "stats_cards",
-            "icon": "📊"
+            "icon": "📊",
+            "endpoint": f"/api/applications/user/{current_user.get('user_id') or current_user.get('username')}/stats"
         })
         dashboard_sections.append({
             "id": "quick_actions",
