@@ -92,9 +92,10 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
         "http://127.0.0.1:5175",
+        "https://unified-anybeuhd9-mersh01s-projects.vercel.app",
     ],
-    # Same-machine browser using LAN IP (Vite --host): e.g. http://192.168.x.x:5173
-    allow_origin_regex=r"http://(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?$",
+    # Same-machine browser using LAN IP (Vite --host) and Vercel domains
+    allow_origin_regex=r"https://.*\.vercel\.app|http://(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
