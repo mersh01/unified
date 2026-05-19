@@ -8,3 +8,4 @@ pyjwt==2.12.1
 supabase==2.10.0
 bcrypt==5.0.0
 minio==7.2.5
+requests==2.31.0
