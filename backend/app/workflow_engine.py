@@ -233,11 +233,10 @@ class WorkflowEngine:
             for state in states:
                 state_name = state.get('name')
                 if state_name:
-                    normalized[state_name] = {
-                        "actions": state.get('actions', []),
-                        "next_states": state.get('next_states', {}),
-                        "allowed_hierarchy_levels": state.get('allowed_hierarchy_levels', [])
-                    }
+                    state_copy = state.copy()
+                    if 'name' in state_copy:
+                        del state_copy['name']
+                    normalized[state_name] = state_copy
             return normalized
         return states
 
