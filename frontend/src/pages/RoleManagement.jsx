@@ -51,6 +51,10 @@ function RoleManagement() {
   const [isEditing, setIsEditing] = useState(false);
   const [editRoleName, setEditRoleName] = useState(null);
 
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterDept, setFilterDept] = useState('');
+
   const initialFormState = {
     role_name: '',
     display_name: '',
@@ -211,6 +215,18 @@ function RoleManagement() {
 
   if (loading) return <div className="loading">Loading roles...</div>;
 
+  // Apply filters
+  const filteredRoles = roles.filter(r => {
+    const searchMatch = !searchQuery || 
+      (r.role_id && r.role_id.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (r.name && r.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (r.description && r.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+    const deptMatch = !filterDept || (r.departments && r.departments.includes(filterDept));
+    
+    return searchMatch && deptMatch;
+  });
+
   return (
     <div>
       <div className="card" style={{ border: '1px solid #e5e7eb', boxShadow: 'var(--glass-shadow)' }}>
@@ -221,24 +237,46 @@ function RoleManagement() {
               Define roles, configure functional scopes, and manage fine-grained workflow permissions checklist.
             </p>
           </div>
-          <button 
-            type="button" 
-            onClick={() => {
-              if (showForm) {
-                setShowForm(false);
-              } else {
-                openCreateForm();
-              }
-            }} 
-            style={{ 
-              background: showForm ? '#64748b' : 'linear-gradient(135deg, #2563eb, #1d4ed8)', 
-              padding: '10px 24px', 
-              borderRadius: '8px',
-              fontWeight: '600'
-            }}
-          >
-            {showForm ? 'Cancel' : '+ New Role'}
-          </button>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', background: '#f8fafc', padding: '4px', borderRadius: '8px', border: '1px solid #e2e8f0', gap: '8px' }}>
+              <input 
+                type="text"
+                placeholder="Search roles..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ border: 'none', background: 'transparent', padding: '6px 12px', outline: 'none', fontSize: '13px', width: '150px' }}
+              />
+              <select 
+                value={filterDept} 
+                onChange={(e) => setFilterDept(e.target.value)}
+                style={{ border: 'none', background: '#fff', borderRadius: '4px', padding: '6px', fontSize: '13px', outline: 'none', cursor: 'pointer' }}
+              >
+                <option value="">All Departments</option>
+                {departments.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
+              </select>
+            </div>
+            <button 
+              type="button" 
+              onClick={() => {
+                if (showForm) {
+                  setShowForm(false);
+                } else {
+                  openCreateForm();
+                }
+              }} 
+              style={{ 
+                background: showForm ? '#64748b' : 'linear-gradient(135deg, #2563eb, #1d4ed8)', 
+                padding: '10px 24px', 
+                borderRadius: '8px',
+                fontWeight: '600',
+                color: 'white',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              {showForm ? 'Cancel' : '+ New Role'}
+            </button>
+          </div>
         </div>
 
         {showForm && (
@@ -458,7 +496,7 @@ function RoleManagement() {
               </tr>
             </thead>
             <tbody>
-              {roles.map((r) => (
+              {filteredRoles.map((r) => (
                 <tr key={r.role_id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.2s' }}>
                   <td style={{ padding: '14px 16px' }}>
                     <code style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', color: '#0f172a', fontWeight: '600' }}>

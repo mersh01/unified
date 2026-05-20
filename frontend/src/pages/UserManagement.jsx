@@ -31,6 +31,20 @@ function UserManagement({ user }) {
   const [extraRole, setExtraRole] = useState('');
   const [roles, setRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
+  
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterRole, setFilterRole] = useState('');
+  const [filterDept, setFilterDept] = useState('');
+  
+  // Hierarchy
+  const [hierarchyData, setHierarchyData] = useState({
+    regions: {},
+    zones: {},
+    woredas: {},
+    kebeles: {}
+  });
+
   const [page, setPage] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
   const pageSize = 20;
@@ -48,18 +62,37 @@ function UserManagement({ user }) {
   };
 
   useEffect(() => {
+    fetchUsers(0, searchQuery, filterRole, filterDept);
+  }, [filterRole, filterDept]); // Refetch when dropdown filters change
+
+  useEffect(() => {
     fetchUsers(0);
     fetchRoles();
     fetchDepartments();
+    fetchHierarchy('regions');
   }, []);
 
-  const fetchUsers = async (pageNumber = 0) => {
+  const fetchUsers = async (pageNumber = 0, search = searchQuery, role = filterRole, dept = filterDept) => {
     setLoading(true);
     try {
       const offset = pageNumber * pageSize;
-      const response = await authFetch(`${API_URL}/api/admin/users?limit=${pageSize}&offset=${offset}`);
+      let url = `${API_URL}/api/admin/users?limit=${pageSize}&offset=${offset}`;
+      if (role) url += `&role=${role}`;
+      if (dept) url += `&department=${dept}`;
+      
+      const response = await authFetch(url);
       const data = await response.json();
-      const list = Array.isArray(data.users) ? data.users : [];
+      let list = Array.isArray(data.users) ? data.users : [];
+      
+      if (search) {
+        const lowerSearch = search.toLowerCase();
+        list = list.filter(u => 
+          (u.username && u.username.toLowerCase().includes(lowerSearch)) || 
+          (u.full_name && u.full_name.toLowerCase().includes(lowerSearch)) ||
+          (u.name && u.name.toLowerCase().includes(lowerSearch))
+        );
+      }
+      
       setUsers(list);
       setTotalUsers(data.total || 0);
       setPage(pageNumber);
@@ -91,6 +124,21 @@ function UserManagement({ user }) {
       }
     } catch (error) {
       console.error('Error fetching departments:', error);
+    }
+  };
+
+  const fetchHierarchy = async (level, parentId = null) => {
+    try {
+      let url = `${API_URL}/api/hierarchy/${level}`;
+      if (parentId) url += `?parent_id=${encodeURIComponent(parentId)}`;
+      
+      const response = await authFetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setHierarchyData(prev => ({ ...prev, [level]: data.data || {} }));
+      }
+    } catch (error) {
+      console.error(`Error fetching hierarchy ${level}:`, error);
     }
   };
 
@@ -175,6 +223,12 @@ function UserManagement({ user }) {
       hierarchy_woreda: u.hierarchy_woreda || '',
       hierarchy_kebele: u.hierarchy_kebele || '',
     });
+    
+    // Fetch relevant hierarchy data if editing existing geographic info
+    if (u.hierarchy_region) fetchHierarchy('zones', u.hierarchy_region);
+    if (u.hierarchy_zone) fetchHierarchy('woredas', u.hierarchy_zone);
+    if (u.hierarchy_woreda) fetchHierarchy('kebeles', u.hierarchy_woreda);
+
     setShowModal(true);
   };
 
@@ -281,25 +335,56 @@ function UserManagement({ user }) {
   return (
     <div>
       <div className="card" style={{ border: '1px solid #e5e7eb', boxShadow: 'var(--glass-shadow)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h2 style={{ margin: 0, color: 'var(--text-main)', fontWeight: 700 }}>User Management</h2>
             <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)', fontSize: '14px' }}>
               Create and manage administrative user accounts, roles, departments, and geographic jurisdictions.
             </p>
           </div>
-          <button 
-            onClick={openCreateModal} 
-            style={{ 
-              background: 'linear-gradient(135deg, #10b981, #059669)', 
-              padding: '10px 24px', 
-              borderRadius: '8px', 
-              boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.2)',
-              fontWeight: '600'
-            }}
-          >
-            + Add New User
-          </button>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', background: '#f8fafc', padding: '4px', borderRadius: '8px', border: '1px solid #e2e8f0', gap: '8px' }}>
+              <input 
+                type="text"
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchUsers(0)}
+                style={{ border: 'none', background: 'transparent', padding: '6px 12px', outline: 'none', fontSize: '13px', width: '150px' }}
+              />
+              <select 
+                value={filterRole} 
+                onChange={(e) => setFilterRole(e.target.value)}
+                style={{ border: 'none', background: '#fff', borderRadius: '4px', padding: '6px', fontSize: '13px', outline: 'none', cursor: 'pointer' }}
+              >
+                <option value="">All Roles</option>
+                {roles.map(r => <option key={r.role_id} value={r.role_id}>{r.name}</option>)}
+              </select>
+              <select 
+                value={filterDept} 
+                onChange={(e) => setFilterDept(e.target.value)}
+                style={{ border: 'none', background: '#fff', borderRadius: '4px', padding: '6px', fontSize: '13px', outline: 'none', cursor: 'pointer' }}
+              >
+                <option value="">All Departments</option>
+                {departments.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
+              </select>
+            </div>
+            <button 
+              onClick={openCreateModal} 
+              style={{ 
+                background: 'linear-gradient(135deg, #10b981, #059669)', 
+                padding: '10px 24px', 
+                borderRadius: '8px', 
+                boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.2)',
+                fontWeight: '600',
+                color: 'white',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              + Add New User
+            </button>
+          </div>
         </div>
         
         <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
@@ -557,43 +642,91 @@ function UserManagement({ user }) {
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label style={{ fontSize: '12px', color: '#475569' }}>Region</label>
-                    <input 
-                      type="text" 
+                    <select 
                       value={userForm.hierarchy_region} 
-                      onChange={(e) => setUserForm({...userForm, hierarchy_region: e.target.value.toUpperCase(), preset: 'custom'})} 
-                      placeholder="OROMIA"
-                      style={{ padding: '8px', fontSize: '14px' }}
-                    />
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setUserForm({
+                          ...userForm, 
+                          hierarchy_region: val,
+                          hierarchy_zone: '',
+                          hierarchy_woreda: '',
+                          hierarchy_kebele: '',
+                          preset: 'custom'
+                        });
+                        if (val) fetchHierarchy('zones', val);
+                        else setHierarchyData(prev => ({ ...prev, zones: {}, woredas: {}, kebeles: {} }));
+                      }} 
+                      style={{ padding: '8px', fontSize: '14px', width: '100%' }}
+                    >
+                      <option value="">-- All Regions --</option>
+                      {Object.entries(hierarchyData.regions || {}).map(([id, name]) => (
+                        <option key={id} value={id}>{name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label style={{ fontSize: '12px', color: '#475569' }}>Zone</label>
-                    <input 
-                      type="text" 
+                    <select 
                       value={userForm.hierarchy_zone} 
-                      onChange={(e) => setUserForm({...userForm, hierarchy_zone: e.target.value.toUpperCase(), preset: 'custom'})} 
-                      placeholder="BALE"
-                      style={{ padding: '8px', fontSize: '14px' }}
-                    />
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setUserForm({
+                          ...userForm, 
+                          hierarchy_zone: val,
+                          hierarchy_woreda: '',
+                          hierarchy_kebele: '',
+                          preset: 'custom'
+                        });
+                        if (val) fetchHierarchy('woredas', val);
+                        else setHierarchyData(prev => ({ ...prev, woredas: {}, kebeles: {} }));
+                      }} 
+                      style={{ padding: '8px', fontSize: '14px', width: '100%' }}
+                      disabled={!userForm.hierarchy_region}
+                    >
+                      <option value="">-- All Zones --</option>
+                      {Object.entries(hierarchyData.zones || {}).map(([id, name]) => (
+                        <option key={id} value={id}>{name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label style={{ fontSize: '12px', color: '#475569' }}>Woreda</label>
-                    <input 
-                      type="text" 
+                    <select 
                       value={userForm.hierarchy_woreda} 
-                      onChange={(e) => setUserForm({...userForm, hierarchy_woreda: e.target.value.toUpperCase(), preset: 'custom'})} 
-                      placeholder="SINANA"
-                      style={{ padding: '8px', fontSize: '14px' }}
-                    />
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setUserForm({
+                          ...userForm, 
+                          hierarchy_woreda: val,
+                          hierarchy_kebele: '',
+                          preset: 'custom'
+                        });
+                        if (val) fetchHierarchy('kebeles', val);
+                        else setHierarchyData(prev => ({ ...prev, kebeles: {} }));
+                      }} 
+                      style={{ padding: '8px', fontSize: '14px', width: '100%' }}
+                      disabled={!userForm.hierarchy_zone}
+                    >
+                      <option value="">-- All Woredas --</option>
+                      {Object.entries(hierarchyData.woredas || {}).map(([id, name]) => (
+                        <option key={id} value={id}>{name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label style={{ fontSize: '12px', color: '#475569' }}>Kebele</label>
-                    <input 
-                      type="text" 
+                    <select 
                       value={userForm.hierarchy_kebele} 
-                      onChange={(e) => setUserForm({...userForm, hierarchy_kebele: e.target.value.toUpperCase(), preset: 'custom'})} 
-                      placeholder="01"
-                      style={{ padding: '8px', fontSize: '14px' }}
-                    />
+                      onChange={(e) => setUserForm({...userForm, hierarchy_kebele: e.target.value, preset: 'custom'})} 
+                      style={{ padding: '8px', fontSize: '14px', width: '100%' }}
+                      disabled={!userForm.hierarchy_woreda}
+                    >
+                      <option value="">-- All Kebeles --</option>
+                      {Object.entries(hierarchyData.kebeles || {}).map(([id, name]) => (
+                        <option key={id} value={id}>{name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: '#64748b' }}>

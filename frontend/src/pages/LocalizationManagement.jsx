@@ -13,6 +13,9 @@ function LocalizationManagement() {
   });
   const [editingLocale, setEditingLocale] = useState(null);
 
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+
   const authFetch = async (url, options = {}) => {
     const token = localStorage.getItem('token');
     const headers = { 'Content-Type': 'application/json', ...options.headers };
@@ -107,14 +110,35 @@ function LocalizationManagement() {
 
   if (loading) return <div className="loading">Loading localization settings...</div>;
 
+  // Apply filters
+  const filteredLocales = locales.filter(l => {
+    const searchMatch = !searchQuery || 
+      (l.locale && l.locale.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (l.display_name && l.display_name.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+    // Optionally we could filter through translation keys but that might be heavy if JSON is large.
+    return searchMatch;
+  });
+
   return (
     <div>
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2>Localization Management</h2>
-          <button type="button" onClick={() => setShowForm(!showForm)} style={{ background: '#2563eb', padding: '10px 20px' }}>
-            {showForm ? 'Cancel' : '+ New Locale'}
-          </button>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', background: '#f8fafc', padding: '4px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <input 
+                type="text"
+                placeholder="Search locales..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ border: 'none', background: 'transparent', padding: '6px 12px', outline: 'none', fontSize: '13px', width: '200px' }}
+              />
+            </div>
+            <button type="button" onClick={() => setShowForm(!showForm)} style={{ background: '#2563eb', padding: '10px 20px', borderRadius: '8px', color: 'white', border: 'none', cursor: 'pointer', fontWeight: '600' }}>
+              {showForm ? 'Cancel' : '+ New Locale'}
+            </button>
+          </div>
         </div>
 
         {showForm && (
@@ -167,7 +191,7 @@ function LocalizationManagement() {
               </tr>
             </thead>
             <tbody>
-              {locales.map((locale) => (
+              {filteredLocales.map((locale) => (
                 <tr key={locale.locale} style={{ borderBottom: '1px solid #e5e7eb' }}>
                   <td style={{ padding: '12px' }}><code>{locale.locale}</code></td>
                   <td style={{ padding: '12px' }}>{locale.display_name}</td>
