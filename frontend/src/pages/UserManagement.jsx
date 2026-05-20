@@ -6,16 +6,31 @@ function UserManagement({ user }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [userForm, setUserForm] = useState({
+  const [isEditing, setIsEditing] = useState(false);
+  const [editUserId, setEditUserId] = useState(null);
+
+  const initialFormState = {
     username: '',
     password: '',
     role: 'viewer',
     name: '',
-    phone_number: '0000000000',
-  });
+    phone_number: '',
+    email: '',
+    department: '',
+    hierarchy_country: 'ETH',
+    hierarchy_region: '',
+    hierarchy_zone: '',
+    hierarchy_woreda: '',
+    hierarchy_kebele: '',
+  };
+
+  const [userForm, setUserForm] = useState(initialFormState);
+  const [preset, setPreset] = useState('custom');
+
   const [roleModalUser, setRoleModalUser] = useState(null);
   const [extraRole, setExtraRole] = useState('');
   const [roles, setRoles] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [page, setPage] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
   const pageSize = 20;
@@ -35,6 +50,7 @@ function UserManagement({ user }) {
   useEffect(() => {
     fetchUsers(0);
     fetchRoles();
+    fetchDepartments();
   }, []);
 
   const fetchUsers = async (pageNumber = 0) => {
@@ -66,34 +82,161 @@ function UserManagement({ user }) {
     }
   };
 
-  const createUser = async () => {
-    if (!userForm.username || !userForm.password) {
-      alert('Username and password are required');
-      return;
-    }
+  const fetchDepartments = async () => {
     try {
-      const response = await authFetch(`${API_URL}/api/admin/users`, {
-        method: 'POST',
-        body: JSON.stringify({
-          username: userForm.username,
-          full_name: userForm.name || userForm.username,
-          phone_number: userForm.phone_number || '0000000000',
-          role: userForm.role,
-          password: userForm.password,
-        }),
-      });
+      const response = await authFetch(`${API_URL}/api/admin/departments`);
       if (response.ok) {
-        alert('User created successfully!');
-        setShowModal(false);
-        fetchUsers();
-        setUserForm({ username: '', password: '', role: 'viewer', name: '', phone_number: '0000000000' });
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.detail || 'Failed to create user'}`);
+        const data = await response.json();
+        setDepartments(Array.isArray(data.departments) ? data.departments : []);
       }
     } catch (error) {
-      console.error('Error creating user:', error);
-      alert('Error creating user');
+      console.error('Error fetching departments:', error);
+    }
+  };
+
+  // Preset templates handler
+  const handlePresetChange = (presetName) => {
+    setPreset(presetName);
+    if (presetName === 'national') {
+      setUserForm(prev => ({
+        ...prev,
+        hierarchy_country: 'ETH',
+        hierarchy_region: '',
+        hierarchy_zone: '',
+        hierarchy_woreda: '',
+        hierarchy_kebele: ''
+      }));
+    } else if (presetName === 'regional') {
+      setUserForm(prev => ({
+        ...prev,
+        hierarchy_country: 'ETH',
+        hierarchy_region: 'OROMIA',
+        hierarchy_zone: '',
+        hierarchy_woreda: '',
+        hierarchy_kebele: ''
+      }));
+    } else if (presetName === 'zone') {
+      setUserForm(prev => ({
+        ...prev,
+        hierarchy_country: 'ETH',
+        hierarchy_region: 'OROMIA',
+        hierarchy_zone: 'BALE',
+        hierarchy_woreda: '',
+        hierarchy_kebele: ''
+      }));
+    } else if (presetName === 'woreda') {
+      setUserForm(prev => ({
+        ...prev,
+        hierarchy_country: 'ETH',
+        hierarchy_region: 'OROMIA',
+        hierarchy_zone: 'BALE',
+        hierarchy_woreda: 'SINANA',
+        hierarchy_kebele: ''
+      }));
+    }
+  };
+
+  const openCreateModal = () => {
+    setIsEditing(false);
+    setEditUserId(null);
+    setPreset('custom');
+    setUserForm(initialFormState);
+    setShowModal(true);
+  };
+
+  const openEditModal = (u) => {
+    setIsEditing(true);
+    setEditUserId(u.user_id);
+    
+    // Determine preset based on hierarchy fields
+    let detectedPreset = 'custom';
+    if (u.hierarchy_country === 'ETH' && !u.hierarchy_region) {
+      detectedPreset = 'national';
+    } else if (u.hierarchy_country === 'ETH' && u.hierarchy_region === 'OROMIA' && !u.hierarchy_zone) {
+      detectedPreset = 'regional';
+    } else if (u.hierarchy_country === 'ETH' && u.hierarchy_region === 'OROMIA' && u.hierarchy_zone === 'BALE' && !u.hierarchy_woreda) {
+      detectedPreset = 'zone';
+    } else if (u.hierarchy_country === 'ETH' && u.hierarchy_region === 'OROMIA' && u.hierarchy_zone === 'BALE' && u.hierarchy_woreda === 'SINANA') {
+      detectedPreset = 'woreda';
+    }
+
+    setPreset(detectedPreset);
+    setUserForm({
+      username: u.username || '',
+      password: '', // Leave empty to not change password
+      role: u.role || 'viewer',
+      name: u.full_name || u.name || '',
+      phone_number: u.phone_number || '',
+      email: u.email || '',
+      department: u.department || '',
+      hierarchy_country: u.hierarchy_country || 'ETH',
+      hierarchy_region: u.hierarchy_region || '',
+      hierarchy_zone: u.hierarchy_zone || '',
+      hierarchy_woreda: u.hierarchy_woreda || '',
+      hierarchy_kebele: u.hierarchy_kebele || '',
+    });
+    setShowModal(true);
+  };
+
+  const handleSaveUser = async (e) => {
+    e.preventDefault();
+    if (!userForm.username) {
+      alert('Username is required');
+      return;
+    }
+    if (!isEditing && !userForm.password) {
+      alert('Password is required for new users');
+      return;
+    }
+    if (!userForm.phone_number) {
+      alert('Phone number is required');
+      return;
+    }
+
+    const payload = {
+      username: userForm.username,
+      full_name: userForm.name || userForm.username,
+      phone_number: userForm.phone_number,
+      role: userForm.role,
+      email: userForm.email || null,
+      department: userForm.department || null,
+      hierarchy_country: userForm.hierarchy_country || null,
+      hierarchy_region: userForm.hierarchy_region || null,
+      hierarchy_zone: userForm.hierarchy_zone || null,
+      hierarchy_woreda: userForm.hierarchy_woreda || null,
+      hierarchy_kebele: userForm.hierarchy_kebele || null,
+    };
+
+    if (userForm.password) {
+      payload.password = userForm.password;
+    }
+
+    try {
+      let response;
+      if (isEditing) {
+        response = await authFetch(`${API_URL}/api/admin/users/${editUserId}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+      } else {
+        response = await authFetch(`${API_URL}/api/admin/users`, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (response.ok) {
+        alert(isEditing ? 'User updated successfully!' : 'User created successfully!');
+        setShowModal(false);
+        fetchUsers(page);
+        setUserForm(initialFormState);
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.detail || 'Failed to save user'}`);
+      }
+    } catch (error) {
+      console.error('Error saving user:', error);
+      alert('Error saving user');
     }
   };
 
@@ -137,69 +280,144 @@ function UserManagement({ user }) {
 
   return (
     <div>
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2>User Management</h2>
-          <button onClick={() => setShowModal(true)} style={{ background: '#22c55e', padding: '10px 20px' }}>
+      <div className="card" style={{ border: '1px solid #e5e7eb', boxShadow: 'var(--glass-shadow)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <div>
+            <h2 style={{ margin: 0, color: 'var(--text-main)', fontWeight: 700 }}>User Management</h2>
+            <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)', fontSize: '14px' }}>
+              Create and manage administrative user accounts, roles, departments, and geographic jurisdictions.
+            </p>
+          </div>
+          <button 
+            onClick={openCreateModal} 
+            style={{ 
+              background: 'linear-gradient(135deg, #10b981, #059669)', 
+              padding: '10px 24px', 
+              borderRadius: '8px', 
+              boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.2)',
+              fontWeight: '600'
+            }}
+          >
             + Add New User
           </button>
         </div>
         
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#f3f4f6', textAlign: 'left' }}>
-                <th style={{ padding: '12px' }}>Username</th>
-                <th style={{ padding: '12px' }}>Name</th>
-                <th style={{ padding: '12px' }}>Role</th>
-                <th style={{ padding: '12px' }}>Also has</th>
-                <th style={{ padding: '12px' }}>Department</th>
-                <th style={{ padding: '12px' }}>Actions</th>
+              <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Username</th>
+                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Name</th>
+                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Role</th>
+                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Department</th>
+                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Jurisdiction</th>
+                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {users.map(u => (
-                <tr key={u.user_id || u.username} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ padding: '12px' }}><code>{u.username}</code></td>
-                  <td style={{ padding: '12px' }}>{u.full_name || u.name}</td>
-                  <td style={{ padding: '12px' }}>{u.role}</td>
-                  <td style={{ padding: '12px', fontSize: '12px' }}>
-                    {(u.extra_roles || [])
-                      .filter((r) => r !== u.role)
-                      .join(', ') || '—'}
+                <tr key={u.user_id || u.username} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.2s' }}>
+                  <td style={{ padding: '14px 16px' }}>
+                    <code style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', color: '#0f172a', fontWeight: '600' }}>
+                      {u.username}
+                    </code>
                   </td>
-                  <td style={{ padding: '12px' }}>{u.department}</td>
-                  <td style={{ padding: '12px' }}>
-                    <button
-                      type="button"
-                      onClick={() => setRoleModalUser(u)}
-                      style={{ background: '#2563eb', padding: '6px 12px', marginRight: '8px' }}
-                    >
-                      + Role
-                    </button>
-                    <button 
-                      onClick={() => deleteUser(u.user_id || u.username, u.full_name || u.name || u.username)} 
-                      style={{ background: '#dc2626', padding: '6px 12px' }} 
-                      disabled={u.username === user?.username}
-                    >
-                      Delete
-                    </button>
+                  <td style={{ padding: '14px 16px', color: 'var(--text-main)', fontWeight: '500' }}>
+                    {u.full_name || u.name}
+                    {u.email && <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{u.email}</div>}
+                  </td>
+                  <td style={{ padding: '14px 16px' }}>
+                    <span className="badge badge-blue" style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '12px' }}>
+                      {u.role}
+                    </span>
+                    {(u.extra_roles || []).filter(r => r !== u.role).map(r => (
+                      <span key={r} className="badge" style={{ background: '#f1f5f9', color: '#475569', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', marginLeft: '4px' }}>
+                        +{r}
+                      </span>
+                    ))}
+                  </td>
+                  <td style={{ padding: '14px 16px' }}>
+                    {u.department ? (
+                      <span style={{ color: '#0369a1', background: '#e0f2fe', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '500' }}>
+                        {u.department}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '13px' }}>None</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '14px 16px', fontSize: '13px', color: '#334155' }}>
+                    {u.hierarchy_country ? (
+                      <div>
+                        <strong>{u.hierarchy_country}</strong>
+                        {u.hierarchy_region && ` / ${u.hierarchy_region}`}
+                        {u.hierarchy_zone && ` / ${u.hierarchy_zone}`}
+                        {u.hierarchy_woreda && ` / ${u.hierarchy_woreda}`}
+                        {u.hierarchy_kebele && ` / ${u.hierarchy_kebele}`}
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Global</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(u)}
+                        style={{ 
+                          background: '#f1f5f9', 
+                          color: '#1e293b', 
+                          padding: '6px 14px', 
+                          borderRadius: '6px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '13px',
+                          fontWeight: '500'
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRoleModalUser(u)}
+                        style={{ 
+                          background: 'linear-gradient(135deg, #3b82f6, #2563eb)', 
+                          padding: '6px 14px', 
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          fontWeight: '500'
+                        }}
+                      >
+                        + Role
+                      </button>
+                      <button 
+                        onClick={() => deleteUser(u.user_id || u.username, u.full_name || u.name || u.username)} 
+                        style={{ 
+                          background: 'linear-gradient(135deg, #ef4444, #dc2626)', 
+                          padding: '6px 14px',
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          fontWeight: '500'
+                        }} 
+                        disabled={u.username === user?.username}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
-          <div style={{ fontSize: '14px', color: '#374151' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
+          <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
             Showing {users.length} of {totalUsers} users
           </div>
-          <div>
+          <div style={{ display: 'flex', gap: '8px' }}>
             <button
               type="button"
               onClick={() => fetchUsers(Math.max(0, page - 1))}
               disabled={page === 0}
-              style={{ marginRight: '8px', padding: '8px 12px', background: page === 0 ? '#9ca3af' : '#2563eb' }}
+              style={{ padding: '8px 16px', background: page === 0 ? '#cbd5e1' : 'var(--primary)', color: page === 0 ? '#64748b' : 'white', borderRadius: '6px', fontWeight: '500' }}
             >
               Previous
             </button>
@@ -207,7 +425,7 @@ function UserManagement({ user }) {
               type="button"
               onClick={() => fetchUsers(page + 1)}
               disabled={(page + 1) * pageSize >= totalUsers}
-              style={{ padding: '8px 12px', background: (page + 1) * pageSize >= totalUsers ? '#9ca3af' : '#2563eb' }}
+              style={{ padding: '8px 16px', background: (page + 1) * pageSize >= totalUsers ? '#cbd5e1' : 'var(--primary)', color: (page + 1) * pageSize >= totalUsers ? '#64748b' : 'white', borderRadius: '6px', fontWeight: '500' }}
             >
               Next
             </button>
@@ -215,60 +433,226 @@ function UserManagement({ user }) {
         </div>
       </div>
 
-      {/* Add User Modal */}
+      {/* Add / Edit User Modal */}
       {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="card" style={{ maxWidth: '500px', width: '100%' }}>
-            <h3>Create New User</h3>
-            <div className="form-group">
-              <label>Username</label>
-              <input type="text" value={userForm.username} onChange={(e) => setUserForm({...userForm, username: e.target.value})} />
-            </div>
-            <div className="form-group">
-              <label>Name</label>
-              <input type="text" value={userForm.name} onChange={(e) => setUserForm({...userForm, name: e.target.value})} />
-            </div>
-            <div className="form-group">
-              <label>Password</label>
-              <input type="password" value={userForm.password} onChange={(e) => setUserForm({...userForm, password: e.target.value})} />
-            </div>
-            <div className="form-group">
-              <label>Phone (10 digits)</label>
-              <input value={userForm.phone_number} onChange={(e) => setUserForm({ ...userForm, phone_number: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label>Primary role</label>
-              <select value={userForm.role} onChange={(e) => setUserForm({...userForm, role: e.target.value})}>
-                {roles.map(r => (
-                  <option key={r.role_id} value={r.role_id}>{r.name}</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button onClick={() => setShowModal(false)} style={{ background: '#6b7280' }}>Cancel</button>
-              <button onClick={createUser} style={{ background: '#2563eb' }}>Create</button>
-            </div>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div className="card" style={{ maxWidth: '750px', width: '100%', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--glass-border)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
+            <h3 style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '12px', marginBottom: '20px', fontWeight: '700', fontSize: '22px' }}>
+              {isEditing ? `Edit User: ${userForm.username}` : 'Create New Administrative User'}
+            </h3>
+            
+            <form onSubmit={handleSaveUser}>
+              <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Username</label>
+                  <input 
+                    type="text" 
+                    value={userForm.username} 
+                    onChange={(e) => setUserForm({...userForm, username: e.target.value.trim().toLowerCase()})} 
+                    disabled={isEditing}
+                    style={{ background: isEditing ? '#f8fafc' : '#fff' }}
+                    placeholder="e.g. jdoe"
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Full Name</label>
+                  <input 
+                    type="text" 
+                    value={userForm.name} 
+                    onChange={(e) => setUserForm({...userForm, name: e.target.value})} 
+                    placeholder="e.g. John Doe"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Password {isEditing && <span style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 'normal' }}>(leave blank to keep current)</span>}</label>
+                  <input 
+                    type="password" 
+                    value={userForm.password} 
+                    onChange={(e) => setUserForm({...userForm, password: e.target.value})} 
+                    placeholder={isEditing ? '••••••••' : 'Enter strong password'}
+                    required={!isEditing}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Phone Number (10 digits)</label>
+                  <input 
+                    type="text"
+                    pattern="[0-9]{9,12}"
+                    value={userForm.phone_number} 
+                    onChange={(e) => setUserForm({ ...userForm, phone_number: e.target.value })} 
+                    placeholder="e.g. 0912345678"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Email Address</label>
+                  <input 
+                    type="email" 
+                    value={userForm.email} 
+                    onChange={(e) => setUserForm({...userForm, email: e.target.value})} 
+                    placeholder="e.g. jdoe@example.com"
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Primary Role</label>
+                  <select value={userForm.role} onChange={(e) => setUserForm({...userForm, role: e.target.value})}>
+                    {roles.map(r => (
+                      <option key={r.role_id} value={r.role_id}>{r.name} ({r.role_id})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '24px' }}>
+                <label>Primary Department</label>
+                <select value={userForm.department} onChange={(e) => setUserForm({...userForm, department: e.target.value})}>
+                  <option value="">No Department (Global/Admin)</option>
+                  <option value="all">All Departments</option>
+                  {departments.map(d => (
+                    <option key={d.key} value={d.key}>{d.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Geographic Hierarchy Section */}
+              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h4 style={{ margin: 0, fontWeight: '600', color: '#1e293b' }}>Geographic Jurisdiction</h4>
+                  
+                  {/* Preset Dropdown */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '500' }}>Presets:</span>
+                    <select 
+                      value={preset} 
+                      onChange={(e) => handlePresetChange(e.target.value)}
+                      style={{ width: 'auto', padding: '6px 12px', fontSize: '13px', borderRadius: '6px' }}
+                    >
+                      <option value="custom">Custom / Manual</option>
+                      <option value="national">National Office (ETH)</option>
+                      <option value="regional">Oromia Regional Office</option>
+                      <option value="zone">Bale Zone Office</option>
+                      <option value="woreda">Sinana Woreda Office</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '12px', color: '#475569' }}>Country</label>
+                    <input 
+                      type="text" 
+                      value={userForm.hierarchy_country} 
+                      onChange={(e) => setUserForm({...userForm, hierarchy_country: e.target.value.toUpperCase(), preset: 'custom'})} 
+                      placeholder="ETH"
+                      style={{ padding: '8px', fontSize: '14px' }}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '12px', color: '#475569' }}>Region</label>
+                    <input 
+                      type="text" 
+                      value={userForm.hierarchy_region} 
+                      onChange={(e) => setUserForm({...userForm, hierarchy_region: e.target.value.toUpperCase(), preset: 'custom'})} 
+                      placeholder="OROMIA"
+                      style={{ padding: '8px', fontSize: '14px' }}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '12px', color: '#475569' }}>Zone</label>
+                    <input 
+                      type="text" 
+                      value={userForm.hierarchy_zone} 
+                      onChange={(e) => setUserForm({...userForm, hierarchy_zone: e.target.value.toUpperCase(), preset: 'custom'})} 
+                      placeholder="BALE"
+                      style={{ padding: '8px', fontSize: '14px' }}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '12px', color: '#475569' }}>Woreda</label>
+                    <input 
+                      type="text" 
+                      value={userForm.hierarchy_woreda} 
+                      onChange={(e) => setUserForm({...userForm, hierarchy_woreda: e.target.value.toUpperCase(), preset: 'custom'})} 
+                      placeholder="SINANA"
+                      style={{ padding: '8px', fontSize: '14px' }}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '12px', color: '#475569' }}>Kebele</label>
+                    <input 
+                      type="text" 
+                      value={userForm.hierarchy_kebele} 
+                      onChange={(e) => setUserForm({...userForm, hierarchy_kebele: e.target.value.toUpperCase(), preset: 'custom'})} 
+                      placeholder="01"
+                      style={{ padding: '8px', fontSize: '14px' }}
+                    />
+                  </div>
+                </div>
+                <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: '#64748b' }}>
+                  Jurisdictions restrict administrative operations to the assigned region, zone, or woreda. Leave empty for national scope.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowModal(false)} 
+                  style={{ background: '#f1f5f9', color: '#1e293b', border: '1px solid #cbd5e1', padding: '10px 24px', borderRadius: '8px', fontWeight: '600' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', padding: '10px 32px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.2)' }}
+                >
+                  {isEditing ? 'Save Changes' : 'Create User'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
+      {/* Assign Extra Role Modal */}
       {roleModalUser && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="card" style={{ maxWidth: '420px', width: '100%' }}>
-            <h3>Assign role to {roleModalUser.username}</h3>
-            <p style={{ fontSize: '13px', color: '#6b7280' }}>Adds an additional role. Primary role stays on the user record; permissions combine at login (re-login to refresh token).</p>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ maxWidth: '420px', width: '100%', border: '1px solid var(--glass-border)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
+            <h3 style={{ margin: '0 0 8px 0', fontWeight: '700' }}>Assign Role to {roleModalUser.username}</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px', lineHeight: '1.4' }}>
+              Adds an additional secondary role. The primary role remains unchanged. Permissions combine at next login.
+            </p>
             <div className="form-group">
-              <label>Role</label>
+              <label>Role to Assign</label>
               <select value={extraRole} onChange={(e) => setExtraRole(e.target.value)}>
-                <option value="">Select…</option>
+                <option value="">Select Role…</option>
                 {roles.map((r) => (
-                  <option key={r.role_id} value={r.role_id}>{r.name}</option>
+                  <option key={r.role_id} value={r.role_id}>{r.name} ({r.role_id})</option>
                 ))}
               </select>
             </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>
-              <button type="button" onClick={() => { setRoleModalUser(null); setExtraRole(''); }} style={{ background: '#6b7280' }}>Cancel</button>
-              <button type="button" onClick={assignExtraRole} style={{ background: '#2563eb' }}>Assign</button>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '24px' }}>
+              <button 
+                type="button" 
+                onClick={() => { setRoleModalUser(null); setExtraRole(''); }} 
+                style={{ background: '#f1f5f9', color: '#1e293b', border: '1px solid #cbd5e1', padding: '8px 16px', borderRadius: '6px', fontWeight: '600' }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                onClick={assignExtraRole} 
+                style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)', padding: '8px 20px', borderRadius: '6px', fontWeight: '600' }}
+              >
+                Assign
+              </button>
             </div>
           </div>
         </div>

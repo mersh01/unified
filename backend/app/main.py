@@ -2236,6 +2236,53 @@ async def admin_update_role(
     return {"ok": True, "role": role_manager.get_role_config(role_name)}
 
 
+# ============ Departments ============
+
+@app.get("/api/admin/departments")
+async def get_departments(current_user = Depends(AuthHandler.get_current_user_required)):
+    """Get dynamic list of all departments based on roles and configs."""
+    _require_config_admin(current_user)
+    
+    departments = set()
+    
+    # 1. Add defaults just in case
+    defaults = [
+        "verification", "document_verification", "payment", 
+        "certificate", "audit", "medical", "tax", 
+        "income_verification", "view_only"
+    ]
+    departments.update(defaults)
+    
+    # 2. Extract from roles
+    for role in role_manager.get_all_roles():
+        if role.get("departments"):
+            for d in role["departments"]:
+                if d and d != "all":
+                    departments.add(d)
+                    
+    # 3. Extract from service to department mapping
+    mapping = role_manager.config.get("service_to_department_mapping", {})
+    for dept in mapping.values():
+        if dept and dept != "all":
+            departments.add(dept)
+            
+    # 4. Extract from department to state mapping
+    state_mapping = role_manager.config.get("department_to_state_mapping", {})
+    for dept in state_mapping.keys():
+        if dept and dept != "all":
+            departments.add(dept)
+            
+    # Format for response
+    result = []
+    for d in sorted(list(departments)):
+        label = d.replace("_", " ").title()
+        if d == "document_verification":
+            label = "Doc Verification"
+        result.append({"key": d, "label": label})
+        
+    return {"departments": result}
+
+
 # ============ Health Check ============
 
 @app.get("/api/hierarchy/{level}")
