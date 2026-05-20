@@ -971,7 +971,6 @@ async def mark_notification_read(notification_id: int, current_user = Depends(Au
 # ============ Helper to Calculate Dynamic Stats ============
 
 def calculate_application_stats(apps):
-    from .workflow_engine import workflow_engine
     
     total = len(apps)
     pending = 0
@@ -979,7 +978,7 @@ def calculate_application_stats(apps):
     rejected = 0
     
     for app in apps:
-        service_type = app.get("service_type")
+        service_type = app.get("service_type") or app.get("document_type")
         current_state = app.get("current_state") or app.get("status") or "SUBMITTED"
         
         # Determine state type
@@ -1003,10 +1002,10 @@ def calculate_application_stats(apps):
                 state_type = "rejected_end"
         
         # Map state type to stats
-        if current_state == "REJECTED" or state_type == "rejected_end":
-            rejected += 1
-        elif state_type == "end":
+        if state_type == "end" or current_state == "REJECTED" or state_type == "rejected_end":
             completed += 1
+            if current_state == "REJECTED" or state_type == "rejected_end":
+                rejected += 1
         else:
             pending += 1
             
@@ -1056,7 +1055,7 @@ async def get_department_dashboard(current_user = Depends(AuthHandler.get_curren
     if user_has_any_role(current_user, "super_admin"):
         dept_filtered_apps = get_all_applications()
     else:
-        dept_filtered_apps = get_applications_by_department(user_department)
+        dept_filtered_apps = get_applications_by_department(user_department) if user_department and user_department != "all" else get_all_applications()
     
     # Second, filter by hierarchy (geographic jurisdiction)
     hierarchy_filtered_apps = []
@@ -1090,7 +1089,7 @@ async def get_dashboard_stats(current_user = Depends(AuthHandler.get_current_use
         all_apps = get_all_applications()
     else:
         user_department = current_user.get("department")
-        all_apps = get_applications_by_department(user_department) if user_department else get_all_applications()
+        all_apps = get_applications_by_department(user_department) if user_department and user_department != "all" else get_all_applications()
 
     # Filter by hierarchy
     accessible_apps = []
