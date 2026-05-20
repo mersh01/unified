@@ -38,6 +38,7 @@ function App() {
   const [locale, setLocale] = useState(getStoredLocale());
   const [translations, setTranslations] = useState({});
   const [availableLocales, setAvailableLocales] = useState([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [services, setServices] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -197,15 +198,21 @@ function App() {
   return (
     <Router>
       <div className="app-layout">
-        <aside className="app-sidebar">
+        {/* Mobile Overlay */}
+        <div 
+          className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} 
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+
+        <aside className={`app-sidebar ${isSidebarOpen ? 'open' : ''}`}>
           <div className="sidebar-header">
             <h2>DMS</h2>
           </div>
           <nav className="sidebar-nav">
             {user?.type === 'citizen' || user?.role === 'citizen' ? (
               <>
-                <Link to="/">Dashboard</Link>
-                <Link to="/track">Track Applications</Link>
+                <Link to="/" onClick={() => setIsSidebarOpen(false)}>Dashboard</Link>
+                <Link to="/track" onClick={() => setIsSidebarOpen(false)}>Track Applications</Link>
                 <div style={{ marginTop: '20px', fontWeight: 'bold', fontSize: '0.75rem', color: '#9ca3af', padding: '0 16px', letterSpacing: '0.05em' }}>DEPARTMENTS</div>
                 {Object.entries(getServicesByDepartment()).map(([department, deptServices]) => (
                   <div key={department}>
@@ -227,6 +234,7 @@ function App() {
                             key={service.service_id} 
                             to={`/apply?service_id=${service.service_id}`}
                             className="service-item"
+                            onClick={() => setIsSidebarOpen(false)}
                           >
                             {service.name}
                           </Link>
@@ -238,7 +246,7 @@ function App() {
               </>
             ) : (
               navigation.map(item => (
-                <Link key={item.path} to={item.path}>
+                <Link key={item.path} to={item.path} onClick={() => setIsSidebarOpen(false)}>
                   {item.icon} {item.label}
                 </Link>
               ))
@@ -248,14 +256,22 @@ function App() {
 
         <main className="app-main">
           <header className="app-header">
-            <div className="header-info">
-              <h1>📄 {translate(translations, 'app_title', 'Document Management System')}</h1>
-              <p>{translate(translations, 'welcome_message', 'Welcome')}, {frontendConfig.user?.name || 'User'}!</p>
-              {frontendConfig.user?.role !== 'citizen' && (
+            <div className="app-header-left">
+              <button 
+                className="mobile-menu-btn" 
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              >
+                &#9776;
+              </button>
+              <div className="header-info">
+                <h1>📄 {translate(translations, 'app_title', 'Document Management System')}</h1>
+                <p>{translate(translations, 'welcome_message', 'Welcome')}, {frontendConfig.user?.name || 'User'}!</p>
+                {frontendConfig.user?.role !== 'citizen' && (
                 <p style={{ fontSize: '12px' }}>
                   {translate(translations, 'role_label', 'Role')}: {frontendConfig.user?.role} | {translate(translations, 'department_label', 'Department')}: {frontendConfig.user?.department || 'N/A'}
                 </p>
               )}
+            </div>
             </div>
             <div className="header-actions">
               <select
