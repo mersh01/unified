@@ -172,5 +172,67 @@ class HierarchyManager:
             parts.append(f"Zone: {hierarchy.get('zone')}")
         return " > ".join(parts) if parts else "Global"
 
+    def is_in_admin_scope(self, admin_user: Dict[str, Any], target_hierarchy: Dict[str, Any], target_department: str = None) -> bool:
+        """Check if a target user (defined by hierarchy and department) is within the admin's scope."""
+        user_roles = admin_user.get("roles") or [admin_user.get("role")]
+        if "super_admin" in user_roles or "system_admin" in user_roles:
+            return True
+            
+        # Department check: If admin has a department, target must be in the same department
+        admin_dept = admin_user.get("department")
+        if admin_dept and target_department and admin_dept != target_department:
+            return False
+            
+        admin_hierarchy = admin_user.get("hierarchy", {})
+        if not admin_hierarchy:
+            admin_hierarchy = {
+                "country": admin_user.get("hierarchy_country"),
+                "region": admin_user.get("hierarchy_region"),
+                "zone": admin_user.get("hierarchy_zone"),
+                "woreda": admin_user.get("hierarchy_woreda"),
+                "kebele": admin_user.get("hierarchy_kebele")
+            }
+            
+        admin_level = admin_hierarchy.get("level")
+        if not admin_level:
+            if admin_hierarchy.get("kebele"): admin_level = "kebele"
+            elif admin_hierarchy.get("woreda"): admin_level = "woreda"
+            elif admin_hierarchy.get("zone"): admin_level = "zone"
+            elif admin_hierarchy.get("region"): admin_level = "region"
+            else: admin_level = "country"
+
+        if admin_level == "country":
+            return target_hierarchy.get("country") == admin_hierarchy.get("country")
+        elif admin_level == "region":
+            if target_hierarchy.get("region") and target_hierarchy.get("region") != admin_hierarchy.get("region"):
+                return False
+            return target_hierarchy.get("country") == admin_hierarchy.get("country")
+        elif admin_level == "zone":
+            if target_hierarchy.get("zone") and target_hierarchy.get("zone") != admin_hierarchy.get("zone"):
+                return False
+            if target_hierarchy.get("region") and target_hierarchy.get("region") != admin_hierarchy.get("region"):
+                return False
+            return target_hierarchy.get("country") == admin_hierarchy.get("country")
+        elif admin_level == "woreda":
+            if target_hierarchy.get("woreda") and target_hierarchy.get("woreda") != admin_hierarchy.get("woreda"):
+                return False
+            if target_hierarchy.get("zone") and target_hierarchy.get("zone") != admin_hierarchy.get("zone"):
+                return False
+            if target_hierarchy.get("region") and target_hierarchy.get("region") != admin_hierarchy.get("region"):
+                return False
+            return target_hierarchy.get("country") == admin_hierarchy.get("country")
+        elif admin_level == "kebele":
+            if target_hierarchy.get("kebele") and target_hierarchy.get("kebele") != admin_hierarchy.get("kebele"):
+                return False
+            if target_hierarchy.get("woreda") and target_hierarchy.get("woreda") != admin_hierarchy.get("woreda"):
+                return False
+            if target_hierarchy.get("zone") and target_hierarchy.get("zone") != admin_hierarchy.get("zone"):
+                return False
+            if target_hierarchy.get("region") and target_hierarchy.get("region") != admin_hierarchy.get("region"):
+                return False
+            return target_hierarchy.get("country") == admin_hierarchy.get("country")
+            
+        return False
+
 # Initialize global hierarchy manager
 hierarchy_manager = HierarchyManager()

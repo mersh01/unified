@@ -1415,8 +1415,22 @@ async def admin_assign_user_role(
 @app.post("/api/admin/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(user_data: UserCreate, current_user = Depends(AuthHandler.get_current_user_required)):
     """Create a new user (admin only)"""
-    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin", "system_admin"):
+    if current_user["type"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
+        
+    has_manage_users = user_has_any_role(current_user, "super_admin", "system_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
+    if not has_manage_users:
+        raise HTTPException(status_code=403, detail="Permission 'manage_users' required")
+        
+    target_hierarchy = {
+        "country": user_data.hierarchy_country,
+        "region": user_data.hierarchy_region,
+        "zone": user_data.hierarchy_zone,
+        "woreda": user_data.hierarchy_woreda,
+        "kebele": user_data.hierarchy_kebele
+    }
+    if not hierarchy_manager.is_in_admin_scope(current_user, target_hierarchy, user_data.department):
+        raise HTTPException(status_code=403, detail="Target user is outside of your administrative scope")
 
     try:
         from .user_manager import user_manager
@@ -1460,8 +1474,16 @@ async def get_users(
     offset: int = 0
 ):
     """Get users list (admin only) with pagination and roles included"""
-    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin", "system_admin"):
+    if current_user["type"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
+        
+    has_manage_users = user_has_any_role(current_user, "super_admin", "system_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
+    if not has_manage_users:
+        raise HTTPException(status_code=403, detail="Permission 'manage_users' required")
+        
+    if not user_has_any_role(current_user, "super_admin", "system_admin"):
+        if current_user.get("department"):
+            department = current_user.get("department")
 
     if limit < 1:
         limit = 1
@@ -1475,7 +1497,23 @@ async def get_users(
 
         result = user_manager.get_users_paginated(limit=limit, offset=offset, role=role, department=department)
         users = result.get('users', [])
-        total = result.get('total', 0)
+        
+        if not user_has_any_role(current_user, "super_admin", "system_admin"):
+            filtered_users = []
+            for u in users:
+                target_hierarchy = {
+                    "country": u.get("hierarchy_country"),
+                    "region": u.get("hierarchy_region"),
+                    "zone": u.get("hierarchy_zone"),
+                    "woreda": u.get("hierarchy_woreda"),
+                    "kebele": u.get("hierarchy_kebele")
+                }
+                if hierarchy_manager.is_in_admin_scope(current_user, target_hierarchy, u.get("department")):
+                    filtered_users.append(u)
+            users = filtered_users
+            total = len(users)
+        else:
+            total = result.get('total', 0)
 
         if is_active is not None:
             users = [u for u in users if u.get('is_active') == is_active]
@@ -1521,8 +1559,12 @@ def _raise_if_user_roles_table_missing(exc: Exception) -> None:
 @app.get("/api/admin/users/{user_id}")
 async def get_user(user_id: str, current_user = Depends(AuthHandler.get_current_user_required)):
     """Get user details (admin only)"""
-    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin", "system_admin"):
+    if current_user["type"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
+        
+    has_manage_users = user_has_any_role(current_user, "super_admin", "system_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
+    if not has_manage_users:
+        raise HTTPException(status_code=403, detail="Permission 'manage_users' required")
 
     try:
         from .user_manager import user_manager
@@ -1530,6 +1572,16 @@ async def get_user(user_id: str, current_user = Depends(AuthHandler.get_current_
 
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
+            
+        target_hierarchy = {
+            "country": user.get("hierarchy_country"),
+            "region": user.get("hierarchy_region"),
+            "zone": user.get("hierarchy_zone"),
+            "woreda": user.get("hierarchy_woreda"),
+            "kebele": user.get("hierarchy_kebele")
+        }
+        if not hierarchy_manager.is_in_admin_scope(current_user, target_hierarchy, user.get("department")):
+            raise HTTPException(status_code=403, detail="User is outside of your administrative scope")
 
         return user
 
@@ -1543,14 +1595,45 @@ async def update_user(
     current_user = Depends(AuthHandler.get_current_user_required)
 ):
     """Update user (admin only)"""
-    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin", "system_admin"):
+    if current_user["type"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
+        
+    has_manage_users = user_has_any_role(current_user, "super_admin", "system_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
+    if not has_manage_users:
+        raise HTTPException(status_code=403, detail="Permission 'manage_users' required")
 
     try:
         from .user_manager import user_manager
 
+        # Check existing user
+        existing_user = user_manager.get_user_by_id(user_id)
+        if not existing_user:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        target_hierarchy = {
+            "country": existing_user.get("hierarchy_country"),
+            "region": existing_user.get("hierarchy_region"),
+            "zone": existing_user.get("hierarchy_zone"),
+            "woreda": existing_user.get("hierarchy_woreda"),
+            "kebele": existing_user.get("hierarchy_kebele")
+        }
+        if not hierarchy_manager.is_in_admin_scope(current_user, target_hierarchy, existing_user.get("department")):
+            raise HTTPException(status_code=403, detail="User is outside of your administrative scope")
+
         # Prepare update data
         update_data = user_data.dict(exclude_unset=True)
+        
+        # Verify new target scope if hierarchy or department is updated
+        new_hierarchy = {**target_hierarchy}
+        if "hierarchy_country" in update_data: new_hierarchy["country"] = update_data["hierarchy_country"]
+        if "hierarchy_region" in update_data: new_hierarchy["region"] = update_data["hierarchy_region"]
+        if "hierarchy_zone" in update_data: new_hierarchy["zone"] = update_data["hierarchy_zone"]
+        if "hierarchy_woreda" in update_data: new_hierarchy["woreda"] = update_data["hierarchy_woreda"]
+        if "hierarchy_kebele" in update_data: new_hierarchy["kebele"] = update_data["hierarchy_kebele"]
+        new_department = update_data.get("department", existing_user.get("department"))
+        
+        if not hierarchy_manager.is_in_admin_scope(current_user, new_hierarchy, new_department):
+            raise HTTPException(status_code=403, detail="Cannot move user outside of your administrative scope")
 
         # Handle hierarchy updates
         if any(key.startswith('hierarchy_') for key in update_data.keys()):
@@ -1575,11 +1658,30 @@ async def update_user(
 @app.delete("/api/admin/users/{user_id}")
 async def delete_user(user_id: str, current_user = Depends(AuthHandler.get_current_user_required)):
     """Deactivate user (admin only) - soft delete"""
-    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin", "system_admin"):
+    if current_user["type"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
+        
+    has_manage_users = user_has_any_role(current_user, "super_admin", "system_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
+    if not has_manage_users:
+        raise HTTPException(status_code=403, detail="Permission 'manage_users' required")
 
     try:
         from .user_manager import user_manager
+
+        # Check existing user
+        existing_user = user_manager.get_user_by_id(user_id)
+        if not existing_user:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        target_hierarchy = {
+            "country": existing_user.get("hierarchy_country"),
+            "region": existing_user.get("hierarchy_region"),
+            "zone": existing_user.get("hierarchy_zone"),
+            "woreda": existing_user.get("hierarchy_woreda"),
+            "kebele": existing_user.get("hierarchy_kebele")
+        }
+        if not hierarchy_manager.is_in_admin_scope(current_user, target_hierarchy, existing_user.get("department")):
+            raise HTTPException(status_code=403, detail="User is outside of your administrative scope")
 
         success = user_manager.deactivate_user(user_id)
 
@@ -1906,7 +2008,7 @@ async def get_frontend_config(current_user = Depends(AuthHandler.get_current_use
             "can_track": True,
             "can_manage_applications": is_admin,
             "can_manage_users": "*" in permissions or "manage_users" in permissions,
-            "can_manage_roles": "*" in permissions or "manage_roles" in permissions,
+            "can_manage_roles": user_has_any_role(current_user, "super_admin", "system_admin"),
             "can_view_reports": "*" in permissions or "view_reports" in permissions or "generate_reports" in permissions,
             "can_export": "*" in permissions or "export_data" in permissions
         },
@@ -1930,9 +2032,11 @@ async def get_frontend_config(current_user = Depends(AuthHandler.get_current_use
             {"label": "Track Application", "path": "/track", "icon": "🔍"}
         ]
         
-        if user_has_any_role(current_user, "super_admin"):
+        if user_has_any_role(current_user, "super_admin", "system_admin") or "manage_users" in permissions:
+            nav_items.append({"label": "User Management", "path": "/admin/users", "icon": "👥"})
+
+        if user_has_any_role(current_user, "super_admin", "system_admin"):
             nav_items.extend([
-                {"label": "User Management", "path": "/admin/users", "icon": "👥"},
                 {"label": "Role Management", "path": "/admin/roles", "icon": "🎭"},
                 {"label": "Services", "path": "/admin/services", "icon": "⚙️"},
                 {"label": "Workflows", "path": "/admin/workflows", "icon": "🔄"},

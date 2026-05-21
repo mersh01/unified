@@ -9,6 +9,8 @@ function UserManagement({ user }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editUserId, setEditUserId] = useState(null);
 
+  const isSuperAdmin = user?.role === 'super_admin' || user?.role === 'system_admin';
+
   const initialFormState = {
     username: '',
     password: '',
@@ -16,12 +18,12 @@ function UserManagement({ user }) {
     name: '',
     phone_number: '',
     email: '',
-    department: '',
-    hierarchy_country: 'ETH',
-    hierarchy_region: '',
-    hierarchy_zone: '',
-    hierarchy_woreda: '',
-    hierarchy_kebele: '',
+    department: isSuperAdmin ? '' : (user?.department || ''),
+    hierarchy_country: isSuperAdmin ? 'ETH' : (user?.hierarchy_country || 'ETH'),
+    hierarchy_region: isSuperAdmin ? '' : (user?.hierarchy_region || ''),
+    hierarchy_zone: isSuperAdmin ? '' : (user?.hierarchy_zone || ''),
+    hierarchy_woreda: isSuperAdmin ? '' : (user?.hierarchy_woreda || ''),
+    hierarchy_kebele: isSuperAdmin ? '' : (user?.hierarchy_kebele || ''),
   };
 
   const [userForm, setUserForm] = useState(initialFormState);
@@ -598,7 +600,11 @@ function UserManagement({ user }) {
 
               <div className="form-group" style={{ marginBottom: '24px' }}>
                 <label>Primary Department</label>
-                <select value={userForm.department} onChange={(e) => setUserForm({...userForm, department: e.target.value})}>
+                <select 
+                  value={userForm.department} 
+                  onChange={(e) => setUserForm({...userForm, department: e.target.value})}
+                  disabled={!isSuperAdmin && !!user?.department}
+                >
                   <option value="">No Department (Global/Admin)</option>
                   <option value="all">All Departments</option>
                   {departments.map(d => (
@@ -637,6 +643,7 @@ function UserManagement({ user }) {
                       value={userForm.hierarchy_country} 
                       onChange={(e) => setUserForm({...userForm, hierarchy_country: e.target.value.toUpperCase(), preset: 'custom'})} 
                       placeholder="ETH"
+                      disabled={!isSuperAdmin && !!user?.hierarchy_country}
                       style={{ padding: '8px', fontSize: '14px' }}
                     />
                   </div>
@@ -657,6 +664,7 @@ function UserManagement({ user }) {
                         if (val) fetchHierarchy('zones', val);
                         else setHierarchyData(prev => ({ ...prev, zones: {}, woredas: {}, kebeles: {} }));
                       }} 
+                      disabled={!isSuperAdmin && !!user?.hierarchy_region}
                       style={{ padding: '8px', fontSize: '14px', width: '100%' }}
                     >
                       <option value="">-- All Regions --</option>
@@ -681,8 +689,8 @@ function UserManagement({ user }) {
                         if (val) fetchHierarchy('woredas', val);
                         else setHierarchyData(prev => ({ ...prev, woredas: {}, kebeles: {} }));
                       }} 
+                      disabled={(!isSuperAdmin && !!user?.hierarchy_zone) || !userForm.hierarchy_region}
                       style={{ padding: '8px', fontSize: '14px', width: '100%' }}
-                      disabled={!userForm.hierarchy_region}
                     >
                       <option value="">-- All Zones --</option>
                       {Object.entries(hierarchyData.zones || {}).map(([id, name]) => (
@@ -705,8 +713,8 @@ function UserManagement({ user }) {
                         if (val) fetchHierarchy('kebeles', val);
                         else setHierarchyData(prev => ({ ...prev, kebeles: {} }));
                       }} 
+                      disabled={(!isSuperAdmin && !!user?.hierarchy_woreda) || !userForm.hierarchy_zone}
                       style={{ padding: '8px', fontSize: '14px', width: '100%' }}
-                      disabled={!userForm.hierarchy_zone}
                     >
                       <option value="">-- All Woredas --</option>
                       {Object.entries(hierarchyData.woredas || {}).map(([id, name]) => (
@@ -719,8 +727,8 @@ function UserManagement({ user }) {
                     <select 
                       value={userForm.hierarchy_kebele} 
                       onChange={(e) => setUserForm({...userForm, hierarchy_kebele: e.target.value, preset: 'custom'})} 
+                      disabled={(!isSuperAdmin && !!user?.hierarchy_kebele) || !userForm.hierarchy_woreda}
                       style={{ padding: '8px', fontSize: '14px', width: '100%' }}
-                      disabled={!userForm.hierarchy_woreda}
                     >
                       <option value="">-- All Kebeles --</option>
                       {Object.entries(hierarchyData.kebeles || {}).map(([id, name]) => (
