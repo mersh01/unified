@@ -177,10 +177,6 @@ class WorkflowEngine:
             if allowed_hierarchy_levels and user_level not in allowed_hierarchy_levels:
                 return []
 
-        # Super admin bypass: users with 'update_any_application' can act on any state
-        if user_permissions is not None and "update_any_application" in user_permissions:
-            return actions
-
         # Permission-based access control
         allowed_permissions = state_config.get('allowed_permissions') or []
 
