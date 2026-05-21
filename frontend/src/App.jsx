@@ -264,25 +264,27 @@ function App() {
         ></div>
 
         <aside className={`app-sidebar ${isSidebarOpen ? 'open' : ''}`}>
-          <div className="sidebar-user-section">
-            <div className="profile-modal-avatar-section" style={{ marginBottom: 0, cursor: 'pointer' }} onClick={() => setIsProfileModalOpen(true)}>
+          <div className="sidebar-user-section" onClick={() => setIsProfileModalOpen(true)}>
+            <div className="sidebar-avatar-container">
               {frontendConfig?.user?.profile_picture_url ? (
                 <img 
                   src={`${API_URL}${frontendConfig.user.profile_picture_url}`} 
                   alt="Profile" 
-                  className="profile-modal-avatar"
-                  style={{ width: '64px', height: '64px', border: '2px solid rgba(255,255,255,0.2)' }}
+                  className="sidebar-avatar"
                 />
               ) : (
-                <div className="profile-modal-avatar-placeholder" style={{ width: '64px', height: '64px', fontSize: '1.5rem', border: '2px solid rgba(255,255,255,0.2)' }}>
+                <div className="sidebar-avatar-placeholder">
                   {(frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'U').charAt(0).toUpperCase()}
                 </div>
               )}
-              <div style={{ color: 'white', marginTop: '10px', fontWeight: '600', fontSize: '1rem' }}>
-                {frontendConfig?.user?.full_name || frontendConfig?.user?.name}
+              <span className="sidebar-avatar-badge"></span>
+            </div>
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">
+                {frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'User'}
               </div>
-              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', textTransform: 'capitalize' }}>
-                {frontendConfig?.user?.role}
+              <div className="sidebar-user-role">
+                {frontendConfig?.user?.role || 'citizen'}
               </div>
             </div>
           </div>
