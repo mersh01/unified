@@ -2399,8 +2399,8 @@ async def get_departments(current_user = Depends(AuthHandler.get_current_user_re
         
 # ============ Profile Picture Endpoints ============
 
-PROFILE_PICS_DIR = os.path.join(os.path.dirname(__file__), '..', 'uploads', 'profile_pictures')
-os.makedirs(PROFILE_PICS_DIR, exist_ok=True)
+import tempfile
+PROFILE_PICS_DIR = os.path.join(tempfile.gettempdir(), 'profile_pictures')
 
 @app.post("/api/users/profile-picture")
 async def upload_profile_picture(
@@ -2410,6 +2410,8 @@ async def upload_profile_picture(
     """Upload or update user's profile picture"""
     from .supabase_client import supabase
     import io
+    
+    os.makedirs(PROFILE_PICS_DIR, exist_ok=True)
     
     # Validate file type
     allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
@@ -2476,6 +2478,7 @@ async def serve_profile_picture(filename: str):
         content = f.read()
     
     return Response(content=content, media_type=content_type)
+
 
 
 # ============ Health Check ============
