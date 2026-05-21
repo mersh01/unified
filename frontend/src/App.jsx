@@ -42,6 +42,10 @@ function App() {
   const [services, setServices] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState(''); // '', 'uploading', 'success', 'error'
 
   useEffect(() => {
     const initApp = async () => {
@@ -168,6 +172,61 @@ function App() {
     }
   };
 
+  const handleFileSelect = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setUploadStatus('');
+    }
+  };
+
+  const handleProfileUpload = async () => {
+    if (!selectedFile) return;
+    
+    setUploadStatus('uploading');
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const response = await fetch(`${API_URL}/api/users/profile-picture`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadStatus('success');
+        
+        // Refresh config to get new picture URL
+        await fetchFrontendConfig(token);
+        
+        setTimeout(() => {
+          setIsProfileModalOpen(false);
+          setUploadStatus('');
+          setSelectedFile(null);
+          setPreviewUrl(null);
+        }, 1500);
+      } else {
+        const errData = await response.json();
+        alert(`Upload failed: ${errData.detail || 'Unknown error'}`);
+        setUploadStatus('error');
+      }
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      alert('Network error during upload');
+      setUploadStatus('error');
+    }
+  };
+
   if (loading) {
     return <div className="loading">Loading configuration...</div>;
   }
@@ -205,7 +264,29 @@ function App() {
         ></div>
 
         <aside className={`app-sidebar ${isSidebarOpen ? 'open' : ''}`}>
-          <div className="sidebar-header">
+          <div className="sidebar-user-section">
+            <div className="profile-modal-avatar-section" style={{ marginBottom: 0, cursor: 'pointer' }} onClick={() => setIsProfileModalOpen(true)}>
+              {frontendConfig?.user?.profile_picture_url ? (
+                <img 
+                  src={`${API_URL}${frontendConfig.user.profile_picture_url}`} 
+                  alt="Profile" 
+                  className="profile-modal-avatar"
+                  style={{ width: '64px', height: '64px', border: '2px solid rgba(255,255,255,0.2)' }}
+                />
+              ) : (
+                <div className="profile-modal-avatar-placeholder" style={{ width: '64px', height: '64px', fontSize: '1.5rem', border: '2px solid rgba(255,255,255,0.2)' }}>
+                  {(frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'U').charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div style={{ color: 'white', marginTop: '10px', fontWeight: '600', fontSize: '1rem' }}>
+                {frontendConfig?.user?.full_name || frontendConfig?.user?.name}
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', textTransform: 'capitalize' }}>
+                {frontendConfig?.user?.role}
+              </div>
+            </div>
+          </div>
+          <div className="sidebar-header" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
             <h2>DMS</h2>
           </div>
           <nav className="sidebar-nav">
@@ -274,6 +355,24 @@ function App() {
             </div>
             </div>
             <div className="header-actions">
+              {frontendConfig?.user?.profile_picture_url ? (
+                <img 
+                  src={`${API_URL}${frontendConfig.user.profile_picture_url}`} 
+                  alt="Profile" 
+                  className="header-user-avatar"
+                  onClick={() => setIsProfileModalOpen(true)}
+                  title="Update Profile Picture"
+                />
+              ) : (
+                <div 
+                  className="header-user-avatar" 
+                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}
+                  onClick={() => setIsProfileModalOpen(true)}
+                  title="Update Profile Picture"
+                >
+                  {(frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'U').charAt(0).toUpperCase()}
+                </div>
+              )}
               <select
                 value={locale}
                 onChange={(e) => handleLocaleChange(e.target.value)}
@@ -334,6 +433,70 @@ function App() {
             </Routes>
           </div>
         </main>
+
+        {/* Profile Picture Modal */}
+        <div className={`profile-modal-overlay ${isProfileModalOpen ? 'visible' : ''}`} onClick={(e) => {
+          if (e.target.className.includes('profile-modal-overlay')) setIsProfileModalOpen(false);
+        }}>
+          <div className="profile-modal">
+            <div className="profile-modal-header">
+              <div className="profile-modal-title">Profile Picture</div>
+              <button className="profile-modal-close" onClick={() => setIsProfileModalOpen(false)}>×</button>
+            </div>
+            
+            <div className="profile-modal-avatar-section">
+              {previewUrl ? (
+                <img src={previewUrl} alt="Preview" className="profile-modal-avatar" />
+              ) : frontendConfig?.user?.profile_picture_url ? (
+                <img src={`${API_URL}${frontendConfig.user.profile_picture_url}`} alt="Current" className="profile-modal-avatar" />
+              ) : (
+                <div className="profile-modal-avatar-placeholder">
+                  {(frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'U').charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="profile-modal-name">{frontendConfig?.user?.full_name || frontendConfig?.user?.name}</div>
+              <div className="profile-modal-role-badge">{frontendConfig?.user?.role}</div>
+            </div>
+
+            {!previewUrl ? (
+              <div className="profile-upload-zone" onClick={() => document.getElementById('profile-upload-input').click()}>
+                <div className="profile-upload-zone-icon">📸</div>
+                <div className="profile-upload-zone-text">Click to browse or drag image here</div>
+                <div className="profile-upload-zone-hint">JPG, PNG or WebP (max. 5MB)</div>
+                <input 
+                  type="file" 
+                  id="profile-upload-input" 
+                  accept="image/jpeg, image/png, image/webp" 
+                  style={{ display: 'none' }} 
+                  onChange={handleFileSelect}
+                />
+              </div>
+            ) : (
+              <div className="profile-upload-preview">
+                <img src={previewUrl} alt="Selected" />
+                <div className="profile-upload-preview-info">
+                  <div className="profile-upload-preview-name">{selectedFile?.name}</div>
+                  <div className="profile-upload-preview-size">{(selectedFile?.size / 1024 / 1024).toFixed(2)} MB</div>
+                </div>
+                <button className="profile-upload-remove" onClick={() => { setSelectedFile(null); setPreviewUrl(null); }}>Remove</button>
+              </div>
+            )}
+
+            {uploadStatus === 'success' && (
+              <div className="profile-upload-success">
+                <span>✅</span> Profile picture updated successfully!
+              </div>
+            )}
+
+            <button 
+              className={`profile-upload-btn ${uploadStatus === 'uploading' ? 'uploading' : ''}`}
+              disabled={!selectedFile || uploadStatus === 'uploading' || uploadStatus === 'success'}
+              onClick={handleProfileUpload}
+            >
+              {uploadStatus === 'uploading' ? 'Uploading...' : uploadStatus === 'success' ? 'Done' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
       </div>
     </Router>
   );

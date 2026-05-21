@@ -1990,11 +1990,13 @@ async def get_frontend_config(current_user = Depends(AuthHandler.get_current_use
     frontend_config = {
         "user": {
             "name": current_user.get("name") or current_user.get("username") or current_user.get("user_id") or "Citizen",
+            "full_name": current_user.get("name") or current_user.get("username") or "User",
             "role": role,
             "roles": all_roles,
             "type": current_user.get("type", "citizen"),
             "department": department,
-            "permissions": permissions
+            "permissions": permissions,
+            "profile_picture_url": current_user.get("profile_picture_url")
         },
         "navigation": {
             "items": []
@@ -2395,7 +2397,85 @@ async def get_departments(current_user = Depends(AuthHandler.get_current_user_re
             label = "Doc Verification"
         result.append({"key": d, "label": label})
         
-    return {"departments": result}
+# ============ Profile Picture Endpoints ============
+
+PROFILE_PICS_DIR = os.path.join(os.path.dirname(__file__), '..', 'uploads', 'profile_pictures')
+os.makedirs(PROFILE_PICS_DIR, exist_ok=True)
+
+@app.post("/api/users/profile-picture")
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    current_user = Depends(AuthHandler.get_current_user_required)
+):
+    """Upload or update user's profile picture"""
+    from .supabase_client import supabase
+    import io
+    
+    # Validate file type
+    allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.")
+    
+    # Read file content
+    file_content = await file.read()
+    file_size = len(file_content)
+    
+    # Limit file size to 5MB
+    if file_size > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size must be less than 5MB.")
+    
+    # Generate unique filename
+    user_id = current_user.get("user_id")
+    file_extension = Path(file.filename).suffix if file.filename else '.jpg'
+    unique_filename = f"profile_{user_id}_{uuid.uuid4().hex[:8]}{file_extension}"
+    
+    # Save to local filesystem
+    file_path = os.path.join(PROFILE_PICS_DIR, unique_filename)
+    with open(file_path, 'wb') as f:
+        f.write(file_content)
+    
+    # Build the URL path
+    profile_picture_url = f"/api/uploads/profile-pictures/{unique_filename}"
+    
+    # Update user record in database
+    try:
+        supabase.table('users').update({
+            'profile_picture_url': profile_picture_url,
+            'updated_at': datetime.now().isoformat()
+        }).eq('user_id', user_id).execute()
+    except Exception as e:
+        print(f"Error updating profile picture URL in database: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update profile picture.")
+    
+    return {
+        "success": True,
+        "profile_picture_url": profile_picture_url,
+        "message": "Profile picture updated successfully"
+    }
+
+@app.get("/api/uploads/profile-pictures/{filename}")
+async def serve_profile_picture(filename: str):
+    """Serve uploaded profile pictures"""
+    file_path = os.path.join(PROFILE_PICS_DIR, filename)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Profile picture not found")
+    
+    # Determine content type
+    extension = Path(filename).suffix.lower()
+    content_types = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp'
+    }
+    content_type = content_types.get(extension, 'image/jpeg')
+    
+    with open(file_path, 'rb') as f:
+        content = f.read()
+    
+    return Response(content=content, media_type=content_type)
 
 
 # ============ Health Check ============

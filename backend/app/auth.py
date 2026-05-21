@@ -268,9 +268,19 @@ class AuthHandler:
         payload = AuthHandler.verify_token(token)
         
         if payload.get("type") == "user":
+            # For citizen users, fetch profile data from database
+            citizen_user_id = payload.get("user_id")
+            try:
+                from .supabase_client import supabase
+                citizen_result = supabase.table('users').select('full_name, profile_picture_url').eq('user_id', citizen_user_id).execute()
+                citizen_db = citizen_result.data[0] if citizen_result.data else {}
+            except Exception:
+                citizen_db = {}
             return {
-                "user_id": payload.get("user_id"),
+                "user_id": citizen_user_id,
                 "phone_number": payload.get("phone_number"),
+                "name": citizen_db.get("full_name"),
+                "profile_picture_url": citizen_db.get("profile_picture_url"),
                 "role": "citizen",
                 "type": "user",
                 "is_authenticated": True
@@ -292,6 +302,7 @@ class AuthHandler:
                             "roles": roles,
                             "department": user.get("department"),
                             "name": user.get("full_name"),
+                            "profile_picture_url": user.get("profile_picture_url"),
                             "hierarchy": {
                                 "country": user.get("hierarchy_country"),
                                 "region": user.get("hierarchy_region"),

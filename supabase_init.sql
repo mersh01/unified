@@ -19,7 +19,9 @@ CREATE TABLE IF NOT EXISTS users (
     hierarchy_woreda VARCHAR,
     hierarchy_kebele VARCHAR,
     -- Password hash for admin users (citizens use OTP)
-    password_hash VARCHAR
+    password_hash VARCHAR,
+    -- Profile picture URL
+    profile_picture_url VARCHAR
 );
 
 -- Create roles table for role definitions
