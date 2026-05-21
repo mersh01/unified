@@ -193,42 +193,66 @@ class HierarchyManager:
                 "kebele": admin_user.get("hierarchy_kebele")
             }
             
+        # Define hierarchy levels from highest to lowest
+        level_values = {
+            "kebele": 1,
+            "woreda": 2,
+            "zone": 3,
+            "region": 4,
+            "country": 5
+        }
+        
+        def is_val(v):
+            return v is not None and str(v).strip() != ""
+            
+        def get_level(h):
+            if is_val(h.get("kebele")): return "kebele"
+            if is_val(h.get("woreda")): return "woreda"
+            if is_val(h.get("zone")): return "zone"
+            if is_val(h.get("region")): return "region"
+            return "country"
+            
         admin_level = admin_hierarchy.get("level")
-        if not admin_level:
-            if admin_hierarchy.get("kebele"): admin_level = "kebele"
-            elif admin_hierarchy.get("woreda"): admin_level = "woreda"
-            elif admin_hierarchy.get("zone"): admin_level = "zone"
-            elif admin_hierarchy.get("region"): admin_level = "region"
-            else: admin_level = "country"
-
+        if not admin_level or admin_level not in level_values:
+            admin_level = get_level(admin_hierarchy)
+            
+        target_level = get_level(target_hierarchy)
+        
+        # Enforce that target_level must be equal to or lower than admin_level
+        # e.g., woreda level admin (2) can access woreda (2) or kebele (1)
+        # but cannot access zone (3), region (4), or country (5).
+        if level_values[target_level] > level_values[admin_level]:
+            return False
+            
+        # Now check matching parent hierarchy values
         if admin_level == "country":
             return target_hierarchy.get("country") == admin_hierarchy.get("country")
         elif admin_level == "region":
-            if target_hierarchy.get("region") and target_hierarchy.get("region") != admin_hierarchy.get("region"):
+            if target_hierarchy.get("region") != admin_hierarchy.get("region"):
                 return False
             return target_hierarchy.get("country") == admin_hierarchy.get("country")
         elif admin_level == "zone":
-            if target_hierarchy.get("zone") and target_hierarchy.get("zone") != admin_hierarchy.get("zone"):
+            if target_hierarchy.get("zone") != admin_hierarchy.get("zone"):
                 return False
-            if target_hierarchy.get("region") and target_hierarchy.get("region") != admin_hierarchy.get("region"):
+            if target_hierarchy.get("region") != admin_hierarchy.get("region"):
                 return False
             return target_hierarchy.get("country") == admin_hierarchy.get("country")
         elif admin_level == "woreda":
-            if target_hierarchy.get("woreda") and target_hierarchy.get("woreda") != admin_hierarchy.get("woreda"):
+            if target_hierarchy.get("woreda") != admin_hierarchy.get("woreda"):
                 return False
-            if target_hierarchy.get("zone") and target_hierarchy.get("zone") != admin_hierarchy.get("zone"):
+            if target_hierarchy.get("zone") != admin_hierarchy.get("zone"):
                 return False
-            if target_hierarchy.get("region") and target_hierarchy.get("region") != admin_hierarchy.get("region"):
+            if target_hierarchy.get("region") != admin_hierarchy.get("region"):
                 return False
             return target_hierarchy.get("country") == admin_hierarchy.get("country")
         elif admin_level == "kebele":
-            if target_hierarchy.get("kebele") and target_hierarchy.get("kebele") != admin_hierarchy.get("kebele"):
+            if target_hierarchy.get("kebele") != admin_hierarchy.get("kebele"):
                 return False
-            if target_hierarchy.get("woreda") and target_hierarchy.get("woreda") != admin_hierarchy.get("woreda"):
+            if target_hierarchy.get("woreda") != admin_hierarchy.get("woreda"):
                 return False
-            if target_hierarchy.get("zone") and target_hierarchy.get("zone") != admin_hierarchy.get("zone"):
+            if target_hierarchy.get("zone") != admin_hierarchy.get("zone"):
                 return False
-            if target_hierarchy.get("region") and target_hierarchy.get("region") != admin_hierarchy.get("region"):
+            if target_hierarchy.get("region") != admin_hierarchy.get("region"):
                 return False
             return target_hierarchy.get("country") == admin_hierarchy.get("country")
             
