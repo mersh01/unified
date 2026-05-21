@@ -262,142 +262,157 @@
       "departments": ["complaints"],
       "can_assign_roles": false,
       "priority": 50
+    },
+
+    "citizen": {
+      "name": "Citizen",
+      "description": "Regular citizen who submits applications and interacts with services",
+      "permissions": [
+        "make_payment",
+        "appeal_decision",
+        "rate_service",
+        "reopen_complaint",
+        "view_own_applications"
+      ],
+      "departments": ["all"],
+      "can_assign_roles": false,
+      "priority": 0
     }
   },
 
   "workflow_permissions": {
     "SUBMITTED": {
-      "allowed_roles": ["verification_officer", "verification_supervisor", "senior_verifier", "super_admin", "gro"],
+      "allowed_permissions": ["verify_applications", "assign_complaints", "reject_complaints"],
       "allowed_actions": ["PROCESS", "REJECT", "ASSIGN_TO_LME"]
     },
     
     "DOCUMENT_CHECK": {
-      "allowed_roles": ["verification_officer", "verification_supervisor", "senior_verifier", "super_admin"],
+      "allowed_permissions": ["verify_applications"],
       "allowed_actions": ["APPROVE", "REJECT", "REQUEST_DOCUMENTS"]
     },
     
     "VERIFICATION": {
-      "allowed_roles": ["verification_officer", "verification_supervisor", "senior_verifier", "super_admin"],
+      "allowed_permissions": ["verify_applications"],
       "allowed_actions": ["APPROVE", "REQUEST_INFO", "REJECT", "ESCALATE"]
     },
     
     "SENIOR_VERIFICATION": {
-      "allowed_roles": ["senior_verifier", "verification_supervisor", "super_admin"],
+      "allowed_permissions": ["verify_applications", "override_verification"],
       "allowed_actions": ["APPROVE", "REJECT", "RETURN_TO_OFFICER"]
     },
     
     "DOCUMENT_VERIFICATION": {
-      "allowed_roles": ["document_verifier", "document_specialist", "senior_document_verifier", "super_admin"],
+      "allowed_permissions": ["verify_documents"],
       "allowed_actions": ["APPROVE", "REJECT", "REQUEST_ADDITIONAL_DOCS", "FLAG_FRAUD"]
     },
     
     "SENIOR_DOCUMENT_VERIFICATION": {
-      "allowed_roles": ["senior_document_verifier", "document_specialist", "super_admin"],
+      "allowed_permissions": ["verify_documents", "override_document_verification"],
       "allowed_actions": ["APPROVE", "REJECT", "RETURN_TO_VERIFIER"]
     },
     
     "PAYMENT_PENDING": {
-      "allowed_roles": ["payment_officer", "payment_approver", "super_admin"],
+      "allowed_permissions": ["process_payments", "make_payment"],
       "allowed_actions": ["MAKE_PAYMENT", "CANCEL", "HOLD_PAYMENT"]
     },
     
     "PAYMENT_APPROVAL": {
-      "allowed_roles": ["payment_approver", "super_admin"],
+      "allowed_permissions": ["process_payments", "approve_refunds"],
       "allowed_actions": ["APPROVE_PAYMENT", "REJECT_PAYMENT"]
     },
     
     "PAYMENT_COMPLETED": {
-      "allowed_roles": ["certificate_issuer", "super_admin"],
+      "allowed_permissions": ["issue_certificates"],
       "allowed_actions": ["GENERATE_CERTIFICATE", "PROCESS_SERVICE"]
     },
     
     "SERVICE_PROCESSED": {
-      "allowed_roles": ["certificate_issuer", "super_admin"],
+      "allowed_permissions": ["issue_certificates"],
       "allowed_actions": ["COMPLETE"]
     },
     
     "CERTIFICATE_GENERATED": {
-      "allowed_roles": ["certificate_issuer", "super_admin"],
+      "allowed_permissions": ["issue_certificates", "dispatch_certificates"],
       "allowed_actions": ["DISPATCH", "EMAIL"]
     },
     
     "MEDICAL_TEST": {
-      "allowed_roles": ["medical_officer", "verification_supervisor", "super_admin"],
+      "allowed_permissions": ["conduct_medical_tests", "clear_medical_tests"],
       "allowed_actions": ["CLEAR", "FAIL", "RESCHEDULE"]
     },
     
     "LICENSE_GENERATED": {
-      "allowed_roles": ["certificate_issuer", "super_admin"],
+      "allowed_permissions": ["dispatch_certificates"],
       "allowed_actions": ["DISPATCH"]
     },
     
     "DRAFT": {
-      "allowed_roles": ["citizen", "tax_officer", "super_admin"],
+      "allowed_permissions": ["make_payment", "assess_tax_returns"],
       "allowed_actions": ["SUBMIT", "SAVE_DRAFT"]
     },
     
     "VALIDATION": {
-      "allowed_roles": ["tax_officer", "super_admin"],
+      "allowed_permissions": ["assess_tax_returns"],
       "allowed_actions": ["VALIDATE", "REJECT"]
     },
     
     "ASSESSMENT": {
-      "allowed_roles": ["tax_officer", "super_admin"],
+      "allowed_permissions": ["assess_tax_returns", "issue_notices"],
       "allowed_actions": ["APPROVE", "NOTICE", "REJECT"]
     },
     
     "REFUND_PENDING": {
-      "allowed_roles": ["tax_officer", "payment_officer", "super_admin"],
+      "allowed_permissions": ["process_payments", "approve_refunds"],
       "allowed_actions": ["PROCESS_REFUND"]
     },
     
     "REFUND_COMPLETED": {
-      "allowed_roles": ["tax_officer", "super_admin"],
+      "allowed_permissions": ["assess_tax_returns"],
       "allowed_actions": []
     },
     
     "DEMAND_PENDING": {
-      "allowed_roles": ["citizen", "tax_officer", "super_admin"],
+      "allowed_permissions": ["make_payment", "appeal_decision"],
       "allowed_actions": ["PAY_TAX", "APPEAL"]
     },
     
     "INCOME_VERIFICATION": {
-      "allowed_roles": ["income_officer", "verification_supervisor", "super_admin"],
+      "allowed_permissions": ["verify_income_proofs", "approve_income_verification"],
       "allowed_actions": ["APPROVE", "REJECT"]
     },
     
     "QUALITY_CHECK": {
-      "allowed_roles": ["quality_auditor", "super_admin"],
+      "allowed_permissions": ["audit_applications", "flag_issues"],
       "allowed_actions": ["APPROVE", "FLAG_ISSUES", "RETURN_FOR_CORRECTION"]
     },
     
     "COMPLETED": {
-      "allowed_roles": ["quality_auditor", "super_admin"],
+      "allowed_permissions": ["audit_applications"],
       "allowed_actions": ["AUDIT", "APPROVE", "FLAG_ISSUES"]
     },
     
     "REJECTED": {
-      "allowed_roles": ["citizen", "super_admin"],
+      "allowed_permissions": ["appeal_decision"],
       "allowed_actions": ["APPEAL"]
     },
     
     "CORRECTION_PENDING": {
-      "allowed_roles": ["verification_officer", "verification_supervisor", "super_admin"],
+      "allowed_permissions": ["verify_applications"],
       "allowed_actions": ["MAKE_CORRECTION", "REJECT"]
     },
     
     "CORRECTION_MADE": {
-      "allowed_roles": ["verification_supervisor", "super_admin"],
+      "allowed_permissions": ["verify_applications", "override_verification"],
       "allowed_actions": ["VERIFY_CORRECTION"]
     },
     
     "ASSIGNED": {
-      "allowed_roles": ["lme", "gro", "super_admin"],
+      "allowed_permissions": ["resolve_complaints", "reassign_complaints"],
       "allowed_actions": ["RESOLVE", "REASSIGN"]
     },
     
     "RESOLVED": {
-      "allowed_roles": ["gro", "super_admin", "citizen"],
+      "allowed_permissions": ["rate_service", "reopen_complaint"],
       "allowed_actions": []
     }
   },

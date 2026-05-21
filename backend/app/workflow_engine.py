@@ -158,6 +158,7 @@ class WorkflowEngine:
         user_roles: List[str] = None,
         user_hierarchy: Dict[str, Any] = None,
         service_type: str = None,
+        user_permissions: List[str] = None,
     ) -> List[str]:
         """Get available actions for current state considering hierarchy and user roles"""
         workflow = self.get_workflow(workflow_name)
@@ -176,14 +177,19 @@ class WorkflowEngine:
             if allowed_hierarchy_levels and user_level not in allowed_hierarchy_levels:
                 return []
 
-        # If this state requires a specific role, only allow action if user has that role
-        required_role = state_config.get('assigned_role')
-        allowed_roles = state_config.get('allowed_roles') or []
-        if required_role:
-            allowed_roles = [required_role]
+        # Super admin bypass: users with 'update_any_application' can act on any state
+        if user_permissions is not None and "update_any_application" in user_permissions:
+            return actions
 
-        if allowed_roles and user_roles is not None:
-            if not set(user_roles) & set(allowed_roles):
+        # Permission-based access control
+        allowed_permissions = state_config.get('allowed_permissions') or []
+
+        if allowed_permissions and user_permissions is not None:
+            if not set(user_permissions) & set(allowed_permissions):
+                return []
+        elif not allowed_permissions:
+            # No permissions defined on this state means no one can act (except super admin above)
+            if actions:
                 return []
 
         return actions

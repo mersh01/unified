@@ -8,6 +8,7 @@
           "display_name": "Submitted",
           "color": "#f59e0b",
           "assigned_role": "verification_officer",
+          "allowed_permissions": ["verify_applications"],
           "actions": ["PROCESS", "REJECT"],
           "next_states": {
             "PROCESS": "VERIFICATION",
@@ -22,6 +23,8 @@
           "type": "internal",
           "display_name": "Under Verification",
           "color": "#3b82f6",
+          "assigned_role": "verification_officer",
+          "allowed_permissions": ["verify_applications"],
           "actions": ["APPROVE", "REQUEST_INFO", "REJECT"],
           "next_states": {
             "APPROVE": "DOCUMENT_VERIFICATION",
@@ -29,7 +32,6 @@
             "REJECT": "REJECTED"
           },
           "allowed_hierarchy_levels": ["zone", "region"],
-          "assigned_role": "verification_officer",
           "notifications": {
             "citizen": "Your application is under verification."
           }
@@ -38,20 +40,21 @@
           "type": "internal",
           "display_name": "Document Verification",
           "color": "#8b5cf6",
+          "assigned_role": "document_verifier",
+          "allowed_permissions": ["verify_documents"],
           "actions": ["APPROVE", "REJECT", "REQUEST_ADDITIONAL_DOCS"],
           "next_states": {
             "APPROVE": "PAYMENT_PENDING",
             "REJECT": "REJECTED",
             "REQUEST_ADDITIONAL_DOCS": "DOCUMENT_VERIFICATION"
           },
-          "allowed_hierarchy_levels": ["zone", "region"],
-          "assigned_role": "document_verifier"
+          "allowed_hierarchy_levels": ["zone", "region"]
         },
         "PAYMENT_PENDING": {
           "type": "user_action",
           "display_name": "Payment Pending",
           "color": "#ec4899",
-          "allowed_roles": ["citizen", "payment_officer", "super_admin"],
+          "allowed_permissions": ["make_payment", "process_payments"],
           "actions": ["MAKE_PAYMENT", "CANCEL"],
           "next_states": {
             "MAKE_PAYMENT": "PAYMENT_COMPLETED",
@@ -64,6 +67,7 @@
           "display_name": "Payment Completed",
           "color": "#10b981",
           "assigned_role": "issuance_officer",
+          "allowed_permissions": ["issue_certificates"],
           "actions": ["GENERATE_CERTIFICATE"],
           "next_states": {
             "GENERATE_CERTIFICATE": "CERTIFICATE_GENERATED"
@@ -74,6 +78,7 @@
           "display_name": "Certificate Generated",
           "color": "#10b981",
           "assigned_role": "issuance_officer",
+          "allowed_permissions": ["issue_certificates", "dispatch_certificates"],
           "actions": ["DISPATCH", "EMAIL"],
           "next_states": {
             "DISPATCH": "COMPLETED",
@@ -91,7 +96,7 @@
           "type": "end",
           "display_name": "Rejected",
           "color": "#ef4444",
-          "allowed_roles": ["citizen", "super_admin"],
+          "allowed_permissions": ["appeal_decision"],
           "actions": ["APPEAL"],
           "next_states": {
             "APPEAL": "VERIFICATION"
@@ -113,6 +118,7 @@
           "display_name": "Submitted",
           "color": "#f59e0b",
           "assigned_role": "verification_officer",
+          "allowed_permissions": ["verify_applications"],
           "actions": ["PROCESS", "REJECT"],
           "next_states": {
             "PROCESS": "VERIFICATION",
@@ -125,6 +131,7 @@
           "display_name": "Under Verification",
           "color": "#3b82f6",
           "assigned_role": "verification_officer",
+          "allowed_permissions": ["verify_applications"],
           "actions": ["APPROVE", "REJECT"],
           "next_states": {
             "APPROVE": "PAYMENT_PENDING",
@@ -136,7 +143,7 @@
           "type": "user_action",
           "display_name": "Payment Pending",
           "color": "#ec4899",
-          "allowed_roles": ["citizen", "payment_officer", "super_admin"],
+          "allowed_permissions": ["make_payment", "process_payments"],
           "actions": ["MAKE_PAYMENT", "CANCEL"],
           "next_states": {
             "MAKE_PAYMENT": "PAYMENT_COMPLETED",
@@ -149,6 +156,7 @@
           "display_name": "Payment Completed",
           "color": "#10b981",
           "assigned_role": "issuance_officer",
+          "allowed_permissions": ["issue_certificates"],
           "actions": ["PROCESS_SERVICE"],
           "next_states": {
             "PROCESS_SERVICE": "COMPLETED"
@@ -164,7 +172,7 @@
           "type": "end",
           "display_name": "Rejected",
           "color": "#ef4444",
-          "allowed_roles": ["citizen", "super_admin"],
+          "allowed_permissions": ["appeal_decision"],
           "actions": ["APPEAL"],
           "next_states": {
             "APPEAL": "VERIFICATION"
@@ -182,6 +190,7 @@
           "display_name": "Submitted",
           "color": "#f59e0b",
           "assigned_role": "verification_officer",
+          "allowed_permissions": ["verify_applications"],
           "actions": ["PROCESS", "REJECT"],
           "next_states": {
             "PROCESS": "VERIFICATION",
@@ -194,6 +203,7 @@
           "display_name": "Under Verification",
           "color": "#3b82f6",
           "assigned_role": "verification_officer",
+          "allowed_permissions": ["verify_applications"],
           "actions": ["APPROVE", "REJECT", "REQUEST_SITE_VISIT"],
           "next_states": {
             "APPROVE": "COMPLETED",
@@ -212,7 +222,7 @@
           "type": "end",
           "display_name": "Rejected",
           "color": "#ef4444",
-          "allowed_roles": ["citizen", "super_admin"],
+          "allowed_permissions": ["appeal_decision"],
           "actions": ["APPEAL"],
           "next_states": {
             "APPEAL": "VERIFICATION"
@@ -230,6 +240,7 @@
           "display_name": "Submitted",
           "color": "#f59e0b",
           "assigned_role": "gro",
+          "allowed_permissions": ["assign_complaints", "reject_complaints"],
           "actions": ["ASSIGN_TO_LME", "REJECT"],
           "next_states": {
             "ASSIGN_TO_LME": "ASSIGNED",
@@ -241,6 +252,7 @@
           "display_name": "Assigned to LME",
           "color": "#2563eb",
           "assigned_role": "lme",
+          "allowed_permissions": ["resolve_complaints", "reassign_complaints"],
           "actions": ["RESOLVE", "REASSIGN"],
           "next_states": {
             "RESOLVE": "RESOLVED",
@@ -251,7 +263,7 @@
           "type": "user_action",
           "display_name": "Resolved",
           "color": "#10b981",
-          "allowed_roles": ["citizen"],
+          "allowed_permissions": ["rate_service", "reopen_complaint"],
           "actions": ["RATE", "REOPEN"],
           "next_states": {
             "RATE": "COMPLETED",

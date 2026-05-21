@@ -147,7 +147,7 @@ function WorkflowManagement() {
               <label>
                 Workflow Definition (JSON)
                 <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                  Define states, transitions, actions, and role requirements. Use assigned_role for specific role requirements and allowed_roles for workflow validation.
+                  Define states, transitions, actions, and permission requirements. Use <strong>allowed_permissions</strong> to control which permissions grant access to each state.
                 </div>
               </label>
               <textarea
@@ -158,15 +158,13 @@ function WorkflowManagement() {
                     start_state: 'submitted',
                     states: {
                       submitted: {
-                        assigned_role: 'citizen',
-                        allowed_roles: ['citizen'],
+                        allowed_permissions: ['make_payment'],
                         actions: ['submit_application'],
                         next_states: ['verification'],
                         sla_days: 1,
                       },
                       verification: {
-                        assigned_role: 'verifier',
-                        allowed_roles: ['verifier', 'regional_manager'],
+                        allowed_permissions: ['verify_applications'],
                         actions: ['approve', 'reject'],
                         next_states: ['approved', 'rejected'],
                         allowed_hierarchy_levels: ['country', 'region'],

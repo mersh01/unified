@@ -748,12 +748,15 @@ async def get_application_actions(application_id: str, current_user = Depends(Au
         except:
             workflow_name = 'standard_document_workflow'
     
+    user_roles = _roles_list(current_user)
+    user_permissions = role_manager.get_permissions_for_roles(user_roles)
     available_actions = workflow_engine.get_next_actions(
         workflow_name,
         current_state,
-        user_roles=_roles_list(current_user),
+        user_roles=user_roles,
         user_hierarchy=current_user.get("hierarchy") or {},
         service_type=service_type,
+        user_permissions=user_permissions,
     )
     
     # If this is a citizen request, they can only act on their own applications
@@ -843,12 +846,15 @@ async def update_application_status(application_id: str, update: ApplicationUpda
     print(f"Service: {service_type}, Workflow: {workflow_name}, Current state: {old_state}, Action: {update.action}")
     
     # Determine allowed actions for this user based on workflow state and role assignment
+    user_roles = _roles_list(current_user)
+    user_permissions = role_manager.get_permissions_for_roles(user_roles)
     available_actions = workflow_engine.get_next_actions(
         workflow_name,
         old_state,
-        user_roles=_roles_list(current_user),
+        user_roles=user_roles,
         user_hierarchy=current_user.get("hierarchy") or {},
         service_type=service_type,
+        user_permissions=user_permissions,
     )
     
     if update.action not in available_actions:

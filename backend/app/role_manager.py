@@ -98,6 +98,16 @@ class RoleManager:
     def get_role_names(self) -> List[str]:
         return list(self.config.get("roles", {}).keys())
 
+    def get_permissions_for_roles(self, roles: List[str]) -> List[str]:
+        """Aggregate all permissions granted by a list of roles."""
+        permissions = set()
+        for role_name in roles:
+            role_config = self.get_role_config(role_name)
+            if role_config:
+                for perm in role_config.get("permissions", []):
+                    permissions.add(perm)
+        return list(permissions)
+
     def has_permission(self, role: str, permission: str) -> bool:
         role_config = self.get_role_config(role)
         if not role_config:
@@ -114,12 +124,19 @@ class RoleManager:
         return False
 
     def get_allowed_actions(self, role: str, current_state: str) -> List[str]:
+        """Check if the given role has any permission that matches the state's allowed_permissions."""
         workflow_permissions = self.config.get("workflow_permissions", {})
         state_config = workflow_permissions.get(current_state, {})
-        allowed_roles = state_config.get("allowed_roles", [])
-        if role not in allowed_roles:
+        allowed_perms = state_config.get("allowed_permissions", [])
+        if not allowed_perms:
             return []
-        return state_config.get("allowed_actions", [])
+        role_config = self.get_role_config(role)
+        if not role_config:
+            return []
+        user_perms = role_config.get("permissions", [])
+        if "*" in user_perms or set(user_perms) & set(allowed_perms):
+            return state_config.get("allowed_actions", [])
+        return []
 
     def get_department_states(self, department: str) -> List[str]:
         mapping = self.config.get("department_to_state_mapping", {})
@@ -212,14 +229,17 @@ class RoleManager:
         self.reload()
         return True
 
-    def add_workflow_permission(self, state: str, role: str, actions: List[str]) -> bool:
+    def add_workflow_permission(self, state: str, permission: str, actions: List[str]) -> bool:
+        """Add a permission-based workflow entry for a state."""
         if "workflow_permissions" not in self.config:
             self.config["workflow_permissions"] = {}
         if state not in self.config["workflow_permissions"]:
-            self.config["workflow_permissions"][state] = {"allowed_roles": [], "allowed_actions": []}
+            self.config["workflow_permissions"][state] = {"allowed_permissions": [], "allowed_actions": []}
         st = self.config["workflow_permissions"][state]
-        if role not in st["allowed_roles"]:
-            st["allowed_roles"].append(role)
+        if "allowed_permissions" not in st:
+            st["allowed_permissions"] = []
+        if permission not in st["allowed_permissions"]:
+            st["allowed_permissions"].append(permission)
         for a in actions:
             if a not in st["allowed_actions"]:
                 st["allowed_actions"].append(a)

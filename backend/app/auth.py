@@ -335,7 +335,7 @@ class AuthHandler:
     
     @staticmethod
     def get_allowed_actions_for_state(user: Dict[str, Any], current_state: str) -> List[str]:
-        """Get allowed actions for a user in a specific state"""
+        """Get allowed actions for a user in a specific state using permission-based access control"""
         if user["type"] == "user":
             return []
 
@@ -348,84 +348,71 @@ class AuthHandler:
             if role_config is not None:
                 merged.extend(role_manager.get_available_actions_for_user(role, current_state))
 
-        # Fallback workflow permissions mapping for legacy behavior
+        # Fallback permission-based workflow mapping
         workflow_permissions = {
             "SUBMITTED": {
-                "verification_officer": ["PROCESS", "REJECT"],
-                "verification_supervisor": ["PROCESS", "REJECT"],
-                "senior_verifier": ["PROCESS", "REJECT"],
-                "super_admin": ["PROCESS", "REJECT"]
+                "allowed_permissions": ["verify_applications", "assign_complaints", "reject_complaints"],
+                "allowed_actions": ["PROCESS", "REJECT", "ASSIGN_TO_LME"]
             },
             "DOCUMENT_CHECK": {
-                "verification_officer": ["APPROVE", "REJECT", "REQUEST_DOCUMENTS"],
-                "verification_supervisor": ["APPROVE", "REJECT", "REQUEST_DOCUMENTS"],
-                "senior_verifier": ["APPROVE", "REJECT", "REQUEST_DOCUMENTS"],
-                "super_admin": ["APPROVE", "REJECT", "REQUEST_DOCUMENTS"]
+                "allowed_permissions": ["verify_applications"],
+                "allowed_actions": ["APPROVE", "REJECT", "REQUEST_DOCUMENTS"]
             },
             "VERIFICATION": {
-                "verification_officer": ["APPROVE", "REQUEST_INFO", "REJECT"],
-                "verification_supervisor": ["APPROVE", "REQUEST_INFO", "REJECT"],
-                "senior_verifier": ["APPROVE", "REQUEST_INFO", "REJECT", "ESCALATE"],
-                "super_admin": ["APPROVE", "REQUEST_INFO", "REJECT", "ESCALATE"]
+                "allowed_permissions": ["verify_applications"],
+                "allowed_actions": ["APPROVE", "REQUEST_INFO", "REJECT", "ESCALATE"]
             },
             "SENIOR_VERIFICATION": {
-                "senior_verifier": ["APPROVE", "REJECT", "RETURN_TO_OFFICER"],
-                "verification_supervisor": ["APPROVE", "REJECT", "RETURN_TO_OFFICER"],
-                "super_admin": ["APPROVE", "REJECT", "RETURN_TO_OFFICER"]
+                "allowed_permissions": ["verify_applications", "override_verification"],
+                "allowed_actions": ["APPROVE", "REJECT", "RETURN_TO_OFFICER"]
             },
             "DOCUMENT_VERIFICATION": {
-                "document_verifier": ["APPROVE", "REJECT", "REQUEST_ADDITIONAL_DOCS"],
-                "document_specialist": ["APPROVE", "REJECT", "REQUEST_ADDITIONAL_DOCS", "FLAG_FRAUD"],
-                "senior_document_verifier": ["APPROVE", "REJECT", "REQUEST_ADDITIONAL_DOCS", "FLAG_FRAUD"],
-                "super_admin": ["APPROVE", "REJECT", "REQUEST_ADDITIONAL_DOCS", "FLAG_FRAUD"]
+                "allowed_permissions": ["verify_documents"],
+                "allowed_actions": ["APPROVE", "REJECT", "REQUEST_ADDITIONAL_DOCS", "FLAG_FRAUD"]
             },
             "SENIOR_DOCUMENT_VERIFICATION": {
-                "senior_document_verifier": ["APPROVE", "REJECT", "RETURN_TO_VERIFIER"],
-                "document_specialist": ["APPROVE", "REJECT", "RETURN_TO_VERIFIER"],
-                "super_admin": ["APPROVE", "REJECT", "RETURN_TO_VERIFIER"]
+                "allowed_permissions": ["verify_documents", "override_document_verification"],
+                "allowed_actions": ["APPROVE", "REJECT", "RETURN_TO_VERIFIER"]
             },
             "PAYMENT_PENDING": {
-                "payment_officer": ["MAKE_PAYMENT", "CANCEL"],
-                "payment_approver": ["MAKE_PAYMENT", "CANCEL", "HOLD_PAYMENT"],
-                "super_admin": ["MAKE_PAYMENT", "CANCEL", "HOLD_PAYMENT"]
+                "allowed_permissions": ["process_payments", "make_payment"],
+                "allowed_actions": ["MAKE_PAYMENT", "CANCEL", "HOLD_PAYMENT"]
             },
             "PAYMENT_APPROVAL": {
-                "payment_approver": ["APPROVE_PAYMENT", "REJECT_PAYMENT"],
-                "super_admin": ["APPROVE_PAYMENT", "REJECT_PAYMENT"]
+                "allowed_permissions": ["process_payments", "approve_refunds"],
+                "allowed_actions": ["APPROVE_PAYMENT", "REJECT_PAYMENT"]
             },
             "PAYMENT_COMPLETED": {
-                "certificate_issuer": ["GENERATE_CERTIFICATE"],
-                "super_admin": ["GENERATE_CERTIFICATE"]
+                "allowed_permissions": ["issue_certificates"],
+                "allowed_actions": ["GENERATE_CERTIFICATE"]
             },
             "CERTIFICATE_GENERATED": {
-                "certificate_issuer": ["DISPATCH", "EMAIL"],
-                "super_admin": ["DISPATCH", "EMAIL"]
+                "allowed_permissions": ["issue_certificates", "dispatch_certificates"],
+                "allowed_actions": ["DISPATCH", "EMAIL"]
             },
             "QUALITY_CHECK": {
-                "quality_auditor": ["APPROVE", "FLAG_ISSUES", "RETURN_FOR_CORRECTION"],
-                "super_admin": ["APPROVE", "FLAG_ISSUES", "RETURN_FOR_CORRECTION"]
+                "allowed_permissions": ["audit_applications", "flag_issues"],
+                "allowed_actions": ["APPROVE", "FLAG_ISSUES", "RETURN_FOR_CORRECTION"]
             },
             "COMPLETED": {
-                "quality_auditor": ["AUDIT", "APPROVE", "FLAG_ISSUES"],
-                "super_admin": ["AUDIT", "APPROVE", "FLAG_ISSUES"]
+                "allowed_permissions": ["audit_applications"],
+                "allowed_actions": ["AUDIT", "APPROVE", "FLAG_ISSUES"]
             },
             "REJECTED": {
-                "citizen": ["APPEAL"],
-                "super_admin": ["APPEAL", "OVERRIDE"]
+                "allowed_permissions": ["appeal_decision"],
+                "allowed_actions": ["APPEAL"]
             }
         }
         
-        state_actions = workflow_permissions.get(current_state, {})
-        for role in role_list:
-            if not role:
-                continue
-            merged.extend(state_actions.get(role, []))
+        state_config = workflow_permissions.get(current_state, {})
+        state_allowed_permissions = state_config.get("allowed_permissions", [])
+        state_allowed_actions = state_config.get("allowed_actions", [])
 
-        if "super_admin" in role_list:
-            all_actions = []
-            for role_actions in state_actions.values():
-                all_actions.extend(role_actions)
-            merged.extend(all_actions)
+        if state_allowed_permissions:
+            # Aggregate user permissions from all roles
+            user_permissions = role_manager.get_permissions_for_roles(role_list)
+            if set(user_permissions) & set(state_allowed_permissions):
+                merged.extend(state_allowed_actions)
 
         return list(dict.fromkeys(merged))
     @staticmethod
