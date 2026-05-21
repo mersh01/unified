@@ -1305,6 +1305,8 @@ async def get_roles(current_user = Depends(AuthHandler.get_current_user_required
     if current_user["type"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
+    if role_manager._use_db:
+        role_manager.reload()
     roles = role_manager.get_all_roles()
     # Ensure the citizen role is visible even if configured separately
     if not any(r["role_id"] == "citizen" for r in roles):
@@ -2248,6 +2250,9 @@ async def admin_update_role(
 async def get_departments(current_user = Depends(AuthHandler.get_current_user_required)):
     """Get dynamic list of all departments based on roles and configs."""
     _require_config_admin(current_user)
+    
+    if role_manager._use_db:
+        role_manager.reload()
     
     departments = set()
     
