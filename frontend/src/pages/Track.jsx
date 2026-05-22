@@ -312,9 +312,10 @@ function Track() {
     );
   };
 
-  // Auto-track if appId is in URL
+  // Auto-track if appId or application_id is in URL
   useEffect(() => {
-    if (searchParams.get('appId')) {
+    const appId = searchParams.get('appId') || searchParams.get('application_id');
+    if (appId) {
       trackApplication();
     }
   }, [searchParams]);
