@@ -56,6 +56,7 @@ function timeAgo(dateStr) {
 }
 
 export default function NotificationsDropdown() {
+  const navigate = useNavigate();
   const [open, setOpen]                   = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading]             = useState(false);
