@@ -1,0 +1,72 @@
+{
+  "levels": ["country", "region", "zone", "woreda", "kebele"],
+  "level_labels": {
+    "country": "National",
+    "region": "Regional State",
+    "zone": "Zone",
+    "woreda": "Woreda/District",
+    "kebele": "Kebele/Neighborhood"
+  },
+  
+  "country": {
+    "id": "ETH",
+    "name": "Ethiopia"
+  },
+  
+  "regions": {
+    "oromia": {
+      "id": "OROMIA",
+      "name": "Oromia Region",
+      "zones": {
+        "bale": {
+          "id": "bale",
+          "name": "Bale Zone",
+          "woredas": {
+            "sinana": {
+              "id": "SINANA",
+              "name": "Sinana Woreda",
+              "kebeles": ["KEBELE_01", "KEBELE_02"]
+            },
+            "dinsho": {
+              "id": "DINSHO",
+              "name": "Dinsho Woreda",
+              "kebeles": ["KEBELE_03", "KEBELE_04"]
+            }
+          }
+        },
+        "arsii": {
+          "id": "ARSII",
+          "name": "Arsi Zone",
+          "woredas": {
+            "sinana": {
+              "id": "ASALLA",
+              "name": "Asalla Woreda",
+              "kebeles": ["KEBELE_01", "KEBELE_02"]
+            }
+          }
+        }
+      }
+    },
+    "amhara": {
+      "id": "AMHARA",
+      "name": "Amhara Region",
+      "zones": {}
+    },
+    "snnpr": {
+      "id": "SNNPR",
+      "name": "SNNPR Region",
+      "zones": {}
+    },
+    "addis_ababa": {
+      "id": "ADDIS",
+      "name": "Addis Ababa",
+      "zones": {
+        "addis_central": {
+          "id": "ADDIS_CENTRAL",
+          "name": "Central District",
+          "woredas": {}
+        }
+      }
+    }
+  }
+}

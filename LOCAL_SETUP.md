@@ -102,7 +102,7 @@ docker run -d --name minio \
   minio/minio server /data --console-address ":9001"
 ```
 
-MinIO Console will be available at **http://localhost:9001** (login: minioadmin/minioadmin).
+MinIO Console will be available at **http://localhost:9000** (login: minioadmin/minioadmin).
 
 ### Option B: docker-compose
 The `docker-compose.yml` already includes MinIO. Just run:
@@ -113,7 +113,7 @@ docker-compose up -d minio
 ### Environment Variables
 Set these in your `.env` or export them:
 ```env
-MINIO_ENDPOINT=localhost:9001
+MINIO_ENDPOINT=localhost:9000
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 MINIO_BUCKET=documents

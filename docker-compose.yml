@@ -61,7 +61,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - VITE_API_URL=https://unified-211c.vercel.app
+      - VITE_API_URL=http://localhost:8000  # Point to backend API
     command: npm run dev -- --host 0.0.0.0 --port 3000  # Force port 3000
 
 volumes:

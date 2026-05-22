@@ -1,0 +1,387 @@
+{
+  "workflows": {
+    "standard_document_workflow": {
+      "name": "Standard Document Workflow",
+      "states": {
+        "SUBMITTED": {
+          "type": "start",
+          "display_name": "Submitted",
+          "color": "#f59e0b",
+          "assigned_role": "verification_officer",
+          "allowed_permissions": ["verify_applications"],
+          "actions": ["PROCESS", "REJECT"],
+          "next_states": {
+            "PROCESS": "VERIFICATION",
+            "REJECT": "REJECTED"
+          },
+          "allowed_hierarchy_levels": ["zone", "woreda", "kebele"],
+          "notifications": {
+            "citizen": "Your application has been submitted successfully."
+          }
+        },
+        "VERIFICATION": {
+          "type": "internal",
+          "display_name": "Under Verification",
+          "color": "#3b82f6",
+          "assigned_role": "verification_officer",
+          "allowed_permissions": ["verify_applications"],
+          "actions": ["APPROVE", "REQUEST_INFO", "REJECT"],
+          "next_states": {
+            "APPROVE": "DOCUMENT_VERIFICATION",
+            "REQUEST_INFO": "VERIFICATION",
+            "REJECT": "REJECTED"
+          },
+          "allowed_hierarchy_levels": ["zone", "region"],
+          "notifications": {
+            "citizen": "Your application is under verification."
+          }
+        },
+        "DOCUMENT_VERIFICATION": {
+          "type": "internal",
+          "display_name": "Document Verification",
+          "color": "#8b5cf6",
+          "assigned_role": "document_verifier",
+          "allowed_permissions": ["verify_documents"],
+          "actions": ["APPROVE", "REJECT", "REQUEST_ADDITIONAL_DOCS"],
+          "next_states": {
+            "APPROVE": "PAYMENT_PENDING",
+            "REJECT": "REJECTED",
+            "REQUEST_ADDITIONAL_DOCS": "DOCUMENT_VERIFICATION"
+          },
+          "allowed_hierarchy_levels": ["zone", "region"]
+        },
+        "PAYMENT_PENDING": {
+          "type": "user_action",
+          "display_name": "Payment Pending",
+          "color": "#ec4899",
+          "allowed_permissions": ["make_payment", "process_payments"],
+          "actions": ["MAKE_PAYMENT", "CANCEL"],
+          "next_states": {
+            "MAKE_PAYMENT": "PAYMENT_COMPLETED",
+            "CANCEL": "REJECTED"
+          },
+          "allowed_hierarchy_levels": ["zone", "woreda"]
+        },
+        "PAYMENT_COMPLETED": {
+          "type": "system",
+          "display_name": "Payment Completed",
+          "color": "#10b981",
+          "assigned_role": "issuance_officer",
+          "allowed_permissions": ["issue_certificates"],
+          "actions": ["GENERATE_CERTIFICATE"],
+          "next_states": {
+            "GENERATE_CERTIFICATE": "CERTIFICATE_GENERATED"
+          }
+        },
+        "CERTIFICATE_GENERATED": {
+          "type": "internal",
+          "display_name": "Certificate Generated",
+          "color": "#10b981",
+          "assigned_role": "issuance_officer",
+          "allowed_permissions": ["issue_certificates", "dispatch_certificates"],
+          "actions": ["DISPATCH", "EMAIL"],
+          "next_states": {
+            "DISPATCH": "COMPLETED",
+            "EMAIL": "COMPLETED"
+          }
+        },
+        "COMPLETED": {
+          "type": "end",
+          "display_name": "Completed",
+          "color": "#22c55e",
+          "actions": [],
+          "next_states": {}
+        },
+        "REJECTED": {
+          "type": "end",
+          "display_name": "Rejected",
+          "color": "#ef4444",
+          "allowed_permissions": ["appeal_decision"],
+          "actions": ["APPEAL"],
+          "next_states": {
+            "APPEAL": "VERIFICATION"
+          }
+        }
+      },
+      "sla_days": {
+        "VERIFICATION": 3,
+        "DOCUMENT_VERIFICATION": 5
+      }
+    },
+
+    "national_service_workflow": {
+      "name": "National Service Workflow",
+      "description": "For passport, PAN card - only at national level",
+      "states": {
+        "SUBMITTED": {
+          "type": "start",
+          "display_name": "Submitted",
+          "color": "#f59e0b",
+          "assigned_role": "verification_officer",
+          "allowed_permissions": ["verify_applications"],
+          "actions": ["PROCESS", "REJECT"],
+          "next_states": {
+            "PROCESS": "VERIFICATION",
+            "REJECT": "REJECTED"
+          },
+          "allowed_hierarchy_levels": ["country"]
+        },
+        "VERIFICATION": {
+          "type": "internal",
+          "display_name": "Under Verification",
+          "color": "#3b82f6",
+          "assigned_role": "verification_officer",
+          "allowed_permissions": ["verify_applications"],
+          "actions": ["APPROVE", "REJECT"],
+          "next_states": {
+            "APPROVE": "PAYMENT_PENDING",
+            "REJECT": "REJECTED"
+          },
+          "allowed_hierarchy_levels": ["country"]
+        },
+        "PAYMENT_PENDING": {
+          "type": "user_action",
+          "display_name": "Payment Pending",
+          "color": "#ec4899",
+          "allowed_permissions": ["make_payment", "process_payments"],
+          "actions": ["MAKE_PAYMENT", "CANCEL"],
+          "next_states": {
+            "MAKE_PAYMENT": "PAYMENT_COMPLETED",
+            "CANCEL": "REJECTED"
+          },
+          "allowed_hierarchy_levels": ["country"]
+        },
+        "PAYMENT_COMPLETED": {
+          "type": "system",
+          "display_name": "Payment Completed",
+          "color": "#10b981",
+          "assigned_role": "issuance_officer",
+          "allowed_permissions": ["issue_certificates"],
+          "actions": ["PROCESS_SERVICE"],
+          "next_states": {
+            "PROCESS_SERVICE": "COMPLETED"
+          }
+        },
+        "COMPLETED": {
+          "type": "end",
+          "display_name": "Completed",
+          "color": "#22c55e",
+          "actions": []
+        },
+        "REJECTED": {
+          "type": "end",
+          "display_name": "Rejected",
+          "color": "#ef4444",
+          "allowed_permissions": ["appeal_decision"],
+          "actions": ["APPEAL"],
+          "next_states": {
+            "APPEAL": "VERIFICATION"
+          }
+        }
+      }
+    },
+
+    "local_service_workflow": {
+      "name": "Local Service Workflow",
+      "description": "For kebele/woreda level services like land registration",
+      "states": {
+        "SUBMITTED": {
+          "type": "start",
+          "display_name": "Submitted",
+          "color": "#f59e0b",
+          "assigned_role": "verification_officer",
+          "allowed_permissions": ["verify_applications"],
+          "actions": ["PROCESS", "REJECT"],
+          "next_states": {
+            "PROCESS": "VERIFICATION",
+            "REJECT": "REJECTED"
+          },
+          "allowed_hierarchy_levels": ["kebele", "woreda"]
+        },
+        "VERIFICATION": {
+          "type": "internal",
+          "display_name": "Under Verification",
+          "color": "#3b82f6",
+          "assigned_role": "verification_officer",
+          "allowed_permissions": ["verify_applications"],
+          "actions": ["APPROVE", "REJECT", "REQUEST_SITE_VISIT"],
+          "next_states": {
+            "APPROVE": "COMPLETED",
+            "REJECT": "REJECTED",
+            "REQUEST_SITE_VISIT": "VERIFICATION"
+          },
+          "allowed_hierarchy_levels": ["kebele", "woreda"]
+        },
+        "COMPLETED": {
+          "type": "end",
+          "display_name": "Completed",
+          "color": "#22c55e",
+          "actions": []
+        },
+        "REJECTED": {
+          "type": "end",
+          "display_name": "Rejected",
+          "color": "#ef4444",
+          "allowed_permissions": ["appeal_decision"],
+          "actions": ["APPEAL"],
+          "next_states": {
+            "APPEAL": "VERIFICATION"
+          }
+        }
+      }
+    },
+
+    "complaint_workflow": {
+      "name": "Complaint Resolution Workflow",
+      "description": "Workflow for citizen complaints: GRO assigns to LME, LME resolves",
+      "states": {
+        "SUBMITTED": {
+          "type": "start",
+          "display_name": "Submitted",
+          "color": "#f59e0b",
+          "assigned_role": "gro",
+          "allowed_permissions": ["assign_complaints", "reject_complaints"],
+          "actions": ["ASSIGN_TO_LME", "REJECT"],
+          "next_states": {
+            "ASSIGN_TO_LME": "ASSIGNED",
+            "REJECT": "REJECTED"
+          }
+        },
+        "ASSIGNED": {
+          "type": "internal",
+          "display_name": "Assigned to LME",
+          "color": "#2563eb",
+          "assigned_role": "lme",
+          "allowed_permissions": ["resolve_complaints", "reassign_complaints"],
+          "actions": ["RESOLVE", "REASSIGN"],
+          "next_states": {
+            "RESOLVE": "RESOLVED",
+            "REASSIGN": "SUBMITTED"
+          }
+        },
+        "RESOLVED": {
+          "type": "user_action",
+          "display_name": "Resolved",
+          "color": "#10b981",
+          "allowed_permissions": ["rate_service", "reopen_complaint"],
+          "actions": ["RATE", "REOPEN"],
+          "next_states": {
+            "RATE": "COMPLETED",
+            "REOPEN": "ASSIGNED"
+          }
+        },
+        "COMPLETED": {
+          "type": "end",
+          "display_name": "Completed",
+          "color": "#22c55e",
+          "actions": []
+        },
+        "REJECTED": {
+          "type": "end",
+          "display_name": "Rejected",
+          "color": "#ef4444",
+          "actions": []
+        }
+      }
+    }
+  },
+
+  "service_to_workflow_mapping": {
+    "birth_certificate": "standard_document_workflow",
+    "tenth_grade_certificate": "standard_document_workflow",
+    "eighth_grade_certificate": "standard_document_workflow",
+    "passport_renewal": "national_service_workflow",
+    "pan_card_reprint": "national_service_workflow",
+    "driver_license_renewal": "standard_document_workflow",
+    "business_license": "standard_document_workflow",
+    "land_registration": "local_service_workflow",
+    "police_clearance": "standard_document_workflow",
+    "complaint_submission": "complaint_workflow"
+  },
+
+  "action_definitions": {
+    "PROCESS": {
+      "display_label": "Process Application"
+    },
+    "APPROVE": {
+      "display_label": "Approve"
+    },
+    "REJECT": {
+      "display_label": "Reject",
+      "requires_payload": true,
+      "fields": [
+        {"name": "rejection_reason", "type": "textarea", "label": "Reason for rejection", "required": true}
+      ]
+    },
+    "REQUEST_INFO": {
+      "display_label": "Request More Info",
+      "requires_payload": true,
+      "fields": [
+        {"name": "info_requested", "type": "textarea", "label": "Information needed", "required": true}
+      ]
+    },
+    "REQUEST_ADDITIONAL_DOCS": {
+      "display_label": "Request Documents",
+      "requires_payload": true,
+      "fields": [
+        {"name": "docs_requested", "type": "textarea", "label": "Documents needed", "required": true}
+      ]
+    },
+    "MAKE_PAYMENT": {
+      "display_label": "Make Payment"
+    },
+    "CANCEL": {
+      "display_label": "Cancel Application"
+    },
+    "GENERATE_CERTIFICATE": {
+      "display_label": "Generate Certificate"
+    },
+    "DISPATCH": {
+      "display_label": "Dispatch Certificate"
+    },
+    "EMAIL": {
+      "display_label": "Email Certificate"
+    },
+    "APPEAL": {
+      "display_label": "Appeal Decision",
+      "requires_payload": true,
+      "fields": [
+        {"name": "appeal_reason", "type": "textarea", "label": "Reason for appeal", "required": true}
+      ]
+    },
+    "ASSIGN_TO_LME": {
+      "display_label": "Assign to LME"
+    },
+    "RESOLVE": {
+      "display_label": "Mark as Resolved",
+      "requires_payload": true,
+      "fields": [
+        {"name": "resolution_notes", "type": "textarea", "label": "Resolution notes", "required": true}
+      ]
+    },
+    "REASSIGN": {
+      "display_label": "Reassign"
+    },
+    "RATE": {
+      "display_label": "Rate Service",
+      "requires_payload": true,
+      "fields": [
+        {"name": "rating_score", "type": "rating", "label": "Rating", "required": true},
+        {"name": "rating_feedback", "type": "textarea", "label": "Feedback", "required": false}
+      ]
+    },
+    "REOPEN": {
+      "display_label": "Reopen Complaint",
+      "requires_payload": true,
+      "fields": [
+        {"name": "reopen_reason", "type": "textarea", "label": "Reason for reopening", "required": true}
+      ]
+    },
+    "REQUEST_SITE_VISIT": {
+      "display_label": "Request Site Visit"
+    },
+    "PROCESS_SERVICE": {
+      "display_label": "Process Service"
+    }
+  }
+}

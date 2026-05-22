@@ -1,0 +1,479 @@
+{
+  "users": {
+    "abeba_bale": {
+      "username": "abeba_bale",
+      "password": "verify123",
+      "name": "Abeba Bale",
+      "role": "verification_officer",
+      "department": "verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "bale",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+    
+    "admin": {
+      "username": "admin",
+      "password": "admin123",
+      "name": "System Administrator",
+      "role": "super_admin",
+      "department": "all",
+      "hierarchy": {
+        "country": "ETH",
+        "region": null,
+        "zone": null,
+        "woreda": null,
+        "kebele": null,
+        "level": "country"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+    
+    "zone_education_head": {
+      "username": "zone_education",
+      "password": "super123",
+      "name": "Bale Zone Education Head",
+      "role": "verification_supervisor",
+      "department": "verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+    
+    "sinana_woreda_officer": {
+      "username": "sinana_officer",
+      "password": "officer123",
+      "name": "Sinana Woreda Officer",
+      "role": "verification_officer",
+      "department": "verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": "SINANA",
+        "kebele": null,
+        "level": "woreda"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "document_verifier_bale": {
+      "username": "doc_verifier_bale",
+      "password": "doc123",
+      "name": "Document Verifier Bale",
+      "role": "document_verifier",
+      "department": "document_verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "payment_officer_bale": {
+      "username": "payment_officer_bale",
+      "password": "pay123",
+      "name": "Payment Officer Bale",
+      "role": "payment_officer",
+      "department": "payment",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "certificate_issuer_bale": {
+      "username": "cert_issuer_bale",
+      "password": "cert123",
+      "name": "Certificate Issuer Bale",
+      "role": "certificate_issuer",
+      "department": "certificate",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "quality_auditor_bale": {
+      "username": "auditor_bale",
+      "password": "audit123",
+      "name": "Quality Auditor Bale",
+      "role": "quality_auditor",
+      "department": "audit",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "verification_officer_arsii": {
+      "username": "verifier_arsii",
+      "password": "verify456",
+      "name": "Verification Officer Arsi",
+      "role": "verification_officer",
+      "department": "verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "ARSII",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "document_specialist_arsii": {
+      "username": "doc_specialist_arsii",
+      "password": "special123",
+      "name": "Document Specialist Arsi",
+      "role": "document_specialist",
+      "department": "document_verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "ARSII",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "payment_approver_arsii": {
+      "username": "pay_approver_arsii",
+      "password": "approve123",
+      "name": "Payment Approver Arsi",
+      "role": "payment_approver",
+      "department": "payment",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "ARSII",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "medical_officer_bale": {
+      "username": "medical_bale",
+      "password": "medical123",
+      "name": "Medical Officer Bale",
+      "role": "medical_officer",
+      "department": "medical",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "tax_officer_bale": {
+      "username": "tax_bale",
+      "password": "tax123",
+      "name": "Tax Officer Bale",
+      "role": "tax_officer",
+      "department": "tax",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "income_officer_bale": {
+      "username": "income_bale",
+      "password": "income123",
+      "name": "Income Officer Bale",
+      "role": "income_officer",
+      "department": "income_verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "police_clearance_officer": {
+      "username": "police_clearance",
+      "password": "police123",
+      "name": "Police Clearance Officer",
+      "role": "verification_officer",
+      "department": "verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "business_license_officer": {
+      "username": "business_license",
+      "password": "business123",
+      "name": "Business License Officer",
+      "role": "verification_officer",
+      "department": "verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": "SINANA",
+        "kebele": null,
+        "level": "woreda"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "land_registration_officer": {
+      "username": "land_registration",
+      "password": "land123",
+      "name": "Land Registration Officer",
+      "role": "verification_officer",
+      "department": "verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": "SINANA",
+        "kebele": "KEBELE_01",
+        "level": "kebele"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "senior_verifier_bale": {
+      "username": "senior_verifier_bale",
+      "password": "senior123",
+      "name": "Senior Verifier Bale",
+      "role": "senior_verifier",
+      "department": "verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "document_verifier_arsii": {
+      "username": "doc_verifier_arsii",
+      "password": "doc456",
+      "name": "Document Verifier Arsi",
+      "role": "document_verifier",
+      "department": "document_verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "ARSII",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "certificate_issuer_arsii": {
+      "username": "cert_issuer_arsii",
+      "password": "cert456",
+      "name": "Certificate Issuer Arsi",
+      "role": "certificate_issuer",
+      "department": "certificate",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "ARSII",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "quality_auditor_arsii": {
+      "username": "auditor_arsii",
+      "password": "audit456",
+      "name": "Quality Auditor Arsi",
+      "role": "quality_auditor",
+      "department": "audit",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "ARSII",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "verification_supervisor_arsii": {
+      "username": "supervisor_arsii",
+      "password": "super456",
+      "name": "Verification Supervisor Arsi",
+      "role": "verification_supervisor",
+      "department": "verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "ARSII",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "payment_officer_arsii": {
+      "username": "payment_arsii",
+      "password": "pay456",
+      "name": "Payment Officer Arsi",
+      "role": "payment_officer",
+      "department": "payment",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "ARSII",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "medical_officer_arsii": {
+      "username": "medical_arsii",
+      "password": "medical456",
+      "name": "Medical Officer Arsi",
+      "role": "medical_officer",
+      "department": "medical",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "ARSII",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "tax_officer_arsii": {
+      "username": "tax_arsii",
+      "password": "tax456",
+      "name": "Tax Officer Arsi",
+      "role": "tax_officer",
+      "department": "tax",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "ARSII",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "income_officer_arsii": {
+      "username": "income_arsii",
+      "password": "income456",
+      "name": "Income Officer Arsi",
+      "role": "income_officer",
+      "department": "income_verification",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "ARSII",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": true
+    },
+
+    "viewer_bale": {
+      "username": "viewer_bale",
+      "password": "view123",
+      "name": "Viewer Bale",
+      "role": "viewer",
+      "department": "view_only",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "BALE",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": false
+    },
+
+    "viewer_arsii": {
+      "username": "viewer_arsii",
+      "password": "view456",
+      "name": "Viewer Arsi",
+      "role": "viewer",
+      "department": "view_only",
+      "hierarchy": {
+        "country": "ETH",
+        "region": "OROMIA",
+        "zone": "ARSII",
+        "woreda": null,
+        "kebele": null,
+        "level": "zone"
+      },
+      "can_see_subordinate_hierarchies": false
+    }
+  }
+}

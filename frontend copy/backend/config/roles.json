@@ -1,0 +1,445 @@
+{
+  "roles": {
+    "super_admin": {
+      "name": "Super Administrator",
+      "description": "Full system access - can manage everything",
+      "permissions": [
+        "view_all_applications",
+        "update_any_application",
+        "delete_any_application",
+        "manage_users",
+        "manage_roles",
+        "view_all_departments",
+        "view_admin_dashboard",
+        "export_data",
+        "generate_reports",
+        "assign_roles"
+      ],
+      "departments": ["all"],
+      "can_assign_roles": true,
+      "priority": 100
+    },
+
+    "verification_supervisor": {
+      "name": "Verification Supervisor",
+      "description": "Supervises the verification department - can assign tasks and review work",
+      "permissions": [
+        "view_department_applications",
+        "verify_applications",
+        "reject_applications",
+        "request_additional_info",
+        "add_comments",
+        "assign_verification_tasks",
+        "review_verified_applications",
+        "view_team_performance"
+      ],
+      "departments": ["verification"],
+      "can_assign_roles": false,
+      "priority": 85
+    },
+
+    "verification_officer": {
+      "name": "Verification Officer",
+      "description": "Verifies initial applications and documents - first level review",
+      "permissions": [
+        "view_department_applications",
+        "verify_applications",
+        "reject_applications",
+        "request_additional_info",
+        "add_comments"
+      ],
+      "departments": ["verification"],
+      "can_assign_roles": false,
+      "priority": 80
+    },
+
+    "senior_verifier": {
+      "name": "Senior Verifier",
+      "description": "Second level verification for complex cases",
+      "permissions": [
+        "view_department_applications",
+        "verify_applications",
+        "reject_applications",
+        "request_additional_info",
+        "add_comments",
+        "override_verification",
+        "escalate_cases"
+      ],
+      "departments": ["verification"],
+      "can_assign_roles": false,
+      "priority": 75
+    },
+
+    "document_specialist": {
+      "name": "Document Specialist",
+      "description": "Specializes in document verification and authenticity checks",
+      "permissions": [
+        "view_department_applications",
+        "verify_documents",
+        "reject_documents",
+        "request_additional_documents",
+        "add_comments",
+        "flag_fraud_documents"
+      ],
+      "departments": ["document_verification"],
+      "can_assign_roles": false,
+      "priority": 70
+    },
+
+    "document_verifier": {
+      "name": "Document Verifier",
+      "description": "Verifies uploaded documents for authenticity",
+      "permissions": [
+        "view_department_applications",
+        "verify_documents",
+        "reject_documents",
+        "request_additional_documents",
+        "add_comments"
+      ],
+      "departments": ["document_verification"],
+      "can_assign_roles": false,
+      "priority": 70
+    },
+
+    "senior_document_verifier": {
+      "name": "Senior Document Verifier",
+      "description": "Handles complex document verification cases",
+      "permissions": [
+        "view_department_applications",
+        "verify_documents",
+        "reject_documents",
+        "request_additional_documents",
+        "add_comments",
+        "override_document_verification",
+        "escalate_document_issues"
+      ],
+      "departments": ["document_verification"],
+      "can_assign_roles": false,
+      "priority": 65
+    },
+
+    "payment_officer": {
+      "name": "Payment Officer",
+      "description": "Processes payments and handles refunds",
+      "permissions": [
+        "view_department_applications",
+        "process_payments",
+        "view_payment_reports",
+        "refund_payments",
+        "add_comments"
+      ],
+      "departments": ["payment"],
+      "can_assign_roles": false,
+      "priority": 60
+    },
+
+    "payment_approver": {
+      "name": "Payment Approver",
+      "description": "Approves high-value payments and refunds",
+      "permissions": [
+        "view_department_applications",
+        "process_payments",
+        "approve_refunds",
+        "view_payment_reports",
+        "add_comments",
+        "override_payment_holds"
+      ],
+      "departments": ["payment"],
+      "can_assign_roles": false,
+      "priority": 55
+    },
+
+    "certificate_issuer": {
+      "name": "Certificate Issuer",
+      "description": "Issues certificates and manages dispatch",
+      "permissions": [
+        "view_department_applications",
+        "issue_certificates",
+        "generate_tracking_ids",
+        "dispatch_certificates",
+        "add_comments"
+      ],
+      "departments": ["certificate"],
+      "can_assign_roles": false,
+      "priority": 50
+    },
+
+    "quality_auditor": {
+      "name": "Quality Auditor",
+      "description": "Audits processed applications for quality",
+      "permissions": [
+        "view_department_applications",
+        "audit_applications",
+        "flag_issues",
+        "view_reports",
+        "add_comments"
+      ],
+      "departments": ["audit"],
+      "can_assign_roles": false,
+      "priority": 40
+    },
+
+    "medical_officer": {
+    "name": "Medical Officer",
+    "description": "Conducts medical tests for license renewals",
+    "permissions": [
+        "view_department_applications",
+        "conduct_medical_tests",
+        "clear_medical_tests",
+        "fail_medical_tests",
+        "add_comments"
+    ],
+    "departments": ["medical"],
+    "can_assign_roles": false,
+    "priority": 45
+    },
+
+    "tax_officer": {
+    "name": "Tax Officer",
+    "description": "Handles income tax assessment and processing",
+    "permissions": [
+        "view_department_applications",
+        "assess_tax_returns",
+        "issue_notices",
+        "approve_refunds",
+        "add_comments"
+    ],
+    "departments": ["tax"],
+    "can_assign_roles": false,
+    "priority": 55
+    },
+
+    "income_officer": {
+    "name": "Income Officer",
+    "description": "Verifies income proofs for certificates",
+    "permissions": [
+        "view_department_applications",
+        "verify_income_proofs",
+        "approve_income_verification",
+        "reject_income_verification",
+        "add_comments"
+    ],
+    "departments": ["income_verification"],
+    "can_assign_roles": false,
+    "priority": 65
+    },
+
+    "viewer": {
+      "name": "Read Only Viewer",
+      "description": "Can only view applications, no actions",
+      "permissions": [
+        "view_department_applications",
+        "export_data"
+      ],
+      "departments": ["view_only"],
+      "can_assign_roles": false,
+      "priority": 10
+    },
+
+    "gro": {
+      "name": "Grievance Redress Officer (GRO)",
+      "description": "Handles incoming complaints and assigns them to Line Management Experts",
+      "permissions": [
+        "view_department_applications",
+        "assign_complaints",
+        "reject_complaints",
+        "add_comments"
+      ],
+      "departments": ["complaints"],
+      "can_assign_roles": false,
+      "priority": 60
+    },
+
+    "lme": {
+      "name": "Line Management Expert (LME)",
+      "description": "Resolves citizen complaints",
+      "permissions": [
+        "view_assigned_applications",
+        "resolve_complaints",
+        "reassign_complaints",
+        "add_comments"
+      ],
+      "departments": ["complaints"],
+      "can_assign_roles": false,
+      "priority": 50
+    },
+
+    "citizen": {
+      "name": "Citizen",
+      "description": "Regular citizen who submits applications and interacts with services",
+      "permissions": [
+        "make_payment",
+        "appeal_decision",
+        "rate_service",
+        "reopen_complaint",
+        "view_own_applications"
+      ],
+      "departments": ["all"],
+      "can_assign_roles": false,
+      "priority": 0
+    }
+  },
+
+  "workflow_permissions": {
+    "SUBMITTED": {
+      "allowed_permissions": ["verify_applications", "assign_complaints", "reject_complaints"],
+      "allowed_actions": ["PROCESS", "REJECT", "ASSIGN_TO_LME"]
+    },
+    
+    "DOCUMENT_CHECK": {
+      "allowed_permissions": ["verify_applications"],
+      "allowed_actions": ["APPROVE", "REJECT", "REQUEST_DOCUMENTS"]
+    },
+    
+    "VERIFICATION": {
+      "allowed_permissions": ["verify_applications"],
+      "allowed_actions": ["APPROVE", "REQUEST_INFO", "REJECT", "ESCALATE"]
+    },
+    
+    "SENIOR_VERIFICATION": {
+      "allowed_permissions": ["verify_applications", "override_verification"],
+      "allowed_actions": ["APPROVE", "REJECT", "RETURN_TO_OFFICER"]
+    },
+    
+    "DOCUMENT_VERIFICATION": {
+      "allowed_permissions": ["verify_documents"],
+      "allowed_actions": ["APPROVE", "REJECT", "REQUEST_ADDITIONAL_DOCS", "FLAG_FRAUD"]
+    },
+    
+    "SENIOR_DOCUMENT_VERIFICATION": {
+      "allowed_permissions": ["verify_documents", "override_document_verification"],
+      "allowed_actions": ["APPROVE", "REJECT", "RETURN_TO_VERIFIER"]
+    },
+    
+    "PAYMENT_PENDING": {
+      "allowed_permissions": ["process_payments", "make_payment"],
+      "allowed_actions": ["MAKE_PAYMENT", "CANCEL", "HOLD_PAYMENT"]
+    },
+    
+    "PAYMENT_APPROVAL": {
+      "allowed_permissions": ["process_payments", "approve_refunds"],
+      "allowed_actions": ["APPROVE_PAYMENT", "REJECT_PAYMENT"]
+    },
+    
+    "PAYMENT_COMPLETED": {
+      "allowed_permissions": ["issue_certificates"],
+      "allowed_actions": ["GENERATE_CERTIFICATE", "PROCESS_SERVICE"]
+    },
+    
+    "SERVICE_PROCESSED": {
+      "allowed_permissions": ["issue_certificates"],
+      "allowed_actions": ["COMPLETE"]
+    },
+    
+    "CERTIFICATE_GENERATED": {
+      "allowed_permissions": ["issue_certificates", "dispatch_certificates"],
+      "allowed_actions": ["DISPATCH", "EMAIL"]
+    },
+    
+    "MEDICAL_TEST": {
+      "allowed_permissions": ["conduct_medical_tests", "clear_medical_tests"],
+      "allowed_actions": ["CLEAR", "FAIL", "RESCHEDULE"]
+    },
+    
+    "LICENSE_GENERATED": {
+      "allowed_permissions": ["dispatch_certificates"],
+      "allowed_actions": ["DISPATCH"]
+    },
+    
+    "DRAFT": {
+      "allowed_permissions": ["make_payment", "assess_tax_returns"],
+      "allowed_actions": ["SUBMIT", "SAVE_DRAFT"]
+    },
+    
+    "VALIDATION": {
+      "allowed_permissions": ["assess_tax_returns"],
+      "allowed_actions": ["VALIDATE", "REJECT"]
+    },
+    
+    "ASSESSMENT": {
+      "allowed_permissions": ["assess_tax_returns", "issue_notices"],
+      "allowed_actions": ["APPROVE", "NOTICE", "REJECT"]
+    },
+    
+    "REFUND_PENDING": {
+      "allowed_permissions": ["process_payments", "approve_refunds"],
+      "allowed_actions": ["PROCESS_REFUND"]
+    },
+    
+    "REFUND_COMPLETED": {
+      "allowed_permissions": ["assess_tax_returns"],
+      "allowed_actions": []
+    },
+    
+    "DEMAND_PENDING": {
+      "allowed_permissions": ["make_payment", "appeal_decision"],
+      "allowed_actions": ["PAY_TAX", "APPEAL"]
+    },
+    
+    "INCOME_VERIFICATION": {
+      "allowed_permissions": ["verify_income_proofs", "approve_income_verification"],
+      "allowed_actions": ["APPROVE", "REJECT"]
+    },
+    
+    "QUALITY_CHECK": {
+      "allowed_permissions": ["audit_applications", "flag_issues"],
+      "allowed_actions": ["APPROVE", "FLAG_ISSUES", "RETURN_FOR_CORRECTION"]
+    },
+    
+    "COMPLETED": {
+      "allowed_permissions": ["audit_applications"],
+      "allowed_actions": ["AUDIT", "APPROVE", "FLAG_ISSUES"]
+    },
+    
+    "REJECTED": {
+      "allowed_permissions": ["appeal_decision"],
+      "allowed_actions": ["APPEAL"]
+    },
+    
+    "CORRECTION_PENDING": {
+      "allowed_permissions": ["verify_applications"],
+      "allowed_actions": ["MAKE_CORRECTION", "REJECT"]
+    },
+    
+    "CORRECTION_MADE": {
+      "allowed_permissions": ["verify_applications", "override_verification"],
+      "allowed_actions": ["VERIFY_CORRECTION"]
+    },
+    
+    "ASSIGNED": {
+      "allowed_permissions": ["resolve_complaints", "reassign_complaints"],
+      "allowed_actions": ["RESOLVE", "REASSIGN"]
+    },
+    
+    "RESOLVED": {
+      "allowed_permissions": ["rate_service", "reopen_complaint"],
+      "allowed_actions": []
+    }
+  },
+  
+  "department_to_state_mapping": {
+    "verification": ["SUBMITTED", "DOCUMENT_CHECK", "VERIFICATION", "SENIOR_VERIFICATION", "CORRECTION_PENDING", "CORRECTION_MADE"],
+    "document_verification": ["DOCUMENT_VERIFICATION", "SENIOR_DOCUMENT_VERIFICATION"],
+    "payment": ["PAYMENT_PENDING", "PAYMENT_APPROVAL", "PAYMENT_COMPLETED", "REFUND_PENDING"],
+    "certificate": ["CERTIFICATE_GENERATED", "SERVICE_PROCESSED", "LICENSE_GENERATED", "COMPLETED"],
+    "audit": ["QUALITY_CHECK", "COMPLETED"],
+    "medical": ["MEDICAL_TEST"],
+    "tax": ["DRAFT", "VALIDATION", "ASSESSMENT", "REFUND_COMPLETED", "DEMAND_PENDING"],
+    "income_verification": ["INCOME_VERIFICATION"],
+    "complaints": ["SUBMITTED", "ASSIGNED", "RESOLVED", "REJECTED"],
+    "view_only": ["ALL_STATES"],
+    "all": ["ALL_STATES"]
+    },
+
+  "service_to_department_mapping": {
+    "birth_certificate": "verification",
+    "tenth_grade_certificate": "verification",
+    "passport_renewal": "verification",
+    "pan_card_reprint": "verification",
+    "driver_license_renewal": "verification",
+    "voter_id_correction": "verification",
+    "income_tax_filing": "payment",
+    "caste_certificate": "verification",
+    "complaint_submission": "complaints"
+  }
+}

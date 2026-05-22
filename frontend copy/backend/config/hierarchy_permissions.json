@@ -1,0 +1,34 @@
+{
+  "hierarchy_permissions": {
+    "country": {
+      "can_see_all": true,
+      "can_see_subordinates": true,
+      "can_process_services": ["passport_renewal", "pan_card_reprint", "income_tax_filing"],
+      "roles_allowed": ["super_admin", "national_director"]
+    },
+    "region": {
+      "can_see_own_level": true,
+      "can_see_subordinates": ["zone", "woreda", "kebele"],
+      "can_process_services": ["tenth_grade_certificate", "driver_license_renewal"],
+      "roles_allowed": ["regional_director", "verification_supervisor"]
+    },
+    "zone": {
+      "can_see_own_level": true,
+      "can_see_subordinates": ["woreda", "kebele"],
+      "can_process_services": ["tenth_grade_certificate", "driver_license_renewal", "police_clearance"],
+      "roles_allowed": ["zone_head", "verification_officer", "document_verifier"]
+    },
+    "woreda": {
+      "can_see_own_level": true,
+      "can_see_subordinates": ["kebele"],
+      "can_process_services": ["birth_certificate", "eighth_grade_certificate", "business_license"],
+      "roles_allowed": ["woreda_officer", "verification_officer"]
+    },
+    "kebele": {
+      "can_see_own_level": true,
+      "can_see_subordinates": [],
+      "can_process_services": ["land_registration", "local_id"],
+      "roles_allowed": ["kebele_administrator", "local_verifier"]
+    }
+  }
+}

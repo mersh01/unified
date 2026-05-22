@@ -1,0 +1,1126 @@
+{
+  "documents": {
+    "birth_certificate": {
+      "category": "document_replacement",
+      "name": "Birth Certificate",
+      "description": "Official birth registration document replacement",
+      "fee_amount": 500,
+      "processing_time_days": 7,
+      "workflow": "standard_document_workflow",
+      "multi_step": {
+        "enabled": true,
+        "auto_save": true,
+        "allow_step_navigation": true,
+        "save_progress_key": "birth_certificate_draft"
+      },
+      "steps": [
+        {
+          "id": "personal_info",
+          "order": 1,
+          "step_key": "step_1_personal_info",
+          "icon": "\ud83d\udc64",
+          "fields": [
+            {
+              "name": "full_name",
+              "type": "text",
+              "required": true,
+              "validation": {
+                "min_length": 2,
+                "max_length": 100,
+                "pattern": "^[A-Za-z\\s]+$"
+              }
+            },
+            {
+              "name": "date_of_birth",
+              "type": "date",
+              "required": true,
+              "validation": {
+                "type": "date",
+                "max_future_days": 0,
+                "min_years_ago": 120
+              }
+            },
+            {
+              "name": "place_of_birth",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "gender",
+              "type": "select",
+              "required": true,
+              "options": [
+                "male",
+                "female",
+                "other"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "parent_info",
+          "order": 2,
+          "step_key": "step_2_parent_info",
+          "icon": "\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67",
+          "fields": [
+            {
+              "name": "mother_name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "mother_id_number",
+              "type": "text",
+              "required": false
+            },
+            {
+              "name": "father_name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "father_id_number",
+              "type": "text",
+              "required": false
+            }
+          ]
+        },
+        {
+          "id": "birth_details",
+          "order": 3,
+          "step_key": "step_3_birth_details",
+          "icon": "\ud83c\udfe5",
+          "fields": [
+            {
+              "name": "hospital_name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "registration_number",
+              "type": "text",
+              "required": false
+            },
+            {
+              "name": "attending_physician",
+              "type": "text",
+              "required": false
+            }
+          ]
+        },
+        {
+          "id": "location_info",
+          "order": 4,
+          "step_key": "step_4_location_info",
+          "icon": "\ud83d\udccd",
+          "fields": [
+            {
+              "name": "region",
+              "type": "hierarchical_dropdown",
+              "required": true,
+              "depends_on": null,
+              "source": "regions",
+              "hierarchy_level": 1
+            },
+            {
+              "name": "zone",
+              "type": "hierarchical_dropdown",
+              "required": true,
+              "depends_on": "region",
+              "source": "zones",
+              "hierarchy_level": 2
+            },
+            {
+              "name": "woreda",
+              "type": "hierarchical_dropdown",
+              "required": true,
+              "depends_on": "zone",
+              "source": "woredas",
+              "hierarchy_level": 3
+            },
+            {
+              "name": "kebele",
+              "type": "hierarchical_dropdown",
+              "required": false,
+              "depends_on": "woreda",
+              "source": "kebeles",
+              "hierarchy_level": 4
+            }
+          ]
+        },
+        {
+          "id": "replacement_details",
+          "order": 5,
+          "step_key": "step_5_replacement_details",
+          "icon": "\ud83d\udd04",
+          "fields": [
+            {
+              "name": "old_certificate_number",
+              "type": "text",
+              "required": false
+            },
+            {
+              "name": "reason_for_replacement",
+              "type": "select",
+              "required": true,
+              "options": [
+                "lost",
+                "damaged",
+                "stolen",
+                "information_error",
+                "other"
+              ]
+            },
+            {
+              "name": "additional_notes",
+              "type": "textarea",
+              "required": false,
+              "rows": 3
+            }
+          ],
+          "conditional_logic": [
+            {
+              "condition": "reason_for_replacement == 'lost' || reason_for_replacement == 'stolen'",
+              "show_fields": [
+                "police_report_required"
+              ],
+              "message_key": "police_report_required_message"
+            }
+          ]
+        },
+        {
+          "id": "document_upload",
+          "order": 6,
+          "step_key": "step_6_document_upload",
+          "icon": "\ud83d\udcce",
+          "type": "verification",
+          "verification_required": true,
+          "fields": [
+            {
+              "name": "id_proof",
+              "type": "file",
+              "required": true,
+              "multiple": false,
+              "accepted_formats": [
+                "pdf",
+                "jpg",
+                "png",
+                "jpeg"
+              ],
+              "max_size_mb": 5
+            },
+            {
+              "name": "hospital_document",
+              "type": "file",
+              "required": true,
+              "multiple": false,
+              "accepted_formats": [
+                "pdf",
+                "jpg",
+                "png"
+              ],
+              "max_size_mb": 5
+            },
+            {
+              "name": "photograph",
+              "type": "file",
+              "required": true,
+              "multiple": false,
+              "accepted_formats": [
+                "jpg",
+                "png",
+                "jpeg"
+              ],
+              "max_size_mb": 2
+            },
+            {
+              "name": "police_report",
+              "type": "file",
+              "required": false,
+              "conditional_on": "reason_for_replacement",
+              "conditional_values": [
+                "lost",
+                "stolen"
+              ],
+              "multiple": false,
+              "accepted_formats": [
+                "pdf",
+                "jpg",
+                "png"
+              ],
+              "max_size_mb": 5
+            }
+          ]
+        }
+      ],
+      "hierarchical_fields": {
+        "region": {
+          "type": "dropdown",
+          "source": "regions",
+          "depends_on": null
+        },
+        "zone": {
+          "type": "dropdown",
+          "source": "zones",
+          "depends_on": "region"
+        },
+        "woreda": {
+          "type": "dropdown",
+          "source": "woredas",
+          "depends_on": "zone"
+        },
+        "kebele": {
+          "type": "dropdown",
+          "source": "kebeles",
+          "depends_on": "woreda"
+        }
+      }
+    },
+    "business_license": {
+      "category": "government_service",
+      "name": "Business License Application",
+      "description": "Apply for a new business license",
+      "fee_amount": 2500,
+      "processing_time_days": 30,
+      "workflow": "business_license_workflow",
+      "multi_step": {
+        "enabled": true,
+        "auto_save": true,
+        "allow_step_navigation": true,
+        "save_progress_key": "business_license_draft"
+      },
+      "steps": [
+        {
+          "id": "business_info",
+          "order": 1,
+          "step_key": "step_1_business_info",
+          "icon": "\ud83c\udfe2",
+          "fields": [
+            {
+              "name": "business_name",
+              "type": "text",
+              "required": true,
+              "validation": {
+                "min_length": 3,
+                "max_length": 100
+              }
+            },
+            {
+              "name": "business_type",
+              "type": "select",
+              "required": true,
+              "options": [
+                "sole_proprietorship",
+                "partnership",
+                "llc",
+                "corporation"
+              ]
+            },
+            {
+              "name": "establishment_date",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "business_address",
+              "type": "text",
+              "required": true
+            }
+          ]
+        },
+        {
+          "id": "owner_info",
+          "order": 2,
+          "step_key": "step_2_owner_info",
+          "icon": "\ud83d\udc64",
+          "fields": [
+            {
+              "name": "owner_name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "owner_aadhaar",
+              "type": "text",
+              "required": true,
+              "validation": {
+                "pattern": "^[0-9]{12}$",
+                "message_key": "invalid_aadhaar"
+              }
+            },
+            {
+              "name": "owner_pan",
+              "type": "text",
+              "required": true,
+              "validation": {
+                "pattern": "^[A-Z]{5}[0-9]{4}[A-Z]{1}$",
+                "message_key": "invalid_pan"
+              }
+            },
+            {
+              "name": "owner_phone",
+              "type": "tel",
+              "required": true
+            },
+            {
+              "name": "owner_email",
+              "type": "email",
+              "required": true
+            }
+          ]
+        },
+        {
+          "id": "financial_info",
+          "order": 3,
+          "step_key": "step_3_financial_info",
+          "icon": "\ud83d\udcb0",
+          "fields": [
+            {
+              "name": "investment_amount",
+              "type": "number",
+              "required": true,
+              "validation": {
+                "type": "number",
+                "min": 10000,
+                "max": 10000000
+              }
+            },
+            {
+              "name": "annual_turnover",
+              "type": "number",
+              "required": false
+            },
+            {
+              "name": "bank_account",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "ifsc_code",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "conditional_logic": [
+            {
+              "condition": "investment_amount > 500000",
+              "show_fields": [
+                "annual_turnover"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "location_info",
+          "order": 4,
+          "step_key": "step_4_location_info",
+          "icon": "\ud83d\udccd",
+          "fields": [
+            {
+              "name": "premises_type",
+              "type": "select",
+              "required": true,
+              "options": [
+                "owned",
+                "rented",
+                "leased",
+                "shared"
+              ]
+            },
+            {
+              "name": "area_sqft",
+              "type": "number",
+              "required": true
+            },
+            {
+              "name": "region",
+              "type": "hierarchical_dropdown",
+              "required": true,
+              "depends_on": null,
+              "source": "regions"
+            },
+            {
+              "name": "zone",
+              "type": "hierarchical_dropdown",
+              "required": true,
+              "depends_on": "region",
+              "source": "zones"
+            },
+            {
+              "name": "woreda",
+              "type": "hierarchical_dropdown",
+              "required": true,
+              "depends_on": "zone",
+              "source": "woredas"
+            },
+            {
+              "name": "kebele",
+              "type": "hierarchical_dropdown",
+              "required": false,
+              "depends_on": "woreda",
+              "source": "kebeles"
+            }
+          ]
+        },
+        {
+          "id": "document_upload",
+          "order": 5,
+          "step_key": "step_5_document_upload",
+          "icon": "\ud83d\udcce",
+          "type": "verification",
+          "verification_required": true,
+          "fields": [
+            {
+              "name": "business_plan",
+              "type": "file",
+              "required": true,
+              "accepted_formats": [
+                "pdf",
+                "doc",
+                "docx"
+              ],
+              "max_size_mb": 10
+            },
+            {
+              "name": "owner_id_proof",
+              "type": "file",
+              "required": true,
+              "accepted_formats": [
+                "pdf",
+                "jpg",
+                "png"
+              ],
+              "max_size_mb": 5
+            },
+            {
+              "name": "address_proof",
+              "type": "file",
+              "required": true,
+              "accepted_formats": [
+                "pdf",
+                "jpg",
+                "png"
+              ],
+              "max_size_mb": 5
+            },
+            {
+              "name": "property_documents",
+              "type": "file",
+              "required": true,
+              "multiple": true,
+              "accepted_formats": [
+                "pdf",
+                "jpg",
+                "png"
+              ],
+              "max_size_mb": 10
+            }
+          ],
+          "conditional_logic": [
+            {
+              "condition": "business_type == 'manufacturing'",
+              "show_fields": [
+                "factory_license",
+                "environmental_clearance"
+              ]
+            },
+            {
+              "condition": "investment_amount > 1000000",
+              "show_fields": [
+                "project_report",
+                "financial_statements"
+              ]
+            }
+          ]
+        }
+      ],
+      "hierarchical_fields": {
+        "region": {
+          "type": "dropdown",
+          "source": "regions",
+          "depends_on": null
+        },
+        "zone": {
+          "type": "dropdown",
+          "source": "zones",
+          "depends_on": "region"
+        },
+        "woreda": {
+          "type": "dropdown",
+          "source": "woredas",
+          "depends_on": "zone"
+        },
+        "kebele": {
+          "type": "dropdown",
+          "source": "kebeles",
+          "depends_on": "woreda"
+        }
+      }
+    },
+    "passport_renewal": {
+      "category": "government_service",
+      "name": "Passport Renewal",
+      "description": "Renew your expired or expiring passport",
+      "fee_amount": 1500,
+      "processing_time_days": 21,
+      "workflow": "standard_service_workflow",
+      "documents_required": [
+        "old_passport",
+        "photograph",
+        "address_proof"
+      ],
+      "multi_step": {
+        "enabled": true,
+        "auto_save": true,
+        "allow_step_navigation": true
+      },
+      "steps": [
+        {
+          "id": "personal_info",
+          "order": 1,
+          "step_key": "step_1_personal_info",
+          "icon": "\ud83d\udec2",
+          "fields": [
+            {
+              "name": "full_name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "passport_number",
+              "type": "text",
+              "required": true,
+              "validation": {
+                "pattern": "^[A-Z][0-9]{7}$",
+                "message_key": "invalid_passport_number"
+              }
+            },
+            {
+              "name": "date_of_birth",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "expiry_date",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "place_of_issue",
+              "type": "text",
+              "required": true
+            }
+          ]
+        },
+        {
+          "id": "address_details",
+          "order": 2,
+          "step_key": "step_2_address_details",
+          "icon": "\ud83d\udccd",
+          "fields": [
+            {
+              "name": "address_change",
+              "type": "radio",
+              "required": true,
+              "options": [
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "name": "new_address",
+              "type": "text",
+              "required": false,
+              "conditional_on": "address_change",
+              "conditional_values": [
+                "yes"
+              ]
+            },
+            {
+              "name": "permanent_address",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "phone_number",
+              "type": "tel",
+              "required": true
+            },
+            {
+              "name": "email",
+              "type": "email",
+              "required": true
+            }
+          ]
+        },
+        {
+          "id": "document_upload",
+          "order": 3,
+          "step_key": "step_3_document_upload",
+          "icon": "\ud83d\udcce",
+          "type": "verification",
+          "verification_required": true,
+          "fields": [
+            {
+              "name": "old_passport",
+              "type": "file",
+              "required": true,
+              "accepted_formats": [
+                "pdf",
+                "jpg",
+                "png"
+              ],
+              "max_size_mb": 5
+            },
+            {
+              "name": "photograph",
+              "type": "file",
+              "required": true,
+              "accepted_formats": [
+                "jpg",
+                "png"
+              ],
+              "max_size_mb": 2
+            },
+            {
+              "name": "address_proof",
+              "type": "file",
+              "required": true,
+              "accepted_formats": [
+                "pdf",
+                "jpg",
+                "png"
+              ],
+              "max_size_mb": 5
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "services": {
+    "driver_license_renewal": {
+      "category": "transport",
+      "name": "Driver's License Renewal",
+      "description": "Renew your driver's license before expiry",
+      "fee_amount": 800,
+      "processing_time_days": 15,
+      "workflow": "license_renewal_workflow",
+      "requires_medical_test": true,
+      "multi_step": {
+        "enabled": true,
+        "auto_save": true,
+        "allow_step_navigation": true
+      },
+      "steps": [
+        {
+          "id": "license_info",
+          "order": 1,
+          "step_key": "step_1_license_info",
+          "icon": "\ud83d\ude97",
+          "fields": [
+            {
+              "name": "full_name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "license_number",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "date_of_birth",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "expiry_date",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "blood_group",
+              "type": "select",
+              "required": true,
+              "options": [
+                "A+",
+                "A-",
+                "B+",
+                "B-",
+                "O+",
+                "O-",
+                "AB+",
+                "AB-"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "medical_test",
+          "order": 2,
+          "step_key": "step_2_medical_test",
+          "icon": "\ud83c\udfe5",
+          "type": "verification",
+          "verification_required": true,
+          "fields": [
+            {
+              "name": "medical_certificate",
+              "type": "file",
+              "required": true,
+              "accepted_formats": [
+                "pdf",
+                "jpg",
+                "png"
+              ],
+              "max_size_mb": 5
+            },
+            {
+              "name": "medical_center_name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "doctor_name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "test_date",
+              "type": "date",
+              "required": true
+            }
+          ]
+        },
+        {
+          "id": "document_upload",
+          "order": 3,
+          "step_key": "step_3_document_upload",
+          "icon": "\ud83d\udcce",
+          "type": "verification",
+          "verification_required": true,
+          "fields": [
+            {
+              "name": "old_license_copy",
+              "type": "file",
+              "required": true,
+              "accepted_formats": [
+                "pdf",
+                "jpg",
+                "png"
+              ],
+              "max_size_mb": 5
+            },
+            {
+              "name": "photograph",
+              "type": "file",
+              "required": true,
+              "accepted_formats": [
+                "jpg",
+                "png"
+              ],
+              "max_size_mb": 2
+            },
+            {
+              "name": "address_proof",
+              "type": "file",
+              "required": true,
+              "accepted_formats": [
+                "pdf",
+                "jpg",
+                "png"
+              ],
+              "max_size_mb": 5
+            }
+          ]
+        },
+        {
+          "id": "verification",
+          "order": 4,
+          "step_key": "step_4_verification",
+          "icon": "\u2705",
+          "type": "verification",
+          "final_step": true,
+          "fields": [
+            {
+              "name": "declaration",
+              "type": "checkbox",
+              "required": true,
+              "checkbox_text_key": "license_declaration_text"
+            },
+            {
+              "name": "signature",
+              "type": "signature",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    "complaint_submission": {
+      "category": "citizen_services",
+      "name": "Submit Complaint",
+      "description": "Lodge a formal complaint about government services or public infrastructure",
+      "fee_amount": 0,
+      "processing_time_days": 5,
+      "workflow": "complaint_workflow",
+      "multi_step": {
+        "enabled": true,
+        "auto_save": true,
+        "allow_step_navigation": true,
+        "save_progress_key": "complaint_draft"
+      },
+      "steps": [
+        {
+          "id": "complaint_type",
+          "order": 1,
+          "step_key": "step_1_complaint_type",
+          "icon": "\u26a0\ufe0f",
+          "title": "Complaint Category",
+          "description": "Select the type and subtype of your complaint",
+          "fields": [
+            {
+              "name": "complaint_type",
+              "type": "select",
+              "required": true,
+              "label": "Complaint Type",
+              "options": [
+                "service_delivery",
+                "infrastructure",
+                "corruption",
+                "staff_conduct",
+                "environmental",
+                "healthcare",
+                "education",
+                "security",
+                "other"
+              ],
+              "help_text": "Choose the main category of your complaint"
+            },
+            {
+              "name": "complaint_subtype",
+              "type": "select",
+              "required": true,
+              "label": "Complaint Subtype",
+              "conditional_on": "complaint_type",
+              "conditional_options": {
+                "service_delivery": [
+                  "delayed_service",
+                  "poor_quality",
+                  "staff_unavailable",
+                  "missing_documentation"
+                ],
+                "infrastructure": [
+                  "road_damage",
+                  "water_issue",
+                  "electricity_problem",
+                  "waste_management"
+                ],
+                "corruption": [
+                  "bribery_demand",
+                  "unfair_process",
+                  "favoritism",
+                  "misuse_of_power"
+                ],
+                "staff_conduct": [
+                  "rude_behavior",
+                  "discrimination",
+                  "harassment",
+                  "unprofessional"
+                ],
+                "environmental": [
+                  "pollution",
+                  "illegal_dumping",
+                  "deforestation",
+                  "water_contamination"
+                ],
+                "healthcare": [
+                  "poor_service",
+                  "medication_shortage",
+                  "staff_neglect",
+                  "unhygienic_conditions"
+                ],
+                "education": [
+                  "poor_teaching",
+                  "inadequate_facilities",
+                  "staff_absence",
+                  "fee_issue"
+                ],
+                "security": [
+                  "theft",
+                  "assault",
+                  "harassment",
+                  "negligence"
+                ],
+                "other": [
+                  "miscellaneous"
+                ]
+              },
+              "help_text": "Provide more details about your complaint"
+            }
+          ]
+        },
+        {
+          "id": "location_info",
+          "order": 2,
+          "step_key": "step_2_location_info",
+          "icon": "\ud83d\udccd",
+          "title": "Location Details",
+          "description": "Specify where the issue occurred",
+          "fields": [
+            {
+              "name": "landmark",
+              "type": "text",
+              "required": true,
+              "label": "Landmark or Address",
+              "placeholder": "e.g., Near Main Market, Kebele 5 Office, Next to School",
+              "validation": {
+                "min_length": 5,
+                "max_length": 200
+              },
+              "help_text": "Describe the location using nearby landmarks or address"
+            },
+            {
+              "name": "region",
+              "type": "hierarchical_dropdown",
+              "required": true,
+              "label": "Region",
+              "depends_on": null,
+              "source": "regions",
+              "hierarchy_level": 1
+            },
+            {
+              "name": "zone",
+              "type": "hierarchical_dropdown",
+              "required": true,
+              "label": "Zone",
+              "depends_on": "region",
+              "source": "zones",
+              "hierarchy_level": 2
+            },
+            {
+              "name": "woreda",
+              "type": "hierarchical_dropdown",
+              "required": true,
+              "label": "Woreda",
+              "depends_on": "zone",
+              "source": "woredas",
+              "hierarchy_level": 3
+            },
+            {
+              "name": "kebele",
+              "type": "hierarchical_dropdown",
+              "required": false,
+              "label": "Kebele",
+              "depends_on": "woreda",
+              "source": "kebeles",
+              "hierarchy_level": 4
+            }
+          ]
+        },
+        {
+          "id": "complaint_details",
+          "order": 3,
+          "step_key": "step_3_complaint_details",
+          "icon": "\ud83d\udcdd",
+          "title": "Complaint Description",
+          "description": "Provide detailed information about your complaint",
+          "fields": [
+            {
+              "name": "incident_date",
+              "type": "date",
+              "required": true,
+              "label": "Date of Incident",
+              "validation": {
+                "type": "date",
+                "max_future_days": 0,
+                "min_days_ago": 365
+              },
+              "help_text": "When did this issue occur?"
+            },
+            {
+              "name": "description",
+              "type": "textarea",
+              "required": true,
+              "label": "Detailed Description",
+              "placeholder": "Please provide a detailed account of the issue, including what happened, who was involved, and the impact",
+              "rows": 6,
+              "validation": {
+                "min_length": 20,
+                "max_length": 2000
+              },
+              "help_text": "Be as specific as possible to help us investigate"
+            }
+          ]
+        },
+        {
+          "id": "document_upload",
+          "order": 4,
+          "step_key": "step_4_document_upload",
+          "icon": "\ud83d\udcce",
+          "title": "Supporting Documents",
+          "description": "Upload any documents to support your complaint (optional)",
+          "fields": [
+            {
+              "name": "supporting_documents",
+              "type": "file",
+              "required": false,
+              "label": "Supporting Documents",
+              "help_text": "Upload photos, receipts, correspondence, or other relevant documents",
+              "multiple": true,
+              "accepted_formats": [
+                "pdf",
+                "jpg",
+                "png",
+                "jpeg",
+                "doc",
+                "docx",
+                "xls",
+                "xlsx"
+              ],
+              "max_size_mb": 5,
+              "max_files": 5
+            },
+            {
+              "name": "photo_evidence",
+              "type": "file",
+              "required": false,
+              "label": "Photo Evidence",
+              "help_text": "Upload photos showing the issue if available",
+              "multiple": true,
+              "accepted_formats": [
+                "jpg",
+                "png",
+                "jpeg"
+              ],
+              "max_size_mb": 5,
+              "max_files": 3
+            }
+          ]
+        }
+      ],
+      "hierarchical_fields": {
+        "region": {
+          "type": "dropdown",
+          "source": "regions",
+          "depends_on": null
+        },
+        "zone": {
+          "type": "dropdown",
+          "source": "zones",
+          "depends_on": "region"
+        },
+        "woreda": {
+          "type": "dropdown",
+          "source": "woredas",
+          "depends_on": "zone"
+        },
+        "kebele": {
+          "type": "dropdown",
+          "source": "kebeles",
+          "depends_on": "woreda"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "service_level_mapping": {
+    "birth_certificate": {
+      "level": "woreda",
+      "description": "Birth certificates are issued at Woreda level",
+      "responsible_hierarchy": ["woreda", "zone", "region", "country"]
+    },
+    "tenth_grade_certificate": {
+      "level": "zone",
+      "description": "10th grade certificates are issued at Zone education office",
+      "responsible_hierarchy": ["zone", "region", "country"]
+    },
+    "eighth_grade_certificate": {
+      "level": "woreda",
+      "description": "8th grade certificates at Woreda level",
+      "responsible_hierarchy": ["woreda", "zone", "region", "country"]
+    },
+    "passport_renewal": {
+      "level": "country",
+      "description": "Passport renewal only at National level",
+      "responsible_hierarchy": ["country"]
+    },
+    "driver_license_renewal": {
+      "level": "zone",
+      "description": "Driver's license renewal at Zone transport office",
+      "responsible_hierarchy": ["zone", "region", "country"]
+    },
+    "pan_card_reprint": {
+      "level": "country",
+      "description": "PAN card reprint at National level",
+      "responsible_hierarchy": ["country"]
+    },
+    "business_license": {
+      "level": "woreda",
+      "description": "Business license at Woreda trade office",
+      "responsible_hierarchy": ["woreda", "zone", "region", "country"]
+    },
+    "land_registration": {
+      "level": "kebele",
+      "description": "Land registration at Kebele level",
+      "responsible_hierarchy": ["kebele", "woreda", "zone", "region", "country"]
+    },
+    "police_clearance": {
+      "level": "zone",
+      "description": "Police clearance certificate at Zone police station",
+      "responsible_hierarchy": ["zone", "region", "country"]
+    },
+    "complaint_submission": {
+      "level": "kebele",
+      "description": "Complaint submission accessible at all levels",
+      "responsible_hierarchy": ["kebele", "woreda", "zone", "region", "country"]
+    }
+  },
+  
+  "delegation_rules": {
+    "higher_level_can_see_lower": true,
+    "lower_level_cannot_see_higher": true,
+    "same_level_can_see_same_level": true
+  }
+}
