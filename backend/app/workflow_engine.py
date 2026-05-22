@@ -181,8 +181,45 @@ class WorkflowEngine:
         allowed_permissions = state_config.get('allowed_permissions') or []
 
         if allowed_permissions and user_permissions is not None:
+            # User must have at least one of the allowed permissions
+            # If no overlap, return empty list
             if not set(user_permissions) & set(allowed_permissions):
                 return []
+            
+            # Granular permission check for specific actions
+            # Map actions to their required permissions based on action name
+            action_permission_map = {
+                'RESOLVE': 'resolve_complaints',
+                'REASSIGN': 'reassign_complaints',
+                'ASSIGN_TO_LME': 'assign_complaints',
+                'REJECT': 'reject_complaints',
+                'PROCESS': 'verify_applications',
+                'APPROVE': 'verify_applications',
+                'REQUEST_INFO': 'verify_applications',
+                'REQUEST_ADDITIONAL_DOCS': 'verify_documents',
+                'MAKE_PAYMENT': 'process_payments',
+                'GENERATE_CERTIFICATE': 'issue_certificates',
+                'DISPATCH': 'dispatch_certificates',
+                'EMAIL': 'dispatch_certificates',
+                'APPEAL': 'appeal_decision',
+                'RATE': 'rate_service',
+                'REOPEN': 'reopen_complaint',
+                'REQUEST_SITE_VISIT': 'verify_applications',
+            }
+            
+            # Filter actions based on specific permissions
+            filtered_actions = []
+            for action in actions:
+                required_perm = action_permission_map.get(action)
+                if required_perm:
+                    # If action has a specific permission mapping, check if user has it
+                    if required_perm in user_permissions:
+                        filtered_actions.append(action)
+                else:
+                    # If no specific mapping, allow if user has any of the state's allowed permissions
+                    filtered_actions.append(action)
+            
+            return filtered_actions
         elif not allowed_permissions:
             # No permissions defined on this state means no one can act (except super admin above)
             if actions:
