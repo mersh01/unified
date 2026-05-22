@@ -2011,7 +2011,8 @@ async def get_frontend_config(current_user = Depends(AuthHandler.get_current_use
             "type": current_user.get("type", "citizen"),
             "department": department,
             "permissions": permissions,
-            "profile_picture_url": current_user.get("profile_picture_url")
+            "profile_picture_url": current_user.get("profile_picture_url"),
+            "phone_number": current_user.get("phone_number")
         },
         "navigation": {
             "items": []
@@ -2423,6 +2424,33 @@ if MINIO_AVAILABLE:
             minio_client.make_bucket(PROFILE_PICS_BUCKET)
     except Exception as e:
         print(f"MinIO profile-pictures bucket check failed: {e}")
+
+class UpdateProfileRequest(BaseModel):
+    full_name: str = Field(..., min_length=1, max_length=100)
+
+@app.put("/api/users/profile")
+async def update_user_profile(
+    request: UpdateProfileRequest,
+    current_user = Depends(AuthHandler.get_current_user_required)
+):
+    """Update user's profile (name)"""
+    from .supabase_client import supabase
+
+    user_id = current_user.get("user_id")
+    try:
+        supabase.table('users').update({
+            'full_name': request.full_name.strip(),
+            'updated_at': datetime.now().isoformat()
+        }).eq('user_id', user_id).execute()
+    except Exception as e:
+        print(f"Error updating user profile: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update profile.")
+
+    return {
+        "success": True,
+        "full_name": request.full_name.strip(),
+        "message": "Profile updated successfully"
+    }
 
 @app.post("/api/users/profile-picture")
 async def upload_profile_picture(

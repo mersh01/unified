@@ -46,6 +46,8 @@ function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploadStatus, setUploadStatus] = useState(''); // '', 'uploading', 'success', 'error'
+  const [editName, setEditName] = useState('');
+  const [nameUpdateStatus, setNameUpdateStatus] = useState(''); // '', 'saving', 'success', 'error'
 
   useEffect(() => {
     const initApp = async () => {
@@ -227,6 +229,39 @@ function App() {
     }
   };
 
+  const handleNameUpdate = async () => {
+    const trimmed = editName.trim();
+    if (!trimmed) return;
+    
+    setNameUpdateStatus('saving');
+    const token = localStorage.getItem('token');
+
+    try {
+      const response = await fetch(`${API_URL}/api/users/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ full_name: trimmed })
+      });
+
+      if (response.ok) {
+        setNameUpdateStatus('success');
+        await fetchFrontendConfig(token);
+        setTimeout(() => setNameUpdateStatus(''), 2000);
+      } else {
+        const errData = await response.json();
+        alert(`Update failed: ${errData.detail || 'Unknown error'}`);
+        setNameUpdateStatus('error');
+      }
+    } catch (error) {
+      console.error('Error updating name:', error);
+      alert('Network error during update');
+      setNameUpdateStatus('error');
+    }
+  };
+
   if (loading) {
     return <div className="loading">Loading configuration...</div>;
   }
@@ -264,7 +299,7 @@ function App() {
         ></div>
 
         <aside className={`app-sidebar ${isSidebarOpen ? 'open' : ''}`}>
-          <div className="sidebar-user-section" onClick={() => setIsProfileModalOpen(true)}>
+          <div className="sidebar-user-section" onClick={() => { setEditName(frontendConfig?.user?.full_name || frontendConfig?.user?.name || ''); setIsProfileModalOpen(true); }}>
             <div className="sidebar-avatar-container">
               {frontendConfig?.user?.profile_picture_url ? (
                 <img 
@@ -284,7 +319,7 @@ function App() {
                 {frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'User'}
               </div>
               <div className="sidebar-user-role">
-                {frontendConfig?.user?.role || 'citizen'}
+                {frontendConfig?.user?.phone_number || ''}
               </div>
             </div>
           </div>
@@ -362,14 +397,14 @@ function App() {
                   src={`${API_URL}${frontendConfig.user.profile_picture_url}`} 
                   alt="Profile" 
                   className="header-user-avatar"
-                  onClick={() => setIsProfileModalOpen(true)}
-                  title="Update Profile Picture"
+                  onClick={() => { setEditName(frontendConfig?.user?.full_name || frontendConfig?.user?.name || ''); setIsProfileModalOpen(true); }}
+                  title="Update Profile"
                 />
               ) : (
                 <div 
                   className="header-user-avatar" 
                   style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}
-                  onClick={() => setIsProfileModalOpen(true)}
+                  onClick={() => { setEditName(frontendConfig?.user?.full_name || frontendConfig?.user?.name || ''); setIsProfileModalOpen(true); }}
                   title="Update Profile Picture"
                 >
                   {(frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'U').charAt(0).toUpperCase()}
@@ -436,13 +471,13 @@ function App() {
           </div>
         </main>
 
-        {/* Profile Picture Modal */}
+        {/* Profile Modal */}
         <div className={`profile-modal-overlay ${isProfileModalOpen ? 'visible' : ''}`} onClick={(e) => {
           if (e.target.className.includes('profile-modal-overlay')) setIsProfileModalOpen(false);
         }}>
           <div className="profile-modal">
             <div className="profile-modal-header">
-              <div className="profile-modal-title">Profile Picture</div>
+              <div className="profile-modal-title">Edit Profile</div>
               <button className="profile-modal-close" onClick={() => setIsProfileModalOpen(false)}>×</button>
             </div>
             
@@ -456,37 +491,59 @@ function App() {
                   {(frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'U').charAt(0).toUpperCase()}
                 </div>
               )}
-              <div className="profile-modal-name">{frontendConfig?.user?.full_name || frontendConfig?.user?.name}</div>
               <div className="profile-modal-role-badge">{frontendConfig?.user?.role}</div>
             </div>
 
-            {!previewUrl ? (
-              <div className="profile-upload-zone" onClick={() => document.getElementById('profile-upload-input').click()}>
-                <div className="profile-upload-zone-icon">📸</div>
-                <div className="profile-upload-zone-text">Click to browse or drag image here</div>
-                <div className="profile-upload-zone-hint">JPG, PNG or WebP (max. 5MB)</div>
-                <input 
-                  type="file" 
-                  id="profile-upload-input" 
-                  accept="image/jpeg, image/png, image/webp" 
-                  style={{ display: 'none' }} 
-                  onChange={handleFileSelect}
+            <div className="profile-edit-section">
+              <label className="profile-edit-label">Full Name</label>
+              <div className="profile-edit-row">
+                <input
+                  type="text"
+                  className="profile-edit-input"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Enter your name"
                 />
+                <button
+                  className="profile-edit-save-btn"
+                  disabled={!editName.trim() || editName.trim() === (frontendConfig?.user?.full_name || frontendConfig?.user?.name) || nameUpdateStatus === 'saving'}
+                  onClick={handleNameUpdate}
+                >
+                  {nameUpdateStatus === 'saving' ? 'Saving...' : nameUpdateStatus === 'success' ? 'Saved!' : 'Update'}
+                </button>
               </div>
-            ) : (
-              <div className="profile-upload-preview">
-                <img src={previewUrl} alt="Selected" />
-                <div className="profile-upload-preview-info">
-                  <div className="profile-upload-preview-name">{selectedFile?.name}</div>
-                  <div className="profile-upload-preview-size">{(selectedFile?.size / 1024 / 1024).toFixed(2)} MB</div>
+            </div>
+
+            <div className="profile-edit-section">
+              <label className="profile-edit-label">Profile Picture</label>
+              {!previewUrl ? (
+                <div className="profile-upload-zone" onClick={() => document.getElementById('profile-upload-input').click()}>
+                  <div className="profile-upload-zone-icon">📸</div>
+                  <div className="profile-upload-zone-text">Click to browse or drag image here</div>
+                  <div className="profile-upload-zone-hint">JPG, PNG or WebP (max. 5MB)</div>
+                  <input 
+                    type="file" 
+                    id="profile-upload-input" 
+                    accept="image/jpeg, image/png, image/webp" 
+                    style={{ display: 'none' }} 
+                    onChange={handleFileSelect}
+                  />
                 </div>
-                <button className="profile-upload-remove" onClick={() => { setSelectedFile(null); setPreviewUrl(null); }}>Remove</button>
-              </div>
-            )}
+              ) : (
+                <div className="profile-upload-preview">
+                  <img src={previewUrl} alt="Selected" />
+                  <div className="profile-upload-preview-info">
+                    <div className="profile-upload-preview-name">{selectedFile?.name}</div>
+                    <div className="profile-upload-preview-size">{(selectedFile?.size / 1024 / 1024).toFixed(2)} MB</div>
+                  </div>
+                  <button className="profile-upload-remove" onClick={() => { setSelectedFile(null); setPreviewUrl(null); }}>Remove</button>
+                </div>
+              )}
+            </div>
 
             {uploadStatus === 'success' && (
               <div className="profile-upload-success">
-                <span>✅</span> Profile picture updated successfully!
+                Profile picture updated successfully!
               </div>
             )}
 
@@ -495,7 +552,7 @@ function App() {
               disabled={!selectedFile || uploadStatus === 'uploading' || uploadStatus === 'success'}
               onClick={handleProfileUpload}
             >
-              {uploadStatus === 'uploading' ? 'Uploading...' : uploadStatus === 'success' ? 'Done' : 'Save Changes'}
+              {uploadStatus === 'uploading' ? 'Uploading...' : uploadStatus === 'success' ? 'Done' : 'Upload Picture'}
             </button>
           </div>
         </div>
