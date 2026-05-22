@@ -25,8 +25,9 @@ from .config_seed import seed_if_empty, ensure_workflow_roles_exist, ensure_admi
 app = FastAPI(title="Document Management System", version="2.0.0")
 
 # Initialize MinIO client
+minio_endpoint = os.getenv("MINIO_ENDPOINT", "localhost:9000")
 minio_client = Minio(
-    os.getenv("MINIO_ENDPOINT", "localhost:9000"),
+    minio_endpoint,
     access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
     secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
     secure=False  # Set to True for HTTPS
@@ -34,19 +35,25 @@ minio_client = Minio(
 MINIO_BUCKET = os.getenv("MINIO_BUCKET", "documents")
 MINIO_AVAILABLE = False
 
-# Ensure bucket exists
-try:
-    if not minio_client.bucket_exists(MINIO_BUCKET):
-        minio_client.make_bucket(MINIO_BUCKET)
-    MINIO_AVAILABLE = True
-    print("MinIO connected successfully")
-except Exception as e:
-    print(f"MinIO not available, using local filesystem fallback: {e}")
+# Only attempt MinIO connection if endpoint is explicitly configured
+if os.getenv("MINIO_ENDPOINT"):
+    try:
+        if not minio_client.bucket_exists(MINIO_BUCKET):
+            minio_client.make_bucket(MINIO_BUCKET)
+        MINIO_AVAILABLE = True
+        print("MinIO connected successfully")
+    except Exception as e:
+        print(f"MinIO not available, using local filesystem fallback: {e}")
+else:
+    print("MINIO_ENDPOINT not set, using local filesystem for uploads")
 
-# Local filesystem fallback directory
+# Local filesystem fallback directory (use /tmp for serverless environments)
 import tempfile
-LOCAL_UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'uploads', 'profile_pictures')
-os.makedirs(LOCAL_UPLOAD_DIR, exist_ok=True)
+LOCAL_UPLOAD_DIR = os.path.join(tempfile.gettempdir(), 'profile_pictures')
+try:
+    os.makedirs(LOCAL_UPLOAD_DIR, exist_ok=True)
+except Exception as e:
+    print(f"Warning: Could not create local upload dir: {e}")
 
 
 def _roles_list(user: Dict[str, Any]) -> List[str]:
