@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import Login from './components/Login';
 import DynamicDashboard from './components/DynamicDashboard';
 import DynamicForm from './components/DynamicForm';
@@ -29,6 +29,18 @@ function LoginWrapper({ onLogin, onAdminLogin, translations, locale, availableLo
     availableLocales={availableLocales}
     onLocaleChange={handleLocaleChange}
   />;
+}
+
+// Apply wrapper to check for service_id parameter
+function ApplyWrapper({ user }) {
+  const [searchParams] = useSearchParams();
+  const serviceId = searchParams.get('service_id');
+  
+  if (!serviceId) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <MultiStepForm user={user} />;
 }
 
 function App() {
@@ -437,9 +449,9 @@ function App() {
               {/* Dashboard - Main page */}
               <Route path="/" element={<DynamicDashboard config={frontendConfig} user={user} />} />
               
-              {/* Apply - Only for citizens */}
+              {/* Apply - Only for citizens with service_id parameter */}
               {canApply && (
-                <Route path="/apply" element={<MultiStepForm user={user} />} />
+                <Route path="/apply" element={<ApplyWrapper user={user} />} />
               )}
               
               {/* Track - Everyone can track */}

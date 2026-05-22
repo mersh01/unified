@@ -43,9 +43,15 @@ const PERMISSION_GROUPS = {
     { key: 'track_applications', label: 'Track Applications' },
   ]
 };
+
+// Helper to format permission key to label
+const formatPermissionLabel = (key) => {
+  return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
 function RoleManagement() {
   const [roles, setRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [workflowPermissions, setWorkflowPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -82,7 +88,20 @@ function RoleManagement() {
   useEffect(() => {
     fetchRoles();
     fetchDepartments();
+    fetchWorkflowPermissions();
   }, []);
+
+  const fetchWorkflowPermissions = async () => {
+    try {
+      const response = await authFetch(`${API_URL}/api/admin/workflow-permissions`);
+      if (response.ok) {
+        const data = await response.json();
+        setWorkflowPermissions(data.workflow_permissions || []);
+      }
+    } catch (error) {
+      console.error('Error fetching workflow permissions:', error);
+    }
+  };
 
   const fetchRoles = async () => {
     try {
@@ -327,6 +346,55 @@ function RoleManagement() {
                   Role Permissions Checklist
                 </label>
                 
+                {/* Workflow-based Permissions */}
+                {workflowPermissions.length > 0 && (
+                  <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '16px', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontWeight: '600', color: '#166534', fontSize: '14px' }}>
+                        🔄 Workflow-Based Permissions
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '4px' }}>
+                        Auto-synced from workflows
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+                      {workflowPermissions.map(permKey => {
+                        const isChecked = form.permissions.includes(permKey);
+                        return (
+                          <label 
+                            key={permKey} 
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '8px', 
+                              padding: '8px 12px', 
+                              background: isChecked ? '#dcfce7' : '#f8fafc',
+                              border: isChecked ? '1px solid #22c55e' : '1px solid #e2e8f0',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              margin: 0,
+                              fontWeight: isChecked ? '500' : 'normal',
+                              color: isChecked ? '#166534' : 'var(--text-main)'
+                            }}
+                          >
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked} 
+                              onChange={() => handlePermissionToggle(permKey)}
+                              style={{ width: 'auto', cursor: 'pointer' }}
+                            />
+                            <span style={{ fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {formatPermissionLabel(permKey)}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Standalone/System Permissions */}
                 {Object.entries(PERMISSION_GROUPS).map(([groupName, groupItems]) => {
                   const allGroupKeys = groupItems.map(item => item.key);
                   const isAllChecked = allGroupKeys.every(k => form.permissions.includes(k));

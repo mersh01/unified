@@ -22,6 +22,18 @@ const CloseIcon = () => (
   </svg>
 );
 
+const ChevronDownIcon = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
+const ChevronUpIcon = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="18 15 12 9 6 15" />
+  </svg>
+);
+
 // Map notification type → colour token
 const TYPE_COLORS = {
   SUBMISSION:    { bg: '#eff6ff', border: '#bfdbfe', icon: '📋', dot: '#3b82f6' },
@@ -47,6 +59,7 @@ export default function NotificationsDropdown() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading]             = useState(false);
   const [markingAll, setMarkingAll]       = useState(false);
+  const [expandedNotifs, setExpandedNotifs] = useState(new Set());
   const panelRef                          = useRef(null);
   const btnRef                            = useRef(null);
 
@@ -121,6 +134,26 @@ export default function NotificationsDropdown() {
       console.error('Failed to mark all as read:', e);
     } finally {
       setMarkingAll(false);
+    }
+  };
+
+  // ── toggle expand ─────────────────────────────────────────────────────────
+  const toggleExpand = (id) => {
+    setExpandedNotifs(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  // ── track application ─────────────────────────────────────────────────────
+  const trackApplication = (applicationId) => {
+    if (applicationId) {
+      window.location.href = `/track?application_id=${applicationId}`;
     }
   };
 
@@ -288,98 +321,126 @@ export default function NotificationsDropdown() {
             ) : (
               notifications.map((notif) => {
                 const colors = TYPE_COLORS[notif.type] || DEFAULT_COLOR;
+                const isExpanded = expandedNotifs.has(notif.id);
                 return (
                   <div
                     key={notif.id}
                     id={`notification-${notif.id}`}
-                    onClick={() => !notif.is_read && markRead(notif.id)}
                     style={{
                       padding:    '14px 20px',
                       borderBottom: '1px solid #f9fafb',
-                      display:    'flex', gap: '12px', alignItems: 'flex-start',
                       background: notif.is_read ? 'white' : colors.bg,
-                      cursor:     notif.is_read ? 'default' : 'pointer',
                       transition: 'background 0.15s',
                       position:   'relative',
                     }}
-                    onMouseEnter={e => {
-                      if (!notif.is_read) e.currentTarget.style.filter = 'brightness(0.97)';
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.filter = 'none';
-                    }}
                   >
-                    {/* Unread dot */}
-                    {!notif.is_read && (
-                      <span style={{
-                        position: 'absolute', top: '18px', left: '8px',
-                        width: '6px', height: '6px',
-                        borderRadius: '50%', background: colors.dot,
-                      }} />
-                    )}
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                      {/* Unread dot */}
+                      {!notif.is_read && (
+                        <span style={{
+                          position: 'absolute', top: '18px', left: '8px',
+                          width: '6px', height: '6px',
+                          borderRadius: '50%', background: colors.dot,
+                        }} />
+                      )}
 
-                    {/* Icon bubble */}
-                    <div style={{
-                      width: '38px', height: '38px', flexShrink: 0,
-                      borderRadius: '10px',
-                      background: notif.is_read ? '#f3f4f6' : colors.bg,
-                      border: `1px solid ${notif.is_read ? '#e5e7eb' : colors.border}`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '18px',
-                    }}>
-                      {colors.icon}
-                    </div>
+                      {/* Icon bubble */}
+                      <div style={{
+                        width: '38px', height: '38px', flexShrink: 0,
+                        borderRadius: '10px',
+                        background: notif.is_read ? '#f3f4f6' : colors.bg,
+                        border: `1px solid ${notif.is_read ? '#e5e7eb' : colors.border}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '18px',
+                      }}>
+                        {colors.icon}
+                      </div>
 
-                    {/* Text */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        fontWeight: notif.is_read ? '500' : '700',
-                        fontSize: '13px', color: '#111827',
-                        marginBottom: '3px',
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                      }}>
-                        {notif.title}
+                      {/* Text */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontWeight: notif.is_read ? '500' : '700',
+                          fontSize: '13px', color: '#111827',
+                          marginBottom: '3px',
+                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        }}>
+                          {notif.title}
+                        </div>
+                        <div style={{
+                          fontSize: '12px', color: '#6b7280',
+                          lineHeight: '1.5',
+                          display: isExpanded ? 'block' : '-webkit-box',
+                          WebkitLineClamp: isExpanded ? 'unset' : 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: isExpanded ? 'visible' : 'hidden',
+                        }}>
+                          {notif.message}
+                        </div>
+                        <div style={{
+                          fontSize: '11px', color: '#9ca3af',
+                          marginTop: '5px',
+                          display: 'flex', alignItems: 'center', gap: '6px',
+                        }}>
+                          <span>{timeAgo(notif.created_at)}</span>
+                          {!notif.is_read && (
+                            <span style={{
+                              padding: '1px 6px', borderRadius: '4px',
+                              background: colors.dot, color: 'white',
+                              fontSize: '10px', fontWeight: '600',
+                            }}>NEW</span>
+                          )}
+                        </div>
                       </div>
-                      <div style={{
-                        fontSize: '12px', color: '#6b7280',
-                        lineHeight: '1.5',
-                        display: '-webkit-box', WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                      }}>
-                        {notif.message}
-                      </div>
-                      <div style={{
-                        fontSize: '11px', color: '#9ca3af',
-                        marginTop: '5px',
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                      }}>
-                        <span>{timeAgo(notif.created_at)}</span>
+
+                      {/* Actions */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                        {/* Expand/collapse button */}
+                        <button
+                          onClick={() => toggleExpand(notif.id)}
+                          title={isExpanded ? 'Collapse' : 'Expand'}
+                          style={{
+                            background: 'transparent', border: 'none',
+                            cursor: 'pointer', color: '#9ca3af',
+                            padding: '2px', borderRadius: '4px',
+                            display: 'flex', alignItems: 'center',
+                          }}
+                        >
+                          {isExpanded ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}
+                        </button>
+
+                        {/* Track Application button */}
+                        {notif.application_id && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); trackApplication(notif.application_id); }}
+                            style={{
+                              background: '#2563eb', color: 'white',
+                              border: 'none', borderRadius: '6px',
+                              padding: '4px 10px', fontSize: '11px',
+                              fontWeight: '600', cursor: 'pointer',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Track
+                          </button>
+                        )}
+
+                        {/* Mark-read button */}
                         {!notif.is_read && (
-                          <span style={{
-                            padding: '1px 6px', borderRadius: '4px',
-                            background: colors.dot, color: 'white',
-                            fontSize: '10px', fontWeight: '600',
-                          }}>NEW</span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); markRead(notif.id); }}
+                            title="Mark as read"
+                            style={{
+                              background: 'white', border: '1px solid #e5e7eb',
+                              borderRadius: '6px', padding: '4px 8px',
+                              cursor: 'pointer', fontSize: '11px', fontWeight: '600',
+                              color: '#6b7280', whiteSpace: 'nowrap',
+                            }}
+                          >
+                            ✓ Read
+                          </button>
                         )}
                       </div>
                     </div>
-
-                    {/* Mark-read button (visible on hover via CSS-in-JS trick) */}
-                    {!notif.is_read && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); markRead(notif.id); }}
-                        title="Mark as read"
-                        style={{
-                          flexShrink: 0, alignSelf: 'center',
-                          background: 'white', border: '1px solid #e5e7eb',
-                          borderRadius: '6px', padding: '4px 8px',
-                          cursor: 'pointer', fontSize: '11px', fontWeight: '600',
-                          color: '#6b7280', whiteSpace: 'nowrap',
-                        }}
-                      >
-                        ✓ Read
-                      </button>
-                    )}
                   </div>
                 );
               })

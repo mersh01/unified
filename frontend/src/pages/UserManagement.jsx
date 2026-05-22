@@ -29,8 +29,6 @@ function UserManagement({ user }) {
   const [userForm, setUserForm] = useState(initialFormState);
   const [preset, setPreset] = useState('custom');
 
-  const [roleModalUser, setRoleModalUser] = useState(null);
-  const [extraRole, setExtraRole] = useState('');
   const [roles, setRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
   
@@ -462,19 +460,6 @@ function UserManagement({ user }) {
                       >
                         Edit
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setRoleModalUser(u)}
-                        style={{ 
-                          background: 'linear-gradient(135deg, #3b82f6, #2563eb)', 
-                          padding: '6px 14px', 
-                          borderRadius: '6px',
-                          fontSize: '13px',
-                          fontWeight: '500'
-                        }}
-                      >
-                        + Role
-                      </button>
                       <button 
                         onClick={() => deleteUser(u.user_id || u.username, u.full_name || u.name || u.username)} 
                         style={{ 
@@ -758,43 +743,6 @@ function UserManagement({ user }) {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Assign Extra Role Modal */}
-      {roleModalUser && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="card" style={{ maxWidth: '420px', width: '100%', border: '1px solid var(--glass-border)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
-            <h3 style={{ margin: '0 0 8px 0', fontWeight: '700' }}>Assign Role to {roleModalUser.username}</h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px', lineHeight: '1.4' }}>
-              Adds an additional secondary role. The primary role remains unchanged. Permissions combine at next login.
-            </p>
-            <div className="form-group">
-              <label>Role to Assign</label>
-              <select value={extraRole} onChange={(e) => setExtraRole(e.target.value)}>
-                <option value="">Select Role…</option>
-                {roles.map((r) => (
-                  <option key={r.role_id} value={r.role_id}>{r.name} ({r.role_id})</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button 
-                type="button" 
-                onClick={() => { setRoleModalUser(null); setExtraRole(''); }} 
-                style={{ background: '#f1f5f9', color: '#1e293b', border: '1px solid #cbd5e1', padding: '8px 16px', borderRadius: '6px', fontWeight: '600' }}
-              >
-                Cancel
-              </button>
-              <button 
-                type="button" 
-                onClick={assignExtraRole} 
-                style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)', padding: '8px 20px', borderRadius: '6px', fontWeight: '600' }}
-              >
-                Assign
-              </button>
-            </div>
           </div>
         </div>
       )}

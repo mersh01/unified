@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS user_roles (
     user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     role_name TEXT NOT NULL REFERENCES roles(role_name) ON DELETE CASCADE,
     assigned_at TIMESTAMPTZ DEFAULT NOW(),
-    PRIMARY KEY (user_id, role_name)
+    PRIMARY KEY (user_id),
+    CONSTRAINT single_role_per_user UNIQUE (user_id)
 );
 
 ALTER TABLE roles ADD COLUMN IF NOT EXISTS departments JSONB DEFAULT '[]'::jsonb;

@@ -804,7 +804,7 @@ async def get_users_by_role(role_name: str, current_user = Depends(AuthHandler.g
     from .supabase_client import supabase
     
     # We enforce same department if not super_admin or all
-    query = supabase.table("users").select("user_id, username, full_name, department, hierarchy_country, hierarchy_region, hierarchy_zone, hierarchy_woreda, hierarchy_kebele").eq("is_active", True)
+    query = supabase.table("users").select("user_id, username, full_name, department, hierarchy_country, hierarchy_region, hierarchy_zone, hierarchy_woreda, hierarchy_kebele, role").eq("is_active", True)
     
     # Filter by role
     query = query.eq("role", role_name)
@@ -1336,6 +1336,26 @@ async def get_roles(current_user = Depends(AuthHandler.get_current_user_required
         })
 
     return {"roles": sorted(roles, key=lambda x: x.get("priority", 0), reverse=True)}
+
+
+@app.get("/api/admin/workflow-permissions")
+async def get_workflow_permissions(current_user = Depends(AuthHandler.get_current_user_required)):
+    """Get workflow-based permissions for role management"""
+    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin", "system_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    workflow_perms = role_manager.config.get("workflow_permissions", {})
+    
+    # Extract unique permissions from all workflow states
+    unique_permissions = set()
+    for state_config in workflow_perms.values():
+        allowed_perms = state_config.get("allowed_permissions", [])
+        unique_permissions.update(allowed_perms)
+    
+    return {
+        "workflow_permissions": list(unique_permissions),
+        "workflow_states": list(workflow_perms.keys())
+    }
 
 
 @app.get("/api/admin/users/{user_id}/roles")

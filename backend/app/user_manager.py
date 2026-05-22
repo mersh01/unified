@@ -41,7 +41,9 @@ class UserManager:
                         {"user_id": user_id, "role_name": user_data["role"]}
                     ).execute()
                 except Exception as ex:
-                    print(f"user_roles insert: {ex}")
+                    # Ignore duplicate errors - user already has this role
+                    if "duplicate" not in str(ex).lower() and "unique" not in str(ex).lower():
+                        print(f"user_roles insert: {ex}")
             return created
         except Exception as e:
             print(f"Error creating user: {e}")
