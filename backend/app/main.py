@@ -1650,16 +1650,6 @@ async def update_user(
         if not hierarchy_manager.is_in_admin_scope(current_user, new_hierarchy, new_department):
             raise HTTPException(status_code=403, detail="Cannot move user outside of your administrative scope")
 
-        # Handle hierarchy updates
-        if any(key.startswith('hierarchy_') for key in update_data.keys()):
-            hierarchy = {}
-            for key, value in update_data.items():
-                if key.startswith('hierarchy_'):
-                    hierarchy[key.replace('hierarchy_', '')] = value
-            update_data['hierarchy'] = hierarchy
-            # Remove individual hierarchy fields
-            update_data = {k: v for k, v in update_data.items() if not k.startswith('hierarchy_') or k == 'hierarchy'}
-
         updated_user = user_manager.update_user(user_id, update_data)
 
         if not updated_user:

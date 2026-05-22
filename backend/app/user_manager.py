@@ -154,16 +154,6 @@ class UserManager:
             elif 'password' in update_data:
                 del update_data['password']
 
-            # Handle hierarchy updates
-            if 'hierarchy' in update_data:
-                hierarchy = update_data['hierarchy']
-                update_data['hierarchy_country'] = hierarchy.get('country')
-                update_data['hierarchy_region'] = hierarchy.get('region')
-                update_data['hierarchy_zone'] = hierarchy.get('zone')
-                update_data['hierarchy_woreda'] = hierarchy.get('woreda')
-                update_data['hierarchy_kebele'] = hierarchy.get('kebele')
-                del update_data['hierarchy']
-
             update_data['updated_at'] = datetime.now().isoformat()
 
             result = supabase.table('users').update(update_data).eq('user_id', user_id).execute()
