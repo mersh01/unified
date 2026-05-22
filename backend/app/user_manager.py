@@ -158,6 +158,25 @@ class UserManager:
 
             update_data['updated_at'] = datetime.now().isoformat()
 
+            # If role is being updated, also update user_roles table
+            if 'role' in update_data:
+                new_role = update_data['role']
+                # Delete old role from user_roles
+                try:
+                    supabase.table('user_roles').delete().eq('user_id', user_id).execute()
+                except Exception as ex:
+                    print(f"Error deleting old user_roles: {ex}")
+                # Insert new role into user_roles
+                try:
+                    supabase.table('user_roles').insert({
+                        'user_id': user_id,
+                        'role_name': new_role
+                    }).execute()
+                except Exception as ex:
+                    # Ignore duplicate errors
+                    if "duplicate" not in str(ex).lower() and "unique" not in str(ex).lower():
+                        print(f"Error inserting new user_roles: {ex}")
+
             result = supabase.table('users').update(update_data).eq('user_id', user_id).execute()
             return result.data[0] if result.data else None
         except Exception as e:

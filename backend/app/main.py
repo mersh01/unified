@@ -800,14 +800,15 @@ async def get_application_actions(application_id: str, current_user = Depends(Au
 
 @app.get("/api/users/by-role/{role_name}")
 async def get_users_by_role(role_name: str, current_user = Depends(AuthHandler.get_current_user_required)):
-    """Get active users matching a role in the same department and hierarchy"""
+    """Get active users matching a role OR having the same permissions as that role"""
     from .supabase_client import supabase
+    
+    # Get permissions for the target role
+    target_role_config = role_manager.get_role_config(role_name)
+    target_permissions = set(target_role_config.get("permissions", [])) if target_role_config else set()
     
     # We enforce same department if not super_admin or all
     query = supabase.table("users").select("user_id, username, full_name, department, hierarchy_country, hierarchy_region, hierarchy_zone, hierarchy_woreda, hierarchy_kebele, role").eq("is_active", True)
-    
-    # Filter by role
-    query = query.eq("role", role_name)
     
     user_dept = current_user.get("department")
     is_super_admin = "super_admin" in (current_user.get("roles") or [])
@@ -818,11 +819,23 @@ async def get_users_by_role(role_name: str, current_user = Depends(AuthHandler.g
     res = query.execute()
     users = res.data or []
     
-    # Filter by hierarchy level match
+    # Filter users who either have the target role OR have matching permissions
     filtered_users = []
     user_h = current_user.get("hierarchy", {})
     
     for u in users:
+        # Check if user has the target role
+        has_target_role = u.get("role") == role_name
+        
+        # Check if user has matching permissions
+        user_role_config = role_manager.get_role_config(u.get("role"))
+        user_permissions = set(user_role_config.get("permissions", [])) if user_role_config else set()
+        has_matching_permissions = bool(target_permissions & user_permissions) if target_permissions else False
+        
+        # Include user if they have the target role or matching permissions
+        if not (has_target_role or has_matching_permissions):
+            continue
+            
         if is_super_admin:
             filtered_users.append(u)
             continue
