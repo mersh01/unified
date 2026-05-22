@@ -25,20 +25,35 @@ from .config_seed import seed_if_empty, ensure_workflow_roles_exist, ensure_admi
 app = FastAPI(title="Document Management System", version="2.0.0")
 
 # Initialize MinIO client
+minio_endpoint = os.getenv("MINIO_ENDPOINT", "localhost:9001")
 minio_client = Minio(
-    os.getenv("MINIO_ENDPOINT", "localhost:9000"),
+    minio_endpoint,
     access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
     secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
     secure=False  # Set to True for HTTPS
 )
 MINIO_BUCKET = os.getenv("MINIO_BUCKET", "documents")
+MINIO_AVAILABLE = False
 
-# Ensure bucket exists
+# Only attempt MinIO connection if endpoint is explicitly configured
+if os.getenv("MINIO_ENDPOINT"):
+    try:
+        if not minio_client.bucket_exists(MINIO_BUCKET):
+            minio_client.make_bucket(MINIO_BUCKET)
+        MINIO_AVAILABLE = True
+        print("MinIO connected successfully")
+    except Exception as e:
+        print(f"MinIO not available, using local filesystem fallback: {e}")
+else:
+    print("MINIO_ENDPOINT not set, using local filesystem for uploads")
+
+# Local filesystem fallback directory (use /tmp for serverless environments)
+import tempfile
+LOCAL_UPLOAD_DIR = os.path.join(tempfile.gettempdir(), 'profile_pictures')
 try:
-    if not minio_client.bucket_exists(MINIO_BUCKET):
-        minio_client.make_bucket(MINIO_BUCKET)
+    os.makedirs(LOCAL_UPLOAD_DIR, exist_ok=True)
 except Exception as e:
-    print(f"MinIO bucket check failed (is MinIO running?): {e}")
+    print(f"Warning: Could not create local upload dir: {e}")
 
 
 def _roles_list(user: Dict[str, Any]) -> List[str]:
@@ -583,7 +598,7 @@ async def create_application(
                     )
                     
                     # Store URL in dict
-                    file_url = f"http://{os.getenv('MINIO_ENDPOINT', 'localhost:9000')}/{MINIO_BUCKET}/{unique_filename}"
+                    file_url = f"http://{os.getenv('MINIO_ENDPOINT', 'localhost:9001')}/{MINIO_BUCKET}/{unique_filename}"
                     form_data_dict[field_name] = file_url
                     
                 except Exception as e:
@@ -2399,47 +2414,63 @@ async def get_departments(current_user = Depends(AuthHandler.get_current_user_re
         
 # ============ Profile Picture Endpoints ============
 
-import tempfile
-PROFILE_PICS_DIR = os.path.join(tempfile.gettempdir(), 'profile_pictures')
+PROFILE_PICS_BUCKET = os.getenv("MINIO_PROFILE_BUCKET", "profile-pictures")
+
+# Ensure profile pictures bucket exists
+if MINIO_AVAILABLE:
+    try:
+        if not minio_client.bucket_exists(PROFILE_PICS_BUCKET):
+            minio_client.make_bucket(PROFILE_PICS_BUCKET)
+    except Exception as e:
+        print(f"MinIO profile-pictures bucket check failed: {e}")
 
 @app.post("/api/users/profile-picture")
 async def upload_profile_picture(
     file: UploadFile = File(...),
     current_user = Depends(AuthHandler.get_current_user_required)
 ):
-    """Upload or update user's profile picture"""
+    """Upload or update user's profile picture (MinIO with local fallback)"""
     from .supabase_client import supabase
     import io
-    
-    os.makedirs(PROFILE_PICS_DIR, exist_ok=True)
-    
-    # Validate file type
+
     allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
     if file.content_type not in allowed_types:
         raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.")
-    
-    # Read file content
+
     file_content = await file.read()
     file_size = len(file_content)
-    
-    # Limit file size to 5MB
+
     if file_size > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File size must be less than 5MB.")
-    
-    # Generate unique filename
+
     user_id = current_user.get("user_id")
     file_extension = Path(file.filename).suffix if file.filename else '.jpg'
     unique_filename = f"profile_{user_id}_{uuid.uuid4().hex[:8]}{file_extension}"
-    
-    # Save to local filesystem
-    file_path = os.path.join(PROFILE_PICS_DIR, unique_filename)
-    with open(file_path, 'wb') as f:
-        f.write(file_content)
-    
-    # Build the URL path
+
+    if MINIO_AVAILABLE:
+        try:
+            file_stream = io.BytesIO(file_content)
+            minio_client.put_object(
+                PROFILE_PICS_BUCKET,
+                unique_filename,
+                file_stream,
+                file_size,
+                content_type=file.content_type or 'image/jpeg'
+            )
+        except Exception as e:
+            print(f"MinIO upload failed for profile picture: {e}")
+            raise HTTPException(status_code=500, detail="Failed to upload profile picture to storage.")
+    else:
+        try:
+            file_path = os.path.join(LOCAL_UPLOAD_DIR, unique_filename)
+            with open(file_path, 'wb') as f:
+                f.write(file_content)
+        except Exception as e:
+            print(f"Local file save failed for profile picture: {e}")
+            raise HTTPException(status_code=500, detail="Failed to save profile picture.")
+
     profile_picture_url = f"/api/uploads/profile-pictures/{unique_filename}"
-    
-    # Update user record in database
+
     try:
         supabase.table('users').update({
             'profile_picture_url': profile_picture_url,
@@ -2448,7 +2479,7 @@ async def upload_profile_picture(
     except Exception as e:
         print(f"Error updating profile picture URL in database: {e}")
         raise HTTPException(status_code=500, detail="Failed to update profile picture.")
-    
+
     return {
         "success": True,
         "profile_picture_url": profile_picture_url,
@@ -2457,13 +2488,9 @@ async def upload_profile_picture(
 
 @app.get("/api/uploads/profile-pictures/{filename}")
 async def serve_profile_picture(filename: str):
-    """Serve uploaded profile pictures"""
-    file_path = os.path.join(PROFILE_PICS_DIR, filename)
-    
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Profile picture not found")
-    
-    # Determine content type
+    """Serve uploaded profile pictures (MinIO with local fallback)"""
+    import io
+
     extension = Path(filename).suffix.lower()
     content_types = {
         '.jpg': 'image/jpeg',
@@ -2473,11 +2500,25 @@ async def serve_profile_picture(filename: str):
         '.webp': 'image/webp'
     }
     content_type = content_types.get(extension, 'image/jpeg')
-    
-    with open(file_path, 'rb') as f:
-        content = f.read()
-    
-    return Response(content=content, media_type=content_type)
+
+    if MINIO_AVAILABLE:
+        try:
+            response = minio_client.get_object(PROFILE_PICS_BUCKET, filename)
+            content = response.read()
+            response.close()
+            response.release_conn()
+            return Response(content=content, media_type=content_type)
+        except S3Error as e:
+            if e.code == "NoSuchKey":
+                raise HTTPException(status_code=404, detail="Profile picture not found")
+            raise HTTPException(status_code=500, detail="Failed to retrieve profile picture.")
+    else:
+        file_path = os.path.join(LOCAL_UPLOAD_DIR, filename)
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="Profile picture not found")
+        with open(file_path, 'rb') as f:
+            content = f.read()
+        return Response(content=content, media_type=content_type)
 
 
 
