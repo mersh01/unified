@@ -162,7 +162,6 @@ class UserManager:
                 update_data['hierarchy_zone'] = hierarchy.get('zone')
                 update_data['hierarchy_woreda'] = hierarchy.get('woreda')
                 update_data['hierarchy_kebele'] = hierarchy.get('kebele')
-                update_data['hierarchy_level'] = hierarchy.get('level')
                 del update_data['hierarchy']
 
             update_data['updated_at'] = datetime.now().isoformat()

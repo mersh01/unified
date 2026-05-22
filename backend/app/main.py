@@ -25,7 +25,7 @@ from .config_seed import seed_if_empty, ensure_workflow_roles_exist, ensure_admi
 app = FastAPI(title="Document Management System", version="2.0.0")
 
 # Initialize MinIO client
-minio_endpoint = os.getenv("MINIO_ENDPOINT", "localhost:9001")
+minio_endpoint = os.getenv("MINIO_ENDPOINT", "localhost:9000")
 minio_client = Minio(
     minio_endpoint,
     access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
@@ -598,7 +598,7 @@ async def create_application(
                     )
                     
                     # Store URL in dict
-                    file_url = f"http://{os.getenv('MINIO_ENDPOINT', 'localhost:9001')}/{MINIO_BUCKET}/{unique_filename}"
+                    file_url = f"http://{os.getenv('MINIO_ENDPOINT', 'localhost:9000')}/{MINIO_BUCKET}/{unique_filename}"
                     form_data_dict[field_name] = file_url
                     
                 except Exception as e:
@@ -2412,6 +2412,8 @@ async def get_departments(current_user = Depends(AuthHandler.get_current_user_re
         if d == "document_verification":
             label = "Doc Verification"
         result.append({"key": d, "label": label})
+    
+    return {"departments": result}
         
 # ============ Profile Picture Endpoints ============
 
