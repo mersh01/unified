@@ -315,10 +315,10 @@ function Track() {
   // Auto-track if appId or application_id is in URL
   useEffect(() => {
     const appId = searchParams.get('appId') || searchParams.get('application_id');
-    if (appId) {
+    if (appId && applicationId) {
       trackApplication();
     }
-  }, [searchParams]);
+  }, [searchParams, applicationId]);
 
   console.log('Is admin?', isAdmin);
   console.log('Available actions:', availableActions);
