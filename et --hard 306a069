@@ -1,0 +1,25 @@
+[33m6d2883d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{0}: reset: moving to HEAD~1
+[33m306a069[m HEAD@{1}: commit: fix: sidebar user section uses proper CSS classes with clean layout
+[33m6d2883d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{2}: commit: chore: add test_scoped_admins and frontend .gitignore
+[33mc0be5b1[m HEAD@{3}: commit: fix: use temp directory for profile picture uploads to prevent vercel read-only crash
+[33m0230ed4[m HEAD@{4}: commit: feat: implement profile picture upload feature
+[33m38bc732[m HEAD@{5}: commit: fix: enforce that lower-level admins cannot access higher-level users in hierarchy
+[33me390146[m HEAD@{6}: commit: feat: add hierarchical admin access control - scoped user management for regional/departmental admins
+[33med79688[m HEAD@{7}: commit: Fix role caching issue across multiple workers
+[33mda58941[m HEAD@{8}: commit: Remove super admin bypass from workflow engine to respect PBAC
+[33m01bf815[m HEAD@{9}: commit: Migrate access control from Role-Based (RBAC) to Permission-Based (PBAC)
+[33m6332481[m HEAD@{10}: commit: fix: preserve assigned_role and allowed_roles when normalizing states
+[33m0d80968[m HEAD@{11}: commit: style: implement responsive mobile UI (hamburger menu, off-canvas sidebar)
+[33mb0b7a15[m HEAD@{12}: commit: feat: add dynamic cascading hierarchy dropdowns and admin table filters
+[33m715d1c7[m HEAD@{13}: commit: feat: make departments fully dynamic in User and Role management
+[33m8df80eb[m HEAD@{14}: commit: fix: add vercel.json rewrite rules for SPA client-side routing
+[33m7e1e8a5[m HEAD@{15}: commit: fix(backend): fix admin dashboard stats and department 'all' filter
+[33m099d11a[m HEAD@{16}: commit: dashboard overview show 0 value while application exist fix
+[33m0c6c349[m HEAD@{17}: commit: Implement dynamic workflow-based calculation for dashboard stats cards
+[33m6a69ab6[m HEAD@{18}: commit: Add requests library to dependencies to fix Vercel backend build failure
+[33m01ce8d4[m HEAD@{19}: commit: Update frontend API_URL fallback to live backend and allow new Vercel domains in backend CORS
+[33mabee638[m HEAD@{20}: commit: change .env for the frontend
+[33md5b4c94[m HEAD@{21}: commit: Allow Vercel frontend domains in CORS origins
+[33m430b3fb[m HEAD@{22}: commit: Make frontend API_URL dynamic via VITE_API_URL environment variable
+[33m21fa7ab[m HEAD@{23}: Branch: renamed refs/heads/master to refs/heads/main
+[33m21fa7ab[m HEAD@{25}: commit (initial): Initial commit of Unified Document System fullstack
