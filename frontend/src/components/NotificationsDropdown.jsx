@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
@@ -153,8 +154,8 @@ export default function NotificationsDropdown() {
   // ── track application ─────────────────────────────────────────────────────
   const trackApplication = (applicationId) => {
     if (applicationId) {
-      // Use React Router navigate instead of window.location.href for better UX
-      window.location.href = `/track?application_id=${applicationId}`;
+      // Use React Router navigate for client-side navigation
+      navigate(`/track?appId=${applicationId}`);
     }
   };
 
