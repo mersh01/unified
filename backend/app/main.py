@@ -165,12 +165,10 @@ def can_access_application_by_hierarchy(user: Dict[str, Any], application: Dict[
     if user.get('type') == 'user' or user_role == 'citizen':
         return user.get('user_id') == application.get('user_id')
         
-    # Check assignment
+    # Check assignment - if assigned to this user, they can see it
     assigned_to = application.get('assigned_to')
-    if assigned_to and assigned_to != user.get('user_id') and assigned_to != user.get('username'):
-        # If assigned to someone else, allow users with same or higher hierarchy to see it
-        # This allows supervisors and users in the same geographic area to view assigned complaints
-        pass  # Let the hierarchy check below handle visibility
+    if assigned_to and (assigned_to == user.get('user_id') or assigned_to == user.get('username')):
+        return True
             
     # For admin users, check hierarchy
     service_level = application.get('service_level', 'zone')
@@ -184,48 +182,76 @@ def can_access_application_by_hierarchy(user: Dict[str, Any], application: Dict[
     user_woreda = user_hierarchy.get('woreda')
     user_kebele = user_hierarchy.get('kebele')
     
+    # Debug logging
+    print(f"Hierarchy Check - User: {user.get('username')}, Role: {user_role}")
+    print(f"  User hierarchy: region={user_region}, zone={user_zone}, woreda={user_woreda}, kebele={user_kebele}")
+    print(f"  App hierarchy: region={app_region}, zone={app_zone}, woreda={app_woreda}, kebele={app_kebele}")
+    print(f"  Service level: {service_level}")
+    print(f"  Assigned to: {assigned_to}")
+    
     # Check based on service level
     if service_level == 'country':
         # Country level services can be seen by region admins? Only super_admin
-        return user_has_any_role(user, 'super_admin')
+        result = user_has_any_role(user, 'super_admin')
+        print(f"  Country level check: {result}")
+        return result
     
     elif service_level == 'region':
         # Region level: user must be in same region
-        return user_region == app_region or user_has_any_role(user, 'super_admin')
+        result = user_region == app_region or user_has_any_role(user, 'super_admin')
+        print(f"  Region level check: {result}")
+        return result
     
     elif service_level == 'zone':
         # Zone level: user must be in same zone OR higher level (region) with same region
         if user_zone == app_zone:
+            print(f"  Zone level check (same zone): True")
             return True
-        if user_region == app_region and user_role in ['region_admin', 'verification_supervisor']:
+        if user_region == app_region and user_role in ['region_admin', 'verification_supervisor', 'lme', 'LME']:
+            print(f"  Zone level check (region admin): True")
             return True
-        return user_has_any_role(user, 'super_admin')
+        result = user_has_any_role(user, 'super_admin')
+        print(f"  Zone level check (super_admin): {result}")
+        return result
     
     elif service_level == 'woreda':
         # Woreda level: user must be in same woreda, or same zone, or same region
         if user_woreda == app_woreda:
+            print(f"  Woreda level check (same woreda): True")
             return True
         if user_zone == app_zone:
+            print(f"  Woreda level check (same zone): True")
             return True
-        if user_region == app_region and user_role in ['region_admin', 'verification_supervisor']:
+        if user_region == app_region and user_role in ['region_admin', 'verification_supervisor', 'lme', 'LME']:
+            print(f"  Woreda level check (region admin): True")
             return True
-        return user_has_any_role(user, 'super_admin')
+        result = user_has_any_role(user, 'super_admin')
+        print(f"  Woreda level check (super_admin): {result}")
+        return result
     
     elif service_level == 'kebele':
         # Kebele level: user must be in same kebele, or same woreda, or same zone, or same region
         if user_kebele == app_kebele:
+            print(f"  Kebele level check (same kebele): True")
             return True
         if user_woreda == app_woreda:
+            print(f"  Kebele level check (same woreda): True")
             return True
         if user_zone == app_zone:
+            print(f"  Kebele level check (same zone): True")
             return True
         # Users at same region can see kebele-level applications
         if user_region == app_region:
+            print(f"  Kebele level check (same region): True")
             return True
-        return user_has_any_role(user, 'super_admin')
+        result = user_has_any_role(user, 'super_admin')
+        print(f"  Kebele level check (super_admin): {result}")
+        return result
     
     # Default: check based on user's zone vs application's zone
-    return user_zone == app_zone or user_has_any_role(user, 'super_admin')
+    result = user_zone == app_zone or user_has_any_role(user, 'super_admin')
+    print(f"  Default check: {result}")
+    return result
 
 
 def get_user_highest_level(user_hierarchy: Dict[str, Any]) -> str:
