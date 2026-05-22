@@ -326,12 +326,14 @@ export default function NotificationsDropdown() {
                   <div
                     key={notif.id}
                     id={`notification-${notif.id}`}
+                    onClick={() => notif.application_id && trackApplication(notif.application_id)}
                     style={{
                       padding:    '14px 20px',
                       borderBottom: '1px solid #f9fafb',
                       background: notif.is_read ? 'white' : colors.bg,
                       transition: 'background 0.15s',
                       position:   'relative',
+                      cursor: notif.application_id ? 'pointer' : 'default',
                     }}
                   >
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
@@ -419,6 +421,7 @@ export default function NotificationsDropdown() {
                               fontWeight: '600', cursor: 'pointer',
                               whiteSpace: 'nowrap',
                             }}
+                            title="View application details"
                           >
                             Track
                           </button>

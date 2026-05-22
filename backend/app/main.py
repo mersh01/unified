@@ -168,19 +168,9 @@ def can_access_application_by_hierarchy(user: Dict[str, Any], application: Dict[
     # Check assignment
     assigned_to = application.get('assigned_to')
     if assigned_to and assigned_to != user.get('user_id') and assigned_to != user.get('username'):
-        # If assigned to someone else, only super_admin or users of a different role can access it
-        if not user_has_any_role(user, 'super_admin'):
-            service_type = application.get('document_type') or application.get('service_type')
-            if service_type:
-                service_config = config_engine.get_service_config(service_type)
-                workflow_name = service_config.get('workflow', 'standard_document_workflow')
-                workflow_states = workflow_engine.get_workflow(workflow_name).get('states', {})
-                current_state = application.get('current_state', 'SUBMITTED')
-                state_assigned_role = workflow_states.get(current_state, {}).get('assigned_role')
-                
-                # If the user's role is the one meant to handle this state, but it's assigned to someone else, hide it.
-                if state_assigned_role and user_has_any_role(user, state_assigned_role):
-                    return False
+        # If assigned to someone else, allow users with same or higher hierarchy to see it
+        # This allows supervisors and users in the same geographic area to view assigned complaints
+        pass  # Let the hierarchy check below handle visibility
             
     # For admin users, check hierarchy
     service_level = application.get('service_level', 'zone')
@@ -229,6 +219,7 @@ def can_access_application_by_hierarchy(user: Dict[str, Any], application: Dict[
             return True
         if user_zone == app_zone:
             return True
+        # Users at same region can see kebele-level applications
         if user_region == app_region:
             return True
         return user_has_any_role(user, 'super_admin')
