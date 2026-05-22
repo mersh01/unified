@@ -302,6 +302,7 @@ class AuthHandler:
                             "roles": roles,
                             "department": user.get("department"),
                             "name": user.get("full_name"),
+                            "phone_number": user.get("phone_number"),
                             "profile_picture_url": user.get("profile_picture_url"),
                             "hierarchy": {
                                 "country": user.get("hierarchy_country"),
