@@ -153,6 +153,7 @@ export default function NotificationsDropdown() {
   // ── track application ─────────────────────────────────────────────────────
   const trackApplication = (applicationId) => {
     if (applicationId) {
+      // Use React Router navigate instead of window.location.href for better UX
       window.location.href = `/track?application_id=${applicationId}`;
     }
   };
@@ -347,14 +348,19 @@ export default function NotificationsDropdown() {
                       )}
 
                       {/* Icon bubble */}
-                      <div style={{
-                        width: '38px', height: '38px', flexShrink: 0,
-                        borderRadius: '10px',
-                        background: notif.is_read ? '#f3f4f6' : colors.bg,
-                        border: `1px solid ${notif.is_read ? '#e5e7eb' : colors.border}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '18px',
-                      }}>
+                      <div
+                        onClick={(e) => { e.stopPropagation(); if (notif.application_id) trackApplication(notif.application_id); }}
+                        style={{
+                          width: '38px', height: '38px', flexShrink: 0,
+                          borderRadius: '10px',
+                          background: notif.is_read ? '#f3f4f6' : colors.bg,
+                          border: `1px solid ${notif.is_read ? '#e5e7eb' : colors.border}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '18px',
+                          cursor: notif.application_id ? 'pointer' : 'default',
+                        }}
+                        title={notif.application_id ? "View application details" : ""}
+                      >
                         {colors.icon}
                       </div>
 
