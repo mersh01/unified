@@ -323,18 +323,19 @@ export default function NotificationsDropdown() {
               notifications.map((notif) => {
                 const colors = TYPE_COLORS[notif.type] || DEFAULT_COLOR;
                 const isExpanded = expandedNotifs.has(notif.id);
+                const applicationId = notif.related_application_id || notif.application_id;
                 return (
                   <div
                     key={notif.id}
                     id={`notification-${notif.id}`}
-                    onClick={() => notif.application_id && trackApplication(notif.application_id)}
+                    onClick={() => applicationId && trackApplication(applicationId)}
                     style={{
                       padding:    '14px 20px',
                       borderBottom: '1px solid #f9fafb',
                       background: notif.is_read ? 'white' : colors.bg,
                       transition: 'background 0.15s',
                       position:   'relative',
-                      cursor: notif.application_id ? 'pointer' : 'default',
+                      cursor: applicationId ? 'pointer' : 'default',
                     }}
                   >
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
@@ -349,7 +350,7 @@ export default function NotificationsDropdown() {
 
                       {/* Icon bubble */}
                       <div
-                        onClick={(e) => { e.stopPropagation(); if (notif.application_id) trackApplication(notif.application_id); }}
+                        onClick={(e) => { e.stopPropagation(); if (applicationId) trackApplication(applicationId); }}
                         style={{
                           width: '38px', height: '38px', flexShrink: 0,
                           borderRadius: '10px',
@@ -357,9 +358,9 @@ export default function NotificationsDropdown() {
                           border: `1px solid ${notif.is_read ? '#e5e7eb' : colors.border}`,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: '18px',
-                          cursor: notif.application_id ? 'pointer' : 'default',
+                          cursor: applicationId ? 'pointer' : 'default',
                         }}
-                        title={notif.application_id ? "View application details" : ""}
+                        title={applicationId ? "View application details" : ""}
                       >
                         {colors.icon}
                       </div>
@@ -417,9 +418,9 @@ export default function NotificationsDropdown() {
                         </button>
 
                         {/* Track Application button */}
-                        {notif.application_id && (
+                        {applicationId && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); trackApplication(notif.application_id); }}
+                            onClick={(e) => { e.stopPropagation(); trackApplication(applicationId); }}
                             style={{
                               background: '#2563eb', color: 'white',
                               border: 'none', borderRadius: '6px',
