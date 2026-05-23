@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import PageWrapper from '../components/ui/PageWrapper';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
@@ -26,12 +29,6 @@ function UserManagement({ user }) {
     hierarchy_kebele: isSuperAdmin ? '' : (user?.hierarchy_kebele || ''),
   };
 
-  const [userForm, setUserForm] = useState(initialFormState);
-  const [preset, setPreset] = useState('custom');
-
-  const [roles, setRoles] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('');
@@ -48,6 +45,13 @@ function UserManagement({ user }) {
   const [page, setPage] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
   const pageSize = 20;
+
+  const [roles, setRoles] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [preset, setPreset] = useState('custom');
+  const [userForm, setUserForm] = useState(initialFormState);
+  const [roleModalUser, setRoleModalUser] = useState(null);
+  const [extraRole, setExtraRole] = useState('');
 
   const authFetch = async (url, options = {}) => {
     const token = localStorage.getItem('token');
@@ -333,62 +337,37 @@ function UserManagement({ user }) {
   if (loading) return <div className="loading">Loading users...</div>;
 
   return (
-    <div>
-      <div className="card" style={{ border: '1px solid #e5e7eb', boxShadow: 'var(--glass-shadow)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <h2 style={{ margin: 0, color: 'var(--text-main)', fontWeight: 700 }}>User Management</h2>
-            <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)', fontSize: '14px' }}>
-              Create and manage administrative user accounts, roles, departments, and geographic jurisdictions.
-            </p>
+    <PageWrapper
+      title="User Management"
+      subtitle="Create and manage administrative user accounts, roles, departments, and geographic jurisdictions."
+      actions={(
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-2xl bg-slate-50 border border-slate-200 px-3 py-1">
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && fetchUsers(0)}
+              className="bg-transparent outline-none text-sm"
+              style={{ width: 180 }}
+            />
+            <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} className="bg-white text-sm px-2 py-1 rounded">
+              <option value="">All Roles</option>
+              {roles.map(r => <option key={r.role_id} value={r.role_id}>{r.name}</option>)}
+            </select>
+            <select value={filterDept} onChange={(e) => setFilterDept(e.target.value)} className="bg-white text-sm px-2 py-1 rounded">
+              <option value="">All Departments</option>
+              {departments.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
+            </select>
           </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', background: '#f8fafc', padding: '4px', borderRadius: '8px', border: '1px solid #e2e8f0', gap: '8px' }}>
-              <input 
-                type="text"
-                placeholder="Search users..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && fetchUsers(0)}
-                style={{ border: 'none', background: 'transparent', padding: '6px 12px', outline: 'none', fontSize: '13px', width: '150px' }}
-              />
-              <select 
-                value={filterRole} 
-                onChange={(e) => setFilterRole(e.target.value)}
-                style={{ border: 'none', background: '#fff', borderRadius: '4px', padding: '6px', fontSize: '13px', outline: 'none', cursor: 'pointer' }}
-              >
-                <option value="">All Roles</option>
-                {roles.map(r => <option key={r.role_id} value={r.role_id}>{r.name}</option>)}
-              </select>
-              <select 
-                value={filterDept} 
-                onChange={(e) => setFilterDept(e.target.value)}
-                style={{ border: 'none', background: '#fff', borderRadius: '4px', padding: '6px', fontSize: '13px', outline: 'none', cursor: 'pointer' }}
-              >
-                <option value="">All Departments</option>
-                {departments.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
-              </select>
-            </div>
-            <button 
-              onClick={openCreateModal} 
-              style={{ 
-                background: 'linear-gradient(135deg, #10b981, #059669)', 
-                padding: '10px 24px', 
-                borderRadius: '8px', 
-                boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.2)',
-                fontWeight: '600',
-                color: 'white',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              + Add New User
-            </button>
-          </div>
+          <Button onClick={openCreateModal} variant="primary">+ Add New User</Button>
         </div>
-        
-        <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      )}
+    >
+      <>
+      <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
                 <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Username</th>
@@ -412,11 +391,9 @@ function UserManagement({ user }) {
                     {u.email && <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{u.email}</div>}
                   </td>
                   <td style={{ padding: '14px 16px' }}>
-                    <span className="badge badge-blue" style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '12px' }}>
-                      {u.role}
-                    </span>
+                    <Badge variant="primary">{u.role}</Badge>
                     {(u.extra_roles || []).filter(r => r !== u.role).map(r => (
-                      <span key={r} className="badge" style={{ background: '#f1f5f9', color: '#475569', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', marginLeft: '4px' }}>
+                      <span key={r} style={{ background: '#f1f5f9', color: '#475569', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', marginLeft: '4px' }}>
                         +{r}
                       </span>
                     ))}
@@ -476,7 +453,7 @@ function UserManagement({ user }) {
                     </div>
                   </td>
                 </tr>
-              ))}
+                  ))}
             </tbody>
           </table>
         </div>
@@ -503,7 +480,7 @@ function UserManagement({ user }) {
             </button>
           </div>
         </div>
-      </div>
+      </>
 
       {/* Add / Edit User Modal */}
       {showModal && (
@@ -746,7 +723,7 @@ function UserManagement({ user }) {
           </div>
         </div>
       )}
-    </div>
+    </PageWrapper>
   );
 }
 

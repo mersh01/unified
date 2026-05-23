@@ -95,7 +95,10 @@ function MultiStepForm({ user }) {
       if (config.multi_step && config.steps) {
         config.steps.forEach(step => {
           step.fields?.forEach(field => {
-            initialData[field] = '';
+            const fieldName = typeof field === 'string' ? field : field?.name;
+            if (fieldName) {
+              initialData[fieldName] = typeof field === 'object' && field?.default_value ? field.default_value : '';
+            }
           });
         });
       } else {
@@ -280,8 +283,58 @@ let visibleFields = (step.fields || []).map(f => typeof f === 'string' ? f : f.n
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleFileUpload = (field, file) => {
-    setUploadedFiles(prev => ({ ...prev, [field]: file }));
+  const getAcceptString = (fieldConfig) => {
+    if (!fieldConfig) return '*/*';
+    if (fieldConfig.accept) return fieldConfig.accept;
+    if (fieldConfig.accepted_formats?.length) {
+      return fieldConfig.accepted_formats
+        .map(format => (format.startsWith('.') ? format : `.${format}`))
+        .join(',');
+    }
+    if (fieldConfig.type === 'image') return 'image/*';
+    return '*/*';
+  };
+
+  const formatFilePreview = (file) => {
+    if (!file) return null;
+    const isImage = file.type?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
+    const fileSize = file.size ? ` (${(file.size / 1024).toFixed(1)} KB)` : '';
+
+    return (
+      <div className="uploaded-file-preview" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+        {isImage ? (
+          <img
+            src={URL.createObjectURL(file)}
+            alt={file.name}
+            style={{ width: '100px', maxHeight: '90px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #d1d5db' }}
+          />
+        ) : (
+          <div style={{ width: '100px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: '#f3f4f6', color: '#4b5563', fontSize: '12px', border: '1px solid #d1d5db', padding: '8px', textAlign: 'center' }}>
+            {file.name.split('.').pop()?.toUpperCase() || 'FILE'}
+          </div>
+        )}
+        <div style={{ fontSize: '13px', color: '#374151' }}>
+          <div style={{ fontWeight: 600 }}>{file.name}</div>
+          {fileSize && <div style={{ color: '#6b7280', marginTop: '4px' }}>{fileSize}</div>}
+        </div>
+      </div>
+    );
+  };
+
+  const handleFileUpload = (field, files, allowMultiple = false) => {
+    const fileList = files ? Array.from(files) : [];
+    if (fileList.length === 0) {
+      setUploadedFiles(prev => ({ ...prev, [field]: allowMultiple ? [] : null }));
+      setFormData(prev => ({ ...prev, [field]: '' }));
+      return;
+    }
+
+    const uploadedValue = allowMultiple ? fileList : fileList[0];
+    setUploadedFiles(prev => ({ ...prev, [field]: uploadedValue }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: allowMultiple ? fileList.map(file => file.name) : fileList[0].name
+    }));
   };
 
   const nextStep = () => {
@@ -460,20 +513,79 @@ const renderField = (field, step) => {
   }
 
   if (fieldType === 'file') {
+    const acceptString = getAcceptString(fieldConfig);
+    const allowMultiple = fieldConfig.multiple === true;
+    const selectedFiles = uploadedFiles[actualFieldName];
+
     return (
       <div key={actualFieldName} className="form-group">
         <label>{label} {isRequired && '*'}</label>
         <input
           type="file"
-          onChange={(e) => handleFileUpload(actualFieldName, e.target.files[0])}
+          onChange={(e) => handleFileUpload(actualFieldName, e.target.files, allowMultiple)}
           required={isRequired}
-          accept={fieldConfig.accept || '*'}
+          accept={acceptString}
+          multiple={allowMultiple}
         />
-        {uploadedFiles[actualFieldName] && (
-          <div className="file-info">
-            <small>Selected: {uploadedFiles[actualFieldName].name}</small>
+        {selectedFiles && (
+          <div className="file-preview" style={{ marginTop: '10px' }}>
+            {Array.isArray(selectedFiles)
+              ? selectedFiles.map((file, index) => (
+                  <div key={`${file.name}-${index}`}>{formatFilePreview(file)}</div>
+                ))
+              : formatFilePreview(selectedFiles)}
           </div>
         )}
+        {fieldConfig.max_size_mb && (
+          <small style={{ display: 'block', marginTop: '8px', color: '#6b7280' }}>
+            Max file size: {fieldConfig.max_size_mb} MB
+          </small>
+        )}
+        {hasError && <span className="error-message">{hasError}</span>}
+      </div>
+    );
+  }
+
+  if (fieldType === 'map' || fieldConfig.component === 'map' || fieldConfig.widget === 'map') {
+    const mapValue = value || fieldConfig.default_value || '9.03,38.74';
+    const coordMatch = mapValue.match(/(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/);
+    const defaultLat = 9.03;
+    const defaultLng = 38.74;
+    const lat = coordMatch ? parseFloat(coordMatch[1]) : defaultLat;
+    const lng = coordMatch ? parseFloat(coordMatch[2]) : defaultLng;
+    const bbox = `${lng - 0.02}%2C${lat - 0.02}%2C${lng + 0.02}%2C${lat + 0.02}`;
+    const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
+
+    return (
+      <div key={actualFieldName} className="form-group">
+        <label>{label} {isRequired && '*'}</label>
+        <p style={{ margin: '8px 0 12px', color: '#4b5563' }}>{fieldConfig.help_text || 'Choose a location on the map or enter coordinates.'}</p>
+        <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid #cbd5e1', marginBottom: '14px', minHeight: '250px' }}>
+          <iframe
+            title={`${label} map`}
+            src={mapSrc}
+            style={{ width: '100%', minHeight: '250px', border: 0 }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <input
+            type="text"
+            value={mapValue}
+            onChange={(e) => handleChange(actualFieldName, e.target.value)}
+            placeholder={fieldConfig.placeholder || '9.03, 38.74'}
+            required={isRequired}
+            className={hasError ? 'error' : ''}
+            style={{ width: '100%', borderRadius: '10px', border: '1px solid #d1d5db', padding: '12px' }}
+          />
+          <button
+            type="button"
+            onClick={() => handleChange(actualFieldName, '9.03,38.74')}
+            style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', width: 'max-content' }}
+          >
+            Use Addis Ababa
+          </button>
+        </div>
         {hasError && <span className="error-message">{hasError}</span>}
       </div>
     );

@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Card from './ui/Card';
+import Button from './ui/Button';
+import Input from './ui/Input';
+import Select from './ui/Select';
+import Badge from './ui/Badge';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
@@ -39,19 +44,14 @@ function PaginatedApplicationsList({ applications, section }) {
       <h3>{section.title}</h3>
       
       {applications.length > 0 && (
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-          <input 
-            type="text" 
-            placeholder="Search by ID, Applicant or Service..." 
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
+          <Input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', flex: 1, minWidth: '200px' }}
+            placeholder="Search by ID, Applicant or Service..."
+            className="min-w-[240px] flex-1"
           />
-          <select 
-            value={statusFilter} 
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-          >
+          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="min-w-[200px]">
             <option value="">All Statuses</option>
             <option value="SUBMITTED">Submitted</option>
             <option value="VERIFICATION">Under Verification</option>
@@ -61,53 +61,57 @@ function PaginatedApplicationsList({ applications, section }) {
             <option value="REJECTED">Rejected</option>
             <option value="ASSIGNED">Assigned</option>
             <option value="RESOLVED">Resolved</option>
-          </select>
+          </Select>
         </div>
       )}
 
       {filteredApps.length === 0 ? (
-        <p>{applications.length === 0 ? "No applications found." : "No applications match your search."}</p>
+        <p className="text-sm text-slate-600">{applications.length === 0 ? 'No applications found.' : 'No applications match your search.'}</p>
       ) : (
         currentApps.map(app => (
-          <div key={app.application_id} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '15px', marginBottom: '15px' }}>
-            <p><strong>ID:</strong> {app.application_id}</p>
-            <p><strong>Service:</strong> {app.service_type?.replace(/_/g, ' ').toUpperCase()}</p>
-            <p><strong>Applicant:</strong> {app.user_name}</p>
-            <p><strong>Status:</strong> {app.current_state}</p>
-            <p><strong>Submitted:</strong> {new Date(app.created_at).toLocaleDateString()}</p>
-            <Link to={`/track?appId=${app.application_id}`}>
-              <button style={{ marginTop: '10px' }}>View Details →</button>
-            </Link>
-          </div>
+          <Card key={app.application_id} className="mb-4">
+            <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-start">
+              <div className="space-y-2 text-sm text-slate-700">
+                <p><span className="font-semibold text-slate-900">ID:</span> {app.application_id}</p>
+                <p><span className="font-semibold text-slate-900">Service:</span> {app.service_type?.replace(/_/g, ' ').toUpperCase()}</p>
+                <p><span className="font-semibold text-slate-900">Applicant:</span> {app.user_name}</p>
+                <p><span className="font-semibold text-slate-900">Submitted:</span> {new Date(app.created_at).toLocaleDateString()}</p>
+              </div>
+              <div className="flex flex-col items-start gap-3 sm:items-end">
+                <Badge variant="info">{app.current_state}</Badge>
+                <Link to={`/track?appId=${app.application_id}`}>
+                  <Button variant="outline">View Details →</Button>
+                </Link>
+              </div>
+            </div>
+          </Card>
         ))
       )}
 
       {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '20px' }}>
-          <button 
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
+        <div className="flex flex-wrap justify-center items-center gap-3 mt-5">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
-            style={{ padding: '6px 12px', background: currentPage === 1 ? '#e5e7eb' : '#2563eb', color: currentPage === 1 ? '#9ca3af' : 'white', border: 'none', borderRadius: '4px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
           >
             Previous
-          </button>
-          <span style={{ fontSize: '14px' }}>
-            Page {currentPage} of {totalPages}
-          </span>
-          <button 
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
+          </Button>
+          <span className="text-sm text-slate-600">Page {currentPage} of {totalPages}</span>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
-            style={{ padding: '6px 12px', background: currentPage === totalPages ? '#e5e7eb' : '#2563eb', color: currentPage === totalPages ? '#9ca3af' : 'white', border: 'none', borderRadius: '4px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
           >
             Next
-          </button>
+          </Button>
         </div>
       )}
 
       {section.show_view_all && applications.length > itemsPerPage && (
-        <div style={{ textAlign: 'center', marginTop: '15px' }}>
+        <div className="text-center mt-5">
           <Link to={section.view_all_link}>
-            <button style={{ background: '#6b7280' }}>View All {applications.length} Applications</button>
+            <Button variant="secondary">View All {applications.length} Applications</Button>
           </Link>
         </div>
       )}
@@ -221,82 +225,80 @@ function DynamicDashboard({ config, user }) {
     const data = sectionData[section.id];
     
     switch (section.type) {
-      case 'stats_cards':
+      case 'stats_cards': {
         const stats = data || {};
+        // Backend returns `completed` which currently includes rejected; compute successful completed separately
+        const rejectedCount = stats.rejected || 0;
+        const completedOnly = Math.max(0, (stats.completed || 0) - rejectedCount);
         return (
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '24px' }}>
-            <div className="card" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#2563eb' }}>{stats.total || 0}</div>
-              <div>Total Applications</div>
-            </div>
-            <div className="card" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#f59e0b' }}>{stats.pending || 0}</div>
-              <div>In Progress</div>
-            </div>
-            <div className="card" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#22c55e' }}>{stats.completed || 0}</div>
-              <div>Completed</div>
-            </div>
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-4 mb-6">
+            <Card className="text-center">
+              <div className="text-3xl font-bold text-govblue-700">{stats.total || 0}</div>
+              <div className="text-slate-600 mt-2">Total Applications</div>
+            </Card>
+            <Card className="text-center">
+              <div className="text-3xl font-bold text-amber-600">{stats.pending || 0}</div>
+              <div className="text-slate-600 mt-2">In Progress</div>
+            </Card>
+            <Card className="text-center">
+              <div className="text-3xl font-bold text-emerald-600">{completedOnly}</div>
+              <div className="text-slate-600 mt-2">Completed</div>
+            </Card>
+            <Card className="text-center">
+              <div className="text-3xl font-bold text-red-600">{rejectedCount}</div>
+              <div className="text-slate-600 mt-2">Rejected</div>
+            </Card>
           </div>
         );
+      }
 
       case 'quick_actions':
-        return (
-          <div className="card">
-            <h3>{section.title}</h3>
-            <div style={{ display: 'flex', gap: '15px', marginTop: '15px', flexWrap: 'wrap' }}>
-              {section.actions?.map(action => (
-                <Link key={action.link} to={action.link}>
-                  <button>{action.icon} {action.label}</button>
-                </Link>
-              ))}
-            </div>
-          </div>
-        );
+        // Quick actions intentionally hidden in dashboard per design request
+        return null;
 
       case 'applications_list':
         const applications = Array.isArray(data) ? data : data?.applications || [];
         return <PaginatedApplicationsList key={section.id} applications={applications} section={section} />;
 
-      case 'users_table':
+      case 'users_table': {
         const users = data || [];
         return (
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <Card>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
               <h3>{section.title}</h3>
-              <button onClick={() => setShowUserModal(true)} style={{ background: '#22c55e', padding: '10px 20px' }}>
+              <Button onClick={() => setShowUserModal(true)} variant="secondary">
                 + Add User
-              </button>
+              </Button>
             </div>
             {users.length === 0 ? (
               <p>No users found.</p>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: '#f3f4f6', textAlign: 'left' }}>
-                      <th style={{ padding: '12px' }}>Username</th>
-                      <th style={{ padding: '12px' }}>Name</th>
-                      <th style={{ padding: '12px' }}>Role</th>
-                      <th style={{ padding: '12px' }}>Department</th>
-                      <th style={{ padding: '12px' }}>Actions</th>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-separate border-spacing-0">
+                  <thead className="bg-slate-100 text-slate-700 text-sm uppercase tracking-wide">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Username</th>
+                      <th className="px-4 py-3 text-left">Name</th>
+                      <th className="px-4 py-3 text-left">Role</th>
+                      <th className="px-4 py-3 text-left">Department</th>
+                      <th className="px-4 py-3 text-left">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {users.map(u => (
-                      <tr key={u.username} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '12px' }}><code>{u.username}</code></td>
-                        <td style={{ padding: '12px' }}>{u.name}</td>
-                        <td style={{ padding: '12px' }}>{u.role}</td>
-                        <td style={{ padding: '12px' }}>{u.department}</td>
-                        <td style={{ padding: '12px' }}>
-                          <button 
-                            onClick={() => deleteUser(u.username)} 
-                            style={{ background: '#dc2626', padding: '6px 12px' }} 
+                      <tr key={u.username} className="border-b border-slate-200 last:border-0">
+                        <td className="px-4 py-3"><code>{u.username}</code></td>
+                        <td className="px-4 py-3">{u.name}</td>
+                        <td className="px-4 py-3">{u.role}</td>
+                        <td className="px-4 py-3">{u.department}</td>
+                        <td className="px-4 py-3">
+                          <Button
+                            variant="danger"
+                            onClick={() => deleteUser(u.username)}
                             disabled={u.username === user?.username}
                           >
                             Delete
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     ))}
@@ -304,37 +306,36 @@ function DynamicDashboard({ config, user }) {
                 </table>
               </div>
             )}
-          </div>
+          </Card>
         );
+      }
 
-      case 'roles_table':
+      case 'roles_table': {
         const rolesList = data || [];
         return (
-          <div className="card">
+          <Card>
             <h3>{section.title}</h3>
             {rolesList.length === 0 ? (
               <p>No roles found.</p>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: '#f3f4f6', textAlign: 'left' }}>
-                      <th style={{ padding: '12px' }}>Role ID</th>
-                      <th style={{ padding: '12px' }}>Name</th>
-                      <th style={{ padding: '12px' }}>Description</th>
-                      <th style={{ padding: '12px' }}>Permissions</th>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-separate border-spacing-0">
+                  <thead className="bg-slate-100 text-slate-700 text-sm uppercase tracking-wide">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Role ID</th>
+                      <th className="px-4 py-3 text-left">Name</th>
+                      <th className="px-4 py-3 text-left">Description</th>
+                      <th className="px-4 py-3 text-left">Permissions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rolesList.map(r => (
-                      <tr key={r.role_id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '12px' }}><code>{r.role_id}</code></td>
-                        <td style={{ padding: '12px' }}>{r.name}</td>
-                        <td style={{ padding: '12px' }}>{r.description}</td>
-                        <td style={{ padding: '12px' }}>
-                          <span style={{ background: '#e5e7eb', padding: '2px 8px', borderRadius: '20px', fontSize: '12px' }}>
-                            {r.permissions?.length || 0} permissions
-                          </span>
+                      <tr key={r.role_id} className="border-b border-slate-200 last:border-0">
+                        <td className="px-4 py-3"><code>{r.role_id}</code></td>
+                        <td className="px-4 py-3">{r.name}</td>
+                        <td className="px-4 py-3">{r.description}</td>
+                        <td className="px-4 py-3">
+                          <Badge variant="muted">{r.permissions?.length || 0} permissions</Badge>
                         </td>
                       </tr>
                     ))}
@@ -342,8 +343,9 @@ function DynamicDashboard({ config, user }) {
                 </table>
               </div>
             )}
-          </div>
+          </Card>
         );
+      }
 
       default:
         return null;
@@ -353,57 +355,79 @@ function DynamicDashboard({ config, user }) {
   if (loading) return <div className="loading">Loading dashboard...</div>;
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Admin Info Card - Only for admins */}
       {config.dashboard.type === 'admin' && (
-        <div className="card" style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)', color: 'white' }}>
+        <Card className="bg-gradient-to-br from-slate-900 via-slate-800 to-govblue-700 text-white">
           <h2>Admin Dashboard</h2>
-          <p>Role: {config.user.role} | Department: {config.user.department || 'All'}</p>
+          <p className="text-sm text-slate-100">Role: {config.user.role} | Department: {config.user.department || 'All'}</p>
           {config.user.permissions?.length > 0 && (
-            <div style={{ fontSize: '12px', marginTop: '10px' }}>
-              <strong>Permissions:</strong> {config.user.permissions.slice(0, 6).join(', ')}...
+            <div className="text-xs text-slate-200 mt-3">
+              <span className="font-semibold">Permissions:</span> {config.user.permissions.slice(0, 6).join(', ')}...
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* Render all sections dynamically from config */}
       {config.dashboard?.sections?.map(section => (
-        <div key={section.id}>
-          {renderSection(section)}
-        </div>
+        <div key={section.id}>{renderSection(section)}</div>
       ))}
 
       {/* User Creation Modal */}
       {showUserModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="card" style={{ maxWidth: '500px', width: '100%' }}>
-            <h3>Create New User</h3>
-            <div className="form-group">
-              <label>Username</label>
-              <input type="text" value={userForm.username} onChange={(e) => setUserForm({...userForm, username: e.target.value})} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+          <Card className="w-full max-w-lg">
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <h3>Create New User</h3>
+              <Button variant="ghost" onClick={() => setShowUserModal(false)}>
+                Close
+              </Button>
             </div>
-            <div className="form-group">
-              <label>Name</label>
-              <input type="text" value={userForm.name} onChange={(e) => setUserForm({...userForm, name: e.target.value})} />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Username</label>
+                <Input
+                  type="text"
+                  value={userForm.username}
+                  onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Name</label>
+                <Input
+                  type="text"
+                  value={userForm.name}
+                  onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Password</label>
+                <Input
+                  type="password"
+                  value={userForm.password}
+                  onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Role</label>
+                <Select
+                  value={userForm.role}
+                  onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                >
+                  {roles.map(r => (
+                    <option key={r.role_id} value={r.role_id}>{r.name}</option>
+                  ))}
+                </Select>
+              </div>
             </div>
-            <div className="form-group">
-              <label>Password</label>
-              <input type="password" value={userForm.password} onChange={(e) => setUserForm({...userForm, password: e.target.value})} />
+            <div className="mt-6 flex flex-wrap gap-3 justify-end">
+              <Button variant="secondary" onClick={() => setShowUserModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={createUser}>Create</Button>
             </div>
-            <div className="form-group">
-              <label>Role</label>
-              <select value={userForm.role} onChange={(e) => setUserForm({...userForm, role: e.target.value})}>
-                {roles.map(r => (
-                  <option key={r.role_id} value={r.role_id}>{r.name}</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button onClick={() => setShowUserModal(false)} style={{ background: '#6b7280' }}>Cancel</button>
-              <button onClick={createUser} style={{ background: '#2563eb' }}>Create</button>
-            </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>

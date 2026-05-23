@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import PageWrapper from '../components/ui/PageWrapper';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import Select from '../components/ui/Select';
+import Badge from '../components/ui/Badge';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
@@ -247,56 +252,29 @@ function RoleManagement() {
   });
 
   return (
-    <div>
-      <div className="card" style={{ border: '1px solid #e5e7eb', boxShadow: 'var(--glass-shadow)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <div>
-            <h2 style={{ margin: 0, color: 'var(--text-main)', fontWeight: 700 }}>Role Management</h2>
-            <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)', fontSize: '14px' }}>
-              Define roles, configure functional scopes, and manage fine-grained workflow permissions checklist.
-            </p>
+    <PageWrapper
+      title="Role Management"
+      subtitle="Define roles, configure functional scopes, and manage fine-grained workflow permissions checklist."
+      actions={(
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-2xl bg-slate-50 border border-slate-200 px-3 py-1">
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search roles..."
+              className="bg-transparent border-none px-0 py-0 text-sm text-slate-900 focus:ring-0"
+            />
+            <Select value={filterDept} onChange={(e) => setFilterDept(e.target.value)} className="bg-white text-sm">
+              <option value="">All Departments</option>
+              {departments.map(d => <option key={d.key} value={d.key}>{d.label}</option>) }
+            </Select>
           </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', background: '#f8fafc', padding: '4px', borderRadius: '8px', border: '1px solid #e2e8f0', gap: '8px' }}>
-              <input 
-                type="text"
-                placeholder="Search roles..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ border: 'none', background: 'transparent', padding: '6px 12px', outline: 'none', fontSize: '13px', width: '150px' }}
-              />
-              <select 
-                value={filterDept} 
-                onChange={(e) => setFilterDept(e.target.value)}
-                style={{ border: 'none', background: '#fff', borderRadius: '4px', padding: '6px', fontSize: '13px', outline: 'none', cursor: 'pointer' }}
-              >
-                <option value="">All Departments</option>
-                {departments.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
-              </select>
-            </div>
-            <button 
-              type="button" 
-              onClick={() => {
-                if (showForm) {
-                  setShowForm(false);
-                } else {
-                  openCreateForm();
-                }
-              }} 
-              style={{ 
-                background: showForm ? '#64748b' : 'linear-gradient(135deg, #2563eb, #1d4ed8)', 
-                padding: '10px 24px', 
-                borderRadius: '8px',
-                fontWeight: '600',
-                color: 'white',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              {showForm ? 'Cancel' : '+ New Role'}
-            </button>
-          </div>
+          <Button onClick={() => { if (showForm) setShowForm(false); else openCreateForm(); }} variant={showForm ? 'secondary' : 'primary'}>
+            {showForm ? 'Cancel' : '+ New Role'}
+          </Button>
         </div>
+      )}
+    >
 
         {showForm && (
           <div style={{ marginBottom: '32px', padding: '24px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
@@ -308,12 +286,12 @@ function RoleManagement() {
               <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label>Role Identifier (Slug)</label>
-                  <input 
-                    value={form.role_name} 
-                    onChange={(e) => setForm({ ...form, role_name: e.target.value })} 
+                  <Input
+                    value={form.role_name}
+                    onChange={(e) => setForm({ ...form, role_name: e.target.value })}
                     disabled={isEditing}
-                    style={{ background: isEditing ? '#e2e8f0' : '#fff', cursor: isEditing ? 'not-allowed' : 'text' }}
-                    placeholder="e.g. regional_auditor" 
+                    className={isEditing ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}
+                    placeholder="e.g. regional_auditor"
                     required
                   />
                   <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
@@ -322,9 +300,9 @@ function RoleManagement() {
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label>Display Name</label>
-                  <input 
-                    value={form.display_name} 
-                    onChange={(e) => setForm({ ...form, display_name: e.target.value })} 
+                  <Input
+                    value={form.display_name}
+                    onChange={(e) => setForm({ ...form, display_name: e.target.value })}
                     placeholder="e.g. Regional Auditor"
                     required
                   />
@@ -333,9 +311,9 @@ function RoleManagement() {
 
               <div className="form-group">
                 <label>Description</label>
-                <input 
-                  value={form.description} 
-                  onChange={(e) => setForm({ ...form, description: e.target.value })} 
+                <Input
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="e.g. Audits incoming regional level applications..."
                 />
               </div>
@@ -505,11 +483,10 @@ function RoleManagement() {
               <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px', alignItems: 'center' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label>Role Priority Index (0 = lowest)</label>
-                  <input 
-                    type="number" 
-                    value={form.priority} 
-                    onChange={(e) => setForm({ ...form, priority: e.target.value })} 
-                    style={{ padding: '10px' }}
+                  <Input
+                    type="number"
+                    value={form.priority}
+                    onChange={(e) => setForm({ ...form, priority: e.target.value })}
                     required
                   />
                   <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
@@ -533,19 +510,12 @@ function RoleManagement() {
               </div>
 
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
-                <button 
-                  type="button" 
-                  onClick={() => setShowForm(false)} 
-                  style={{ background: '#f1f5f9', color: '#1e293b', border: '1px solid #cbd5e1', padding: '10px 24px', borderRadius: '8px', fontWeight: '600' }}
-                >
+                <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>
                   Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  style={{ background: 'linear-gradient(135deg, #16a34a, #15803d)', padding: '10px 32px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 6px -1px rgba(22, 163, 74, 0.2)' }}
-                >
+                </Button>
+                <Button variant="success" type="submit">
                   Save Role
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -587,34 +557,17 @@ function RoleManagement() {
                     )}
                   </td>
                   <td style={{ padding: '14px 16px' }}>
-                    <span className="badge badge-green" style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '12px' }}>
-                      {r.permissions?.length || 0} permissions
-                    </span>
+                    <Badge variant="info">{r.permissions?.length || 0} permissions</Badge>
                   </td>
                   <td style={{ padding: '14px 16px' }}>
-                    <button
-                      type="button"
-                      onClick={() => openEditForm(r)}
-                      style={{ 
-                        background: '#f1f5f9', 
-                        color: '#1e293b', 
-                        padding: '6px 14px', 
-                        borderRadius: '6px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '13px',
-                        fontWeight: '500'
-                      }}
-                    >
-                      Edit
-                    </button>
+                    <Button variant="secondary" onClick={() => openEditForm(r)}>Edit</Button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+    </PageWrapper>
   );
 }
 

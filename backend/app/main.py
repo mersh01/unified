@@ -47,11 +47,13 @@ if os.getenv("MINIO_ENDPOINT"):
 else:
     print("MINIO_ENDPOINT not set, using local filesystem for uploads")
 
-# Local filesystem fallback directory (use /tmp for serverless environments)
+# Local filesystem fallback directories (use /tmp for serverless environments)
 import tempfile
 LOCAL_UPLOAD_DIR = os.path.join(tempfile.gettempdir(), 'profile_pictures')
+LOCAL_DOC_UPLOAD_DIR = os.path.join(tempfile.gettempdir(), 'documents')
 try:
     os.makedirs(LOCAL_UPLOAD_DIR, exist_ok=True)
+    os.makedirs(LOCAL_DOC_UPLOAD_DIR, exist_ok=True)
 except Exception as e:
     print(f"Warning: Could not create local upload dir: {e}")
 
@@ -556,7 +558,7 @@ async def create_application(
         print(f"Validation failed for {service_type}. Errors: {errors}")
         raise HTTPException(status_code=400, detail={"errors": errors})
     
-    # Handle file uploads to MinIO
+    # Handle file uploads to MinIO or local fallback
     if uploaded_files:
         for file in uploaded_files:
             if file.filename:
@@ -569,31 +571,42 @@ async def create_application(
                 file_extension = Path(actual_filename).suffix
                 unique_filename = f"{uuid.uuid4()}{file_extension}"
                 
-                # Upload to MinIO
-                try:
-                    # Read file content
-                    file_content = await file.read()
-                    file_size = len(file_content)
-                    import io
-                    file_stream = io.BytesIO(file_content)
-                    
-                    # Upload to MinIO
-                    minio_client.put_object(
-                        MINIO_BUCKET,
-                        unique_filename,
-                        file_stream,
-                        file_size,
-                        content_type=file.content_type or 'application/octet-stream'
-                    )
-                    
-                    # Store URL in dict
-                    file_url = f"http://{os.getenv('MINIO_ENDPOINT', 'localhost:9000')}/{MINIO_BUCKET}/{unique_filename}"
-                    form_data_dict[field_name] = file_url
-                    
-                except Exception as e:
-                    print(f"File upload failed: {str(e)}")
-                    # We continue even if file upload fails to allow testing without MinIO
-                    pass
+                file_url = f"/api/uploads/documents/{unique_filename}"
+                
+                file_bytes = await file.read()
+                
+                if MINIO_AVAILABLE:
+                    try:
+                        import io
+                        file_stream = io.BytesIO(file_bytes)
+                        file_size = len(file_bytes)
+                        
+                        # Upload to MinIO
+                        minio_client.put_object(
+                            MINIO_BUCKET,
+                            unique_filename,
+                            file_stream,
+                            file_size,
+                            content_type=file.content_type or 'application/octet-stream'
+                        )
+                    except Exception as e:
+                        print(f"File upload failed: {str(e)}")
+                        # Fall back to local filesystem if MinIO fails
+                        try:
+                            local_path = os.path.join(LOCAL_DOC_UPLOAD_DIR, unique_filename)
+                            with open(local_path, 'wb') as f:
+                                f.write(file_bytes)
+                        except Exception as inner_e:
+                            print(f"Local fallback upload failed: {inner_e}")
+                else:
+                    try:
+                        local_path = os.path.join(LOCAL_DOC_UPLOAD_DIR, unique_filename)
+                        with open(local_path, 'wb') as f:
+                            f.write(file_bytes)
+                    except Exception as e:
+                        print(f"Local file save failed: {str(e)}")
+                
+                form_data_dict[field_name] = file_url
     
     app_id = f"{service_type.upper()}_{uuid.uuid4().hex[:8].upper()}"
     now = datetime.now().isoformat()
@@ -2558,6 +2571,48 @@ async def serve_profile_picture(filename: str):
         file_path = os.path.join(LOCAL_UPLOAD_DIR, filename)
         if not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail="Profile picture not found")
+        with open(file_path, 'rb') as f:
+            content = f.read()
+        return Response(content=content, media_type=content_type)
+
+@app.get("/api/uploads/documents/{filename}")
+async def serve_uploaded_document(filename: str):
+    """Serve uploaded documents and images from MinIO or local fallback."""
+
+    extension = Path(filename).suffix.lower()
+    content_types = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.pdf': 'application/pdf',
+        '.txt': 'text/plain',
+        '.csv': 'text/csv',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.xls': 'application/vnd.ms-excel',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.ppt': 'application/vnd.ms-powerpoint',
+        '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    }
+    content_type = content_types.get(extension, 'application/octet-stream')
+
+    if MINIO_AVAILABLE:
+        try:
+            response = minio_client.get_object(MINIO_BUCKET, filename)
+            content = response.read()
+            response.close()
+            response.release_conn()
+            return Response(content=content, media_type=content_type)
+        except S3Error as e:
+            if e.code == "NoSuchKey":
+                raise HTTPException(status_code=404, detail="Document not found")
+            raise HTTPException(status_code=500, detail="Failed to retrieve document.")
+    else:
+        file_path = os.path.join(LOCAL_DOC_UPLOAD_DIR, filename)
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="Document not found")
         with open(file_path, 'rb') as f:
             content = f.read()
         return Response(content=content, media_type=content_type)

@@ -1,4 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import PageWrapper from '../components/ui/PageWrapper';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import Textarea from '../components/ui/Textarea';
+import Badge from '../components/ui/Badge';
+import Select from '../components/ui/Select';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
@@ -118,117 +124,110 @@ function WorkflowManagement() {
   if (loading) return <div className="loading">Loading workflows...</div>;
 
   return (
-    <div>
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2>Workflow Management</h2>
-          <button
-            type="button"
-            onClick={() => (showForm ? resetForm() : setShowForm(true))}
-            style={{ background: '#2563eb', padding: '10px 20px' }}
-          >
-            {showForm ? 'Cancel' : '+ New Workflow'}
-          </button>
-        </div>
-
+    <PageWrapper
+      title="Workflow Management"
+      subtitle="Manage workflow definitions, workflow states, and active automation paths for application processing."
+      actions={(
+        <Button variant={showForm ? 'secondary' : 'primary'} onClick={() => (showForm ? resetForm() : setShowForm(true))}>
+          {showForm ? 'Cancel' : '+ New Workflow'}
+        </Button>
+      )}
+    >
+      <div className="space-y-6">
         {showForm && (
-          <div style={{ marginBottom: '24px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
-            <h3 style={{ marginTop: 0 }}>{editingName ? 'Edit' : 'Create'} Workflow</h3>
-            <div className="form-group">
-              <label>Workflow Name</label>
-              <input
-                value={form.workflow_name}
-                onChange={(e) => setForm({ ...form, workflow_name: e.target.value })}
-                placeholder="e.g. birth_certificate_replacement"
-                disabled={editingName !== null}
-              />
+          <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 shadow-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">{editingName ? 'Edit' : 'Create'} Workflow</h3>
+                <p className="text-sm text-slate-600">Define workflow rules and publish them immediately into the admin catalog.</p>
+              </div>
             </div>
-            <div className="form-group">
-              <label>
-                Workflow Definition (JSON)
-                <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                  Define states, transitions, actions, and permission requirements. Use <strong>allowed_permissions</strong> to control which permissions grant access to each state.
-                </div>
-              </label>
-              <textarea
-                value={form.definition}
-                onChange={(e) => setForm({ ...form, definition: e.target.value })}
-                placeholder={JSON.stringify(
-                  {
-                    start_state: 'submitted',
-                    states: {
-                      submitted: {
-                        allowed_permissions: ['make_payment'],
-                        actions: ['submit_application'],
-                        next_states: ['verification'],
-                        sla_days: 1,
-                      },
-                      verification: {
-                        allowed_permissions: ['verify_applications'],
-                        actions: ['approve', 'reject'],
-                        next_states: ['approved', 'rejected'],
-                        allowed_hierarchy_levels: ['country', 'region'],
-                        sla_days: 5,
-                      },
-                    },
-                  },
-                  null,
-                  2
-                )}
-                style={{ height: '400px', fontFamily: 'monospace', fontSize: '12px' }}
-              />
+
+            {!editingName && presets.length > 0 && (
+              <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Load from Preset</label>
+                <Select defaultValue="" onChange={(e) => {
+                  const presetId = e.target.value;
+                  if (!presetId) return;
+                  const preset = presets.find(p => p.id === presetId);
+                  if (preset) {
+                    setForm(prev => ({
+                      ...prev,
+                      workflow_name: preset.workflow_name || prev.workflow_name,
+                      definition: JSON.stringify(preset.definition, null, 2),
+                    }));
+                  }
+                }}>
+                  <option value="">-- Select a preset --</option>
+                  {presets.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.id})</option>
+                  ))}
+                </Select>
+                <p className="mt-3 text-sm text-slate-500">A preset can speed up workflow creation with prebuilt states and transitions.</p>
+              </div>
+            )}
+
+            <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Workflow Name</label>
+                <Input
+                  value={form.workflow_name}
+                  onChange={(e) => setForm({ ...form, workflow_name: e.target.value })}
+                  placeholder="e.g. birth_certificate_replacement"
+                  disabled={editingName !== null}
+                />
+              </div>
+              <div className="flex items-end gap-3">
+                <label className="inline-flex w-full items-center gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
+                  <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 rounded border-slate-300 text-gov-primary focus:ring-govblue-500" />
+                  Active
+                </label>
+              </div>
             </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
-              Active
-            </label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="button" onClick={saveWorkflow} style={{ background: '#16a34a', padding: '10px 20px' }}>
-                Save Workflow
-              </button>
-              <button type="button" onClick={resetForm} style={{ background: '#6b7280', padding: '10px 20px' }}>
-                Cancel
-              </button>
+
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700">Workflow Definition (JSON)</label>
+              <div className="rounded-2xl border border-slate-300 bg-white p-3">
+                <Textarea
+                  value={form.definition}
+                  onChange={(e) => setForm({ ...form, definition: e.target.value })}
+                  className="min-h-[360px] font-mono text-xs"
+                />
+              </div>
+              <p className="mt-2 text-sm text-slate-500">Define states, transitions, allowed permissions and workflow behavior in JSON format.</p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button variant="success" onClick={saveWorkflow}>Save Workflow</Button>
+              <Button variant="secondary" onClick={resetForm}>Cancel</Button>
             </div>
           </div>
         )}
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f3f4f6', textAlign: 'left' }}>
-                <th style={{ padding: '12px' }}>Workflow Name</th>
-                <th style={{ padding: '12px' }}>Start State</th>
-                <th style={{ padding: '12px' }}>States Count</th>
-                <th style={{ padding: '12px' }}>Status</th>
-                <th style={{ padding: '12px' }}>Actions</th>
+        <div className="overflow-x-auto rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="px-4 py-3 font-semibold uppercase tracking-[0.12em]">Workflow Name</th>
+                <th className="px-4 py-3 font-semibold uppercase tracking-[0.12em]">Start State</th>
+                <th className="px-4 py-3 font-semibold uppercase tracking-[0.12em]">States Count</th>
+                <th className="px-4 py-3 font-semibold uppercase tracking-[0.12em]">Status</th>
+                <th className="px-4 py-3 font-semibold uppercase tracking-[0.12em]">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100 bg-white">
               {workflows.map((w) => (
-                <tr key={w.workflow_name} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ padding: '12px' }}><code>{w.workflow_name}</code></td>
-                  <td style={{ padding: '12px' }}>
-                    <code>{w.definition?.start_state || '—'}</code>
+                <tr key={w.workflow_name} className="transition hover:bg-slate-50">
+                  <td className="px-4 py-4 font-medium text-slate-900"><code>{w.workflow_name}</code></td>
+                  <td className="px-4 py-4 text-slate-700"><code>{w.definition?.start_state || '—'}</code></td>
+                  <td className="px-4 py-4 text-slate-700">
+                    <Badge variant="muted">{w.definition?.states ? Object.keys(w.definition.states).length : 0} states</Badge>
                   </td>
-                  <td style={{ padding: '12px' }}>
-                    <span style={{ background: '#e5e7eb', padding: '2px 8px', borderRadius: '20px', fontSize: '12px' }}>
-                      {w.definition?.states ? Object.keys(w.definition.states).length : 0} states
-                    </span>
+                  <td className="px-4 py-4">
+                    <Badge variant={w.is_active ? 'success' : 'muted'}>{w.is_active ? 'Active' : 'Inactive'}</Badge>
                   </td>
-                  <td style={{ padding: '12px' }}>
-                    <span style={{ background: w.is_active ? '#d1fae5' : '#fee2e2', color: w.is_active ? '#065f46' : '#991b1b', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>
-                      {w.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <button
-                      type="button"
-                      onClick={() => editWorkflow(w)}
-                      style={{ background: '#2563eb', padding: '6px 12px', color: 'white', border: 'none', cursor: 'pointer' }}
-                    >
-                      Edit
-                    </button>
+                  <td className="px-4 py-4">
+                    <Button variant="outline" className="px-3 py-2 text-xs" onClick={() => editWorkflow(w)}>Edit</Button>
                   </td>
                 </tr>
               ))}
@@ -236,7 +235,7 @@ function WorkflowManagement() {
           </table>
         </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 }
 

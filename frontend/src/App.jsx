@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, NavLink, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Menu, ChevronDown, ChevronUp } from 'lucide-react';
 import Login from './components/Login';
 import DynamicDashboard from './components/DynamicDashboard';
@@ -39,15 +39,52 @@ function LoginWrapper({ onLogin, onAdminLogin, translations, locale, availableLo
 }
 
 // Apply wrapper to check for service_id parameter
-function ApplyWrapper({ user }) {
+function ApplyWrapper({ user, services = [] }) {
   const [searchParams] = useSearchParams();
   const serviceId = searchParams.get('service_id');
-  
-  if (!serviceId) {
-    return <Navigate to="/" replace />;
+
+  // If a service_id is provided, render the multi-step form for that service
+  if (serviceId) {
+    return <MultiStepForm user={user} />;
   }
-  
-  return <MultiStepForm user={user} />;
+
+  // Otherwise render a simple services selection list so the user can choose a service
+  const departments = {};
+  services.forEach(s => {
+    const dept = s.category || 'Other';
+    if (!departments[dept]) departments[dept] = [];
+    departments[dept].push(s);
+  });
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold">Apply for Service</h2>
+      <p className="text-sm text-slate-600">Select a department and then a service to start your application.</p>
+
+      {Object.entries(departments).length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-600">No services available.</div>
+      ) : (
+        <div className="space-y-4">
+          {Object.entries(departments).map(([dept, deptServices]) => (
+            <div key={dept} className="rounded-2xl border border-slate-200 bg-white p-4">
+              <h3 className="font-semibold">{dept.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h3>
+              <div className="mt-3 grid grid-cols-1 gap-2">
+                {deptServices.map(s => (
+                  <Link
+                    key={s.service_id}
+                    to={`/apply?service_id=${s.service_id}`}
+                    className="inline-block rounded-2xl px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100"
+                  >
+                    {s.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function App() {
@@ -346,15 +383,16 @@ function App() {
 
           <nav className="space-y-1 mt-8">
             {(isCitizen ? citizenMenu : adminMenu).map((item) => (
-              <Link
+              <NavLink
                 key={item.path}
                 to={item.path}
+                end={item.path === '/'}
                 onClick={() => setIsSidebarOpen(false)}
-                className={`block rounded-3xl px-4 py-3 text-sm font-medium transition ${isPathActive(item.path) ? 'bg-govblue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100'}`}
+                className={({ isActive }) => `block rounded-3xl px-4 py-3 text-sm font-medium transition ${isActive ? 'bg-govblue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100'}`}
               >
                 {item.icon ? <span className="mr-2 inline-flex align-middle">{item.icon}</span> : null}
                 {item.label}
-              </Link>
+              </NavLink>
             ))}
           </nav>
 
@@ -465,7 +503,7 @@ function App() {
               
               {/* Apply - Only for citizens with service_id parameter */}
               {canApply && (
-                <Route path="/apply" element={<ApplyWrapper user={user} />} />
+                <Route path="/apply" element={<ApplyWrapper user={user} services={services} />} />
               )}
               
               {/* Track - Everyone can track */}

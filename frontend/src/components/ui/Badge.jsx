@@ -11,7 +11,7 @@ const variants = {
 
 export default function Badge({ children, variant = 'muted', className = '', ...props }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${variants[variant] || variants.muted} ${className}`} {...props}>
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${variants[variant] || variants.muted} ${className}`} {...props}>
       {children}
     </span>
   )

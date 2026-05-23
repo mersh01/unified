@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import PageWrapper from '../components/ui/PageWrapper';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import Textarea from '../components/ui/Textarea';
+import Badge from '../components/ui/Badge';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
@@ -13,7 +18,6 @@ function LocalizationManagement() {
   });
   const [editingLocale, setEditingLocale] = useState(null);
 
-  // Filters
   const [searchQuery, setSearchQuery] = useState('');
 
   const authFetch = async (url, options = {}) => {
@@ -79,19 +83,19 @@ function LocalizationManagement() {
     }
   };
 
-  const editLocale = (locale) => {
+  const editLocale = (localeData) => {
     setForm({
-      locale: locale.locale,
-      display_name: locale.display_name || locale.locale,
-      translations: JSON.stringify(locale.translations || {}, null, 2),
+      locale: localeData.locale,
+      display_name: localeData.display_name || localeData.locale,
+      translations: JSON.stringify(localeData.translations || {}, null, 2),
     });
-    setEditingLocale(locale.locale);
+    setEditingLocale(localeData.locale);
     setShowForm(true);
   };
 
-  const deleteLocale = async (locale) => {
-    if (!window.confirm(`Delete locale ${locale}?`)) return;
-    const response = await authFetch(`${API_URL}/api/admin/config/localizations/${locale}`, {
+  const deleteLocale = async (localeCode) => {
+    if (!window.confirm(`Delete locale ${localeCode}?`)) return;
+    const response = await authFetch(`${API_URL}/api/admin/config/localizations/${localeCode}`, {
       method: 'DELETE',
     });
     if (response.ok) {
@@ -110,99 +114,104 @@ function LocalizationManagement() {
 
   if (loading) return <div className="loading">Loading localization settings...</div>;
 
-  // Apply filters
   const filteredLocales = locales.filter(l => {
-    const searchMatch = !searchQuery || 
+    const searchMatch = !searchQuery ||
       (l.locale && l.locale.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (l.display_name && l.display_name.toLowerCase().includes(searchQuery.toLowerCase()));
-      
-    // Optionally we could filter through translation keys but that might be heavy if JSON is large.
     return searchMatch;
   });
 
   return (
-    <div>
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2>Localization Management</h2>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', background: '#f8fafc', padding: '4px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <input 
-                type="text"
-                placeholder="Search locales..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ border: 'none', background: 'transparent', padding: '6px 12px', outline: 'none', fontSize: '13px', width: '200px' }}
-              />
-            </div>
-            <button type="button" onClick={() => setShowForm(!showForm)} style={{ background: '#2563eb', padding: '10px 20px', borderRadius: '8px', color: 'white', border: 'none', cursor: 'pointer', fontWeight: '600' }}>
-              {showForm ? 'Cancel' : '+ New Locale'}
-            </button>
+    <PageWrapper
+      title="Localization Management"
+      subtitle="Manage supported locales, display names, and translation payloads for your platform." 
+      actions={(
+        <Button variant={showForm ? 'secondary' : 'primary'} onClick={() => setShowForm(prev => !prev)}>
+          {showForm ? 'Cancel' : '+ New Locale'}
+        </Button>
+      )}
+    >
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <input
+              type="text"
+              placeholder="Search locales..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-transparent text-sm text-slate-900 outline-none"
+            />
           </div>
         </div>
 
         {showForm && (
-          <div style={{ marginBottom: '24px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
-            <h3 style={{ marginTop: 0 }}>{editingLocale ? 'Edit Locale' : 'Create Locale'}</h3>
-            <div className="form-group">
-              <label>Locale code</label>
-              <input
-                value={form.locale}
-                onChange={(e) => setForm({ ...form, locale: e.target.value })}
-                placeholder="e.g. en, am, fr"
-                disabled={Boolean(editingLocale)}
-              />
+          <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 shadow-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">{editingLocale ? 'Edit Locale' : 'Create Locale'}</h3>
+                <p className="text-sm text-slate-600">Add or update a language locale and its translation keys.</p>
+              </div>
             </div>
-            <div className="form-group">
-              <label>Display name</label>
-              <input
-                value={form.display_name}
-                onChange={(e) => setForm({ ...form, display_name: e.target.value })}
-                placeholder="e.g. English"
-              />
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Locale Code</label>
+                <Input
+                  value={form.locale}
+                  onChange={(e) => setForm({ ...form, locale: e.target.value })}
+                  placeholder="e.g. en, am, fr"
+                  disabled={Boolean(editingLocale)}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Display Name</label>
+                <Input
+                  value={form.display_name}
+                  onChange={(e) => setForm({ ...form, display_name: e.target.value })}
+                  placeholder="e.g. English"
+                />
+              </div>
             </div>
-            <div className="form-group">
-              <label>Translations JSON</label>
-              <textarea
+
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700">Translations JSON</label>
+              <Textarea
                 value={form.translations}
                 onChange={(e) => setForm({ ...form, translations: e.target.value })}
-                style={{ height: '260px', fontFamily: 'monospace', fontSize: '13px' }}
+                className="min-h-[280px] font-mono text-xs"
               />
             </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button type="button" onClick={saveLocale} style={{ background: '#16a34a', padding: '10px 20px' }}>
-                Save Locale
-              </button>
-              <button type="button" onClick={resetForm} style={{ background: '#6b7280', padding: '10px 20px' }}>
-                Cancel
-              </button>
+
+            <div className="flex flex-wrap gap-3">
+              <Button variant="success" onClick={saveLocale}>Save Locale</Button>
+              <Button variant="secondary" onClick={resetForm}>Cancel</Button>
             </div>
           </div>
         )}
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f3f4f6', textAlign: 'left' }}>
-                <th style={{ padding: '12px' }}>Locale</th>
-                <th style={{ padding: '12px' }}>Display Name</th>
-                <th style={{ padding: '12px' }}>Translation Keys</th>
-                <th style={{ padding: '12px' }}>Actions</th>
+        <div className="overflow-x-auto rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="px-4 py-3 font-semibold uppercase tracking-[0.12em]">Locale</th>
+                <th className="px-4 py-3 font-semibold uppercase tracking-[0.12em]">Display Name</th>
+                <th className="px-4 py-3 font-semibold uppercase tracking-[0.12em]">Translation Keys</th>
+                <th className="px-4 py-3 font-semibold uppercase tracking-[0.12em]">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredLocales.map((locale) => (
-                <tr key={locale.locale} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ padding: '12px' }}><code>{locale.locale}</code></td>
-                  <td style={{ padding: '12px' }}>{locale.display_name}</td>
-                  <td style={{ padding: '12px', fontSize: '12px' }}>{locale.translations ? Object.keys(locale.translations).length : 0}</td>
-                  <td style={{ padding: '12px' }}>
-                    <button type="button" onClick={() => editLocale(locale)} style={{ background: '#2563eb', padding: '6px 12px', marginRight: '8px', color: 'white', border: 'none', cursor: 'pointer' }}>
-                      Edit
-                    </button>
-                    <button type="button" onClick={() => deleteLocale(locale.locale)} style={{ background: '#dc2626', padding: '6px 12px', color: 'white', border: 'none', cursor: 'pointer' }}>
-                      Delete
-                    </button>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {filteredLocales.map((localeData) => (
+                <tr key={localeData.locale} className="transition hover:bg-slate-50">
+                  <td className="px-4 py-4 font-medium text-slate-900"><code>{localeData.locale}</code></td>
+                  <td className="px-4 py-4 text-slate-700">{localeData.display_name}</td>
+                  <td className="px-4 py-4 text-slate-700">
+                    <Badge variant="muted">{localeData.translations ? Object.keys(localeData.translations).length : 0}</Badge>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" className="px-3 py-2 text-xs" onClick={() => editLocale(localeData)}>Edit</Button>
+                      <Button variant="danger" className="px-3 py-2 text-xs" onClick={() => deleteLocale(localeData.locale)}>Delete</Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -210,7 +219,7 @@ function LocalizationManagement() {
           </table>
         </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 }
 

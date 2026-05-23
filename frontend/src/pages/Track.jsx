@@ -24,6 +24,7 @@ function Track() {
   const [statusNames, setStatusNames] = useState({});
   const [actionDefinitions, setActionDefinitions] = useState({});
   const [actionPayload, setActionPayload] = useState({});
+  const [previewItem, setPreviewItem] = useState(null);
 
   // Get current user from localStorage
   useEffect(() => {
@@ -235,6 +236,117 @@ function Track() {
       .replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  const normalizeDocumentUrl = (rawUrl) => {
+    if (typeof rawUrl !== 'string') return rawUrl;
+    if (rawUrl.startsWith('/api/uploads/')) return `${API_URL}${rawUrl}`;
+    try {
+      const parsed = new URL(rawUrl);
+      const pathParts = parsed.pathname.split('/').filter(Boolean);
+      const documentsIndex = pathParts.findIndex(part => part === 'documents');
+      if (documentsIndex >= 0 && pathParts.length > documentsIndex + 1) {
+        return `${API_URL}/api/uploads/documents/${pathParts[documentsIndex + 1]}`;
+      }
+      return rawUrl;
+    } catch {
+      return rawUrl;
+    }
+  };
+
+  const openPreview = (item) => setPreviewItem(item);
+  const closePreview = () => setPreviewItem(null);
+
+  const isValidUrl = (value) => {
+    if (typeof value !== 'string') return false;
+    try {
+      new URL(value);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const renderFormValue = (value) => {
+    if (value === null || value === undefined || value === '') {
+      return 'Not provided';
+    }
+
+    if (Array.isArray(value)) {
+      return (
+        <ul style={{ margin: 0, paddingLeft: '18px', color: '#1f2937' }}>
+          {value.map((item, index) => (
+            <li key={`${item}-${index}`}>{renderFormValue(item)}</li>
+          ))}
+        </ul>
+      );
+    }
+
+    if (typeof value === 'object') {
+      return <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#1f2937', margin: 0 }}>{JSON.stringify(value, null, 2)}</pre>;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      const coordsMatch = trimmed.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+      if (coordsMatch) {
+        const lat = coordsMatch[1];
+        const lng = coordsMatch[2];
+        const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+        return (
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '12px', background: '#f8fafc' }}>
+            <strong style={{ display: 'block', marginBottom: '6px', color: '#1f2937' }}>Map Location</strong>
+            <div style={{ color: '#4b5563', marginBottom: '12px' }}>{trimmed}</div>
+            <button
+              type="button"
+              onClick={() => openPreview({ type: 'map', url: mapUrl, title: 'Map Preview' })}
+              style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 12px', cursor: 'pointer' }}
+            >
+              Open Map
+            </button>
+          </div>
+        );
+      }
+
+      if (isValidUrl(trimmed)) {
+        const normalizedUrl = normalizeDocumentUrl(trimmed);
+        const fileName = trimmed.split('/').pop();
+        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(trimmed);
+
+        return (
+          <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '12px', background: '#ffffff' }}>
+            {isImage ? (
+              <img
+                src={normalizedUrl}
+                alt={fileName}
+                onClick={() => openPreview({ type: 'image', url: normalizedUrl, title: fileName || 'Image Preview' })}
+                style={{ width: '120px', height: '90px', objectFit: 'cover', borderRadius: '12px', cursor: 'pointer', border: '1px solid #d1d5db' }}
+              />
+            ) : (
+              <div style={{ width: '120px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px', background: '#f3f4f6', color: '#475569', border: '1px solid #d1d5db', textAlign: 'center', padding: '8px', fontSize: '13px' }}>
+                {fileName?.toUpperCase() || 'FILE'}
+              </div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: '600', marginBottom: '6px', color: '#111827' }}>{fileName || trimmed}</div>
+              <a href={normalizedUrl} target="_blank" rel="noreferrer" style={{ color: '#2563eb', textDecoration: 'underline', display: 'inline-block', marginBottom: '8px' }}>
+                Open in new tab
+              </a>
+              <button
+                type="button"
+                onClick={() => openPreview({ type: isImage ? 'image' : 'file', url: normalizedUrl, title: fileName || 'File Preview' })}
+                style={{ background: '#374151', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 12px', cursor: 'pointer' }}
+              >
+                Preview
+              </button>
+            </div>
+          </div>
+        );
+      }
+      return trimmed;
+    }
+
+    return String(value);
+  };
+
   // Helper to get action display label from config
   const getActionLabel = (action) => {
     return actionDefinitions[action]?.display_label || action.replace(/_/g, ' ');
@@ -267,7 +379,7 @@ function Track() {
       if (!value) return;
       if (key.startsWith('_')) return; // Ignore internal data like _multi_step_data
       
-      const displayValue = typeof value === 'object' ? JSON.stringify(value) : value;
+      const displayValue = renderFormValue(value);
       
       if (personalFields.includes(key)) {
         groupedData['Personal Information'][key] = displayValue;
@@ -449,7 +561,28 @@ function Track() {
               ℹ️ No actions available for your role in the current state.
             </div>
           )}
-          
+
+          {previewItem && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div style={{ position: 'absolute', inset: 0 }} onClick={closePreview} />
+              <div style={{ position: 'relative', width: '100%', maxWidth: '900px', maxHeight: '90vh', overflow: 'auto', background: 'white', borderRadius: '18px', boxShadow: '0 20px 60px rgba(15,23,42,0.35)', padding: '18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h3 style={{ margin: 0, fontSize: '18px' }}>{previewItem.title || 'Preview'}</h3>
+                  <button onClick={closePreview} style={{ background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+                </div>
+                {previewItem.type === 'image' && (
+                  <img src={previewItem.url} alt={previewItem.title} style={{ width: '100%', maxHeight: '75vh', objectFit: 'contain', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
+                )}
+                {previewItem.type === 'map' && (
+                  <iframe src={previewItem.url} title={previewItem.title} style={{ width: '100%', minHeight: '70vh', border: 'none', borderRadius: '12px' }} />
+                )}
+                {previewItem.type === 'file' && (
+                  <iframe src={previewItem.url} title={previewItem.title} style={{ width: '100%', minHeight: '70vh', border: 'none', borderRadius: '12px' }} />
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Application History */}
           <h4 style={{ marginTop: '24px', marginBottom: '12px' }}>Application History</h4>
           {application.history && application.history.map((entry, index) => (

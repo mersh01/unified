@@ -1019,9 +1019,28 @@
           ]
         },
         {
-          "id": "complaint_details",
+          "id": "complaint_map",
           "order": 3,
-          "step_key": "step_3_complaint_details",
+          "step_key": "step_3_complaint_map",
+          "icon": "\ud83d\uddfa\ufe0f",
+          "title": "Complaint Location on Map",
+          "description": "Pin the complaint location on the map. Initial position is Addis Ababa.",
+          "fields": [
+            {
+              "name": "complaint_location",
+              "type": "map",
+              "required": true,
+              "label": "Complaint Location",
+              "placeholder": "9.03, 38.74",
+              "default_value": "9.03,38.74",
+              "help_text": "Provide the coordinates for the complaint location or use the map preview."
+            }
+          ]
+        },
+        {
+          "id": "complaint_details",
+          "order": 4,
+          "step_key": "step_4_complaint_details",
           "icon": "\ud83d\udcdd",
           "title": "Complaint Description",
           "description": "Provide detailed information about your complaint",
@@ -1055,8 +1074,8 @@
         },
         {
           "id": "document_upload",
-          "order": 4,
-          "step_key": "step_4_document_upload",
+          "order": 5,
+          "step_key": "step_5_document_upload",
           "icon": "\ud83d\udcce",
           "title": "Supporting Documents",
           "description": "Upload any documents to support your complaint (optional)",
