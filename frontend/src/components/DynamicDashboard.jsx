@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Card, Badge, Button } from './ui';
 import { Card, Badge } from './ui';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
@@ -260,34 +261,37 @@ function DynamicDashboard({ config, user }) {
       case 'stats_cards':
         const stats = data || {};
         return (
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '24px' }}>
-            <div className="card" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#2563eb' }}>{stats.total || 0}</div>
-              <div>Total Applications</div>
-            </div>
-            <div className="card" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#f59e0b' }}>{stats.pending || 0}</div>
-              <div>In Progress</div>
-            </div>
-            <div className="card" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#22c55e' }}>{stats.completed || 0}</div>
-              <div>Completed</div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <Card variant="elevated" className="text-center py-8">
+              <div className="text-4xl font-bold text-primary-600 mb-2">{stats.total || 0}</div>
+              <div className="text-gray-600 font-medium">Total Applications</div>
+            </Card>
+            <Card variant="elevated" className="text-center py-8">
+              <div className="text-4xl font-bold text-warning-600 mb-2">{stats.pending || 0}</div>
+              <div className="text-gray-600 font-medium">In Progress</div>
+            </Card>
+            <Card variant="elevated" className="text-center py-8">
+              <div className="text-4xl font-bold text-success-600 mb-2">{stats.completed || 0}</div>
+              <div className="text-gray-600 font-medium">Completed</div>
+            </Card>
           </div>
         );
 
       case 'quick_actions':
         return (
-          <div className="card">
-            <h3>{section.title}</h3>
-            <div style={{ display: 'flex', gap: '15px', marginTop: '15px', flexWrap: 'wrap' }}>
+          <Card variant="elevated">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{section.title}</h3>
+            <div className="flex gap-3 flex-wrap">
               {section.actions?.map(action => (
                 <Link key={action.link} to={action.link}>
-                  <button>{action.icon} {action.label}</button>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <span>{action.icon}</span>
+                    <span>{action.label}</span>
+                  </Button>
                 </Link>
               ))}
             </div>
-          </div>
+          </Card>
         );
 
       case 'applications_list':
@@ -297,42 +301,43 @@ function DynamicDashboard({ config, user }) {
       case 'users_table':
         const users = data || [];
         return (
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3>{section.title}</h3>
-              <button onClick={() => setShowUserModal(true)} style={{ background: '#22c55e', padding: '10px 20px' }}>
+          <Card variant="elevated">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">{section.title}</h3>
+              <Button onClick={() => setShowUserModal(true)} variant="primary">
                 + Add User
-              </button>
+              </Button>
             </div>
             {users.length === 0 ? (
-              <p>No users found.</p>
+              <p className="text-gray-500 text-center py-8">No users found.</p>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
                   <thead>
-                    <tr style={{ background: '#f3f4f6', textAlign: 'left' }}>
-                      <th style={{ padding: '12px' }}>Username</th>
-                      <th style={{ padding: '12px' }}>Name</th>
-                      <th style={{ padding: '12px' }}>Role</th>
-                      <th style={{ padding: '12px' }}>Department</th>
-                      <th style={{ padding: '12px' }}>Actions</th>
+                    <tr className="bg-gray-50 text-left">
+                      <th className="px-4 py-3 font-semibold text-gray-700">Username</th>
+                      <th className="px-4 py-3 font-semibold text-gray-700">Name</th>
+                      <th className="px-4 py-3 font-semibold text-gray-700">Role</th>
+                      <th className="px-4 py-3 font-semibold text-gray-700">Department</th>
+                      <th className="px-4 py-3 font-semibold text-gray-700">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {users.map(u => (
-                      <tr key={u.username} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '12px' }}><code>{u.username}</code></td>
-                        <td style={{ padding: '12px' }}>{u.name}</td>
-                        <td style={{ padding: '12px' }}>{u.role}</td>
-                        <td style={{ padding: '12px' }}>{u.department}</td>
-                        <td style={{ padding: '12px' }}>
-                          <button 
+                      <tr key={u.username} className="border-b border-gray-200 hover:bg-gray-50">
+                        <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-1 rounded text-sm">{u.username}</code></td>
+                        <td className="px-4 py-3">{u.name}</td>
+                        <td className="px-4 py-3"><Badge variant="primary">{u.role}</Badge></td>
+                        <td className="px-4 py-3">{u.department}</td>
+                        <td className="px-4 py-3">
+                          <Button 
                             onClick={() => deleteUser(u.username)} 
-                            style={{ background: '#dc2626', padding: '6px 12px' }} 
+                            variant="danger"
+                            size="sm"
                             disabled={u.username === user?.username}
                           >
                             Delete
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     ))}
@@ -340,7 +345,7 @@ function DynamicDashboard({ config, user }) {
                 </table>
               </div>
             )}
-          </div>
+          </Card>
         );
 
       case 'roles_table':
