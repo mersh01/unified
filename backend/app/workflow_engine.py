@@ -189,22 +189,29 @@ class WorkflowEngine:
             # Granular permission check for specific actions
             # Map actions to their required permissions based on action name
             action_permission_map = {
+                # Complaint-specific actions
                 'RESOLVE': 'resolve_complaints',
                 'REASSIGN': 'reassign_complaints',
                 'ASSIGN_TO_LME': 'assign_complaints',
-                'REJECT': 'reject_complaints',
+                'REOPEN': 'reopen_complaint',
+                # Standard document workflow actions
                 'PROCESS': 'verify_applications',
                 'APPROVE': 'verify_applications',
                 'REQUEST_INFO': 'verify_applications',
                 'REQUEST_ADDITIONAL_DOCS': 'verify_documents',
+                'REQUEST_SITE_VISIT': 'verify_applications',
+                # Payment actions
                 'MAKE_PAYMENT': 'process_payments',
+                # Certificate actions
                 'GENERATE_CERTIFICATE': 'issue_certificates',
                 'DISPATCH': 'dispatch_certificates',
                 'EMAIL': 'dispatch_certificates',
+                # General actions
+                'REJECT': 'reject_complaints',
                 'APPEAL': 'appeal_decision',
                 'RATE': 'rate_service',
-                'REOPEN': 'reopen_complaint',
-                'REQUEST_SITE_VISIT': 'verify_applications',
+                'CANCEL': 'cancel_applications',
+                'PROCESS_SERVICE': 'process_applications',
             }
             
             # Filter actions based on specific permissions
