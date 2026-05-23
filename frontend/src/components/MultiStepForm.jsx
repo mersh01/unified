@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { FileText, GraduationCap, Building, CreditCard, Truck, BarChart, Award, ChevronLeft, ChevronRight, CheckCircle, Upload, Eye } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import RatingField from './RatingField';
@@ -553,19 +556,55 @@ const renderField = (field, step) => {
     const defaultLng = 38.74;
     const lat = coordMatch ? parseFloat(coordMatch[1]) : defaultLat;
     const lng = coordMatch ? parseFloat(coordMatch[2]) : defaultLng;
-    const bbox = `${lng - 0.02}%2C${lat - 0.02}%2C${lng + 0.02}%2C${lat + 0.02}`;
-    const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
+
+    // Fix for default marker icon in Leaflet
+    const customIcon = L.icon({
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+
+    // Component to handle map clicks
+    function MapClickHandler({ onMapClick }) {
+      useMapEvents({
+        click: (e) => {
+          onMapClick(e.latlng.lat, e.latlng.lng);
+        }
+      });
+      return null;
+    }
+
+    const handleMapClick = (newLat, newLng) => {
+      handleChange(actualFieldName, `${newLat.toFixed(6)},${newLng.toFixed(6)}`);
+    };
 
     return (
       <div key={actualFieldName} className="form-group">
         <label>{label} {isRequired && '*'}</label>
-        <p style={{ margin: '8px 0 12px', color: '#4b5563' }}>{fieldConfig.help_text || 'Choose a location on the map or enter coordinates.'}</p>
-        <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid #cbd5e1', marginBottom: '14px', minHeight: '250px' }}>
-          <iframe
-            title={`${label} map`}
-            src={mapSrc}
-            style={{ width: '100%', minHeight: '250px', border: 0 }}
-          />
+        <p style={{ margin: '8px 0 12px', color: '#4b5563' }}>{fieldConfig.help_text || 'Click on the map to mark the location or enter coordinates manually.'}</p>
+        
+        <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid #cbd5e1', marginBottom: '14px', minHeight: '300px' }}>
+          <MapContainer
+            center={[lat, lng]}
+            zoom={13}
+            style={{ width: '100%', height: '300px' }}
+            onClick={(e) => {
+              if (e.originalEvent && e.originalEvent.target.classList.contains('leaflet-container')) {
+                handleMapClick(e.latlng.lat, e.latlng.lng);
+              }
+            }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <Marker position={[lat, lng]} icon={customIcon} />
+            <MapClickHandler onMapClick={handleMapClick} />
+          </MapContainer>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -583,7 +622,7 @@ const renderField = (field, step) => {
             onClick={() => handleChange(actualFieldName, '9.03,38.74')}
             style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', width: 'max-content' }}
           >
-            Use Addis Ababa
+            Reset to Addis Ababa
           </button>
         </div>
         {hasError && <span className="error-message">{hasError}</span>}
