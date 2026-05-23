@@ -1957,16 +1957,6 @@ tbody tr:hover {
     padding: var(--spacing-6);
   }
 }
-  text-decoration: none;
-}
-
-.dashboard-view-btn:hover {
-  background: var(--color-primary-700);
-  box-shadow: var(--shadow-md);
-}
-
-.dashboard-pagination {
-  display: flex;
   justify-content: center;
   align-items: center;
   gap: var(--spacing-3);
