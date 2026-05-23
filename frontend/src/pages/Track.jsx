@@ -257,10 +257,15 @@ function Track() {
 
   const isValidUrl = (value) => {
     if (typeof value !== 'string') return false;
+    // Check for absolute URLs
     try {
       new URL(value);
       return true;
     } catch {
+      // Check for relative upload paths
+      if (value.startsWith('/api/uploads/') || value.startsWith('/uploads/')) {
+        return true;
+      }
       return false;
     }
   };
@@ -291,18 +296,33 @@ function Track() {
       if (coordsMatch) {
         const lat = coordsMatch[1];
         const lng = coordsMatch[2];
-        const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+        const bbox = `${lng - 0.02}%2C${lat - 0.02}%2C${lng + 0.02}%2C${lat + 0.02}`;
+        const embedMapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
+        const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+        
         return (
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '12px', background: '#f8fafc' }}>
-            <strong style={{ display: 'block', marginBottom: '6px', color: '#1f2937' }}>Map Location</strong>
-            <div style={{ color: '#4b5563', marginBottom: '12px' }}>{trimmed}</div>
-            <button
-              type="button"
-              onClick={() => openPreview({ type: 'map', url: mapUrl, title: 'Map Preview' })}
-              style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 12px', cursor: 'pointer' }}
-            >
-              Open Map
-            </button>
+            <strong style={{ display: 'block', marginBottom: '8px', color: '#1f2937' }}>🗺️ Map Location</strong>
+            <div style={{ color: '#4b5563', marginBottom: '12px', fontSize: '13px' }}>
+              Coordinates: {lat}, {lng}
+            </div>
+            <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1', marginBottom: '12px', minHeight: '200px' }}>
+              <iframe
+                title="Map Preview"
+                src={embedMapUrl}
+                style={{ width: '100%', minHeight: '200px', border: 0 }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <a
+                href={googleMapsUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 12px', cursor: 'pointer', textDecoration: 'none', display: 'inline-block' }}
+              >
+                Open in Google Maps
+              </a>
+            </div>
           </div>
         );
       }
@@ -311,6 +331,18 @@ function Track() {
         const normalizedUrl = normalizeDocumentUrl(trimmed);
         const fileName = trimmed.split('/').pop();
         const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(trimmed);
+        const isPdf = /\.pdf$/i.test(trimmed);
+        const isDoc = /\.(doc|docx)$/i.test(trimmed);
+        const isExcel = /\.(xls|xlsx)$/i.test(trimmed);
+
+        // Get file icon based on type
+        const getFileIcon = () => {
+          if (isImage) return '📷';
+          if (isPdf) return '📄';
+          if (isDoc) return '📝';
+          if (isExcel) return '📊';
+          return '📎';
+        };
 
         return (
           <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '12px', background: '#ffffff' }}>
@@ -322,22 +354,26 @@ function Track() {
                 style={{ width: '120px', height: '90px', objectFit: 'cover', borderRadius: '12px', cursor: 'pointer', border: '1px solid #d1d5db' }}
               />
             ) : (
-              <div style={{ width: '120px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px', background: '#f3f4f6', color: '#475569', border: '1px solid #d1d5db', textAlign: 'center', padding: '8px', fontSize: '13px' }}>
-                {fileName?.toUpperCase() || 'FILE'}
+              <div style={{ width: '120px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px', background: '#f3f4f6', color: '#475569', border: '1px solid #d1d5db', textAlign: 'center', padding: '8px', fontSize: '24px' }}>
+                {getFileIcon()}
               </div>
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: '600', marginBottom: '6px', color: '#111827' }}>{fileName || trimmed}</div>
-              <a href={normalizedUrl} target="_blank" rel="noreferrer" style={{ color: '#2563eb', textDecoration: 'underline', display: 'inline-block', marginBottom: '8px' }}>
-                Open in new tab
-              </a>
-              <button
-                type="button"
-                onClick={() => openPreview({ type: isImage ? 'image' : 'file', url: normalizedUrl, title: fileName || 'File Preview' })}
-                style={{ background: '#374151', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 12px', cursor: 'pointer' }}
-              >
-                Preview
-              </button>
+              <div style={{ fontWeight: '600', marginBottom: '6px', color: '#111827', fontSize: '14px' }}>{fileName || trimmed}</div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <a href={normalizedUrl} target="_blank" rel="noreferrer" style={{ color: '#2563eb', textDecoration: 'underline', fontSize: '13px' }}>
+                  Open in new tab
+                </a>
+                {isImage && (
+                  <button
+                    type="button"
+                    onClick={() => openPreview({ type: 'image', url: normalizedUrl, title: fileName || 'Image Preview' })}
+                    style={{ background: '#374151', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '12px' }}
+                  >
+                    Preview
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         );
