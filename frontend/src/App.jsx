@@ -10,7 +10,8 @@ import RoleManagement from './pages/RoleManagement';
 import ServiceManagement from './pages/ServiceManagement';
 import WorkflowManagement from './pages/WorkflowManagement';
 import LocalizationManagement from './pages/LocalizationManagement';
-import NotificationsDropdown from './components/NotificationsDropdown';
+import DynamicNavigation from './components/DynamicNavigation';
+import Header from './components/Header';
 import { translate, getStoredLocale, saveLocale } from './utils/i18n';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -50,7 +51,7 @@ function App() {
   const [locale, setLocale] = useState(getStoredLocale());
   const [translations, setTranslations] = useState({});
   const [availableLocales, setAvailableLocales] = useState([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [services, setServices] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [loading, setLoading] = useState(true);
