@@ -515,6 +515,57 @@ textarea:focus-visible {
 
 .loading { display: flex; align-items: center; justify-content: center; min-height: 200px; color: var(--color-gray-500); font-size: var(--font-size-lg); }
 
+.duration-200 { transition-duration: 200ms; }
+.duration-300 { transition-duration: 300ms; }
+
+.top-full { top: 100%; }
+.top-1 { top: var(--space-1); }
+.right-0 { right: 0; }
+.right-1 { right: var(--space-1); }
+.left-0 { left: 0; }
+.bottom-0 { bottom: 0; }
+
+.gap-1 { gap: var(--space-1); }
+.gap-2 { gap: var(--space-2); }
+
+.font-bold { font-weight: var(--font-weight-bold); }
+
+.overflow-y-auto { overflow-y: auto; }
+.overflow-hidden { overflow: hidden; }
+
+.rounded-2xl { border-radius: var(--radius-2xl); }
+
+.shadow-2xl { box-shadow: var(--shadow-xl); }
+
+.bg-black\/50 { background-color: rgba(0, 0, 0, 0.5); }
+
+.border-2 { border-width: 2px; }
+.border-white { border-color: white; }
+
+.error-message { color: var(--color-danger-600); font-size: var(--font-size-sm); margin-top: var(--space-2); }
+
+.animate-slideDown { animation: slideDown var(--transition-base) ease-in-out; }
+
+.text-gray-400 { color: var(--color-gray-400); }
+.text-gray-500 { color: var(--color-gray-500); }
+.text-gray-900 { color: var(--color-gray-900); }
+.text-info-700 { color: var(--color-info-700); }
+
+.bg-info-50 { background-color: var(--color-info-50); }
+.border-info-200 { border-color: var(--color-info-200); }
+
+.bg-black { background-color: black; }
+
+.hover\:text-gray-600:hover { color: var(--color-gray-600); }
+
+.-ml-1 { margin-left: -0.25rem; }
+
+.mb-1 { margin-bottom: var(--space-1); }
+.mb-1\.5 { margin-bottom: 0.375rem; }
+
+.border-solid { border-style: solid; }
+.border-dashed { border-style: dashed; }
+
 /* ============================================
    Animation Keyframes
    ============================================ */
