@@ -317,67 +317,22 @@ function App() {
           onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
-        <main className="app-main">
-          <header className="app-header">
-            <div className="app-header-left">
-              <button 
-                className="mobile-menu-btn" 
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              >
-                &#9776;
-              </button>
-              <div className="header-info">
-                <h1>📄 {translate(translations, 'app_title', 'Document Management System')}</h1>
-                <p>{translate(translations, 'welcome_message', 'Welcome')}, {frontendConfig.user?.name || 'User'}!</p>
-                {frontendConfig.user?.role !== 'citizen' && (
-                <p style={{ fontSize: '12px' }}>
-                  {translate(translations, 'role_label', 'Role')}: {frontendConfig.user?.role} | {translate(translations, 'department_label', 'Department')}: {frontendConfig.user?.department || 'N/A'}
-                </p>
-              )}
-            </div>
-            </div>
-            <div className="header-actions">
-              {frontendConfig?.user?.profile_picture_url ? (
-                <img 
-                  src={`${API_URL}${frontendConfig.user.profile_picture_url}`} 
-                  alt="Profile" 
-                  className="header-user-avatar"
-                  onClick={() => { setEditName(frontendConfig?.user?.full_name || frontendConfig?.user?.name || ''); setIsProfileModalOpen(true); }}
-                  title="Update Profile"
-                />
-              ) : (
-                <div 
-                  className="header-user-avatar" 
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}
-                  onClick={() => { setEditName(frontendConfig?.user?.full_name || frontendConfig?.user?.name || ''); setIsProfileModalOpen(true); }}
-                  title="Update Profile Picture"
-                >
-                  {(frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'U').charAt(0).toUpperCase()}
-                </div>
-              )}
-              <select
-                value={locale}
-                onChange={(e) => handleLocaleChange(e.target.value)}
-                style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
-              >
-                {availableLocales.length > 0 ? (
-                  availableLocales.map((localeEntry) => (
-                    <option key={localeEntry.locale} value={localeEntry.locale}>
-                      {localeEntry.display_name || localeEntry.locale}
-                    </option>
-                  ))
-                ) : (
-                  <option value="en">English</option>
-                )}
-              </select>
-              <button onClick={handleLogout} style={{ background: '#dc2626', padding: '8px 20px', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white' }}>
-                {translate(translations, 'logout', 'Logout')}
-              </button>
-            </div>
-          </header>
+        <main className="flex-1 flex flex-col">
+          <Header
+            user={frontendConfig?.user || user}
+            onLogout={handleLogout}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+            onProfileClick={() => { setEditName(frontendConfig?.user?.full_name || frontendConfig?.user?.name || ''); setIsProfileModalOpen(true); }}
+            locale={locale}
+            availableLocales={availableLocales}
+            onLocaleChange={handleLocaleChange}
+            translations={translations}
+            translate={translate}
+          />
 
-          <div className="p-4 lg:p-8">
-            <Routes>
+          <div className="flex-1 p-4 lg:p-8 overflow-auto">
+            <div className="max-w-7xl mx-auto">
+              <Routes>
               {/* Dashboard - Main page */}
               <Route path="/" element={<DynamicDashboard config={frontendConfig} user={user} />} />
               
