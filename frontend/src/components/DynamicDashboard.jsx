@@ -391,18 +391,20 @@ function DynamicDashboard({ config, user }) {
   if (loading) return <div className="loading">Loading dashboard...</div>;
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Admin Info Card - Only for admins */}
       {config.dashboard.type === 'admin' && (
-        <div className="card" style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)', color: 'white' }}>
-          <h2>Admin Dashboard</h2>
-          <p>Role: {config.user.role} | Department: {config.user.department || 'All'}</p>
-          {config.user.permissions?.length > 0 && (
-            <div style={{ fontSize: '12px', marginTop: '10px' }}>
-              <strong>Permissions:</strong> {config.user.permissions.slice(0, 6).join(', ')}...
-            </div>
-          )}
-        </div>
+        <Card variant="elevated" className="bg-gradient-to-br from-primary-700 to-primary-500 text-white">
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-2">Admin Dashboard</h2>
+            <p className="text-primary-100">Role: {config.user.role} | Department: {config.user.department || 'All'}</p>
+            {config.user.permissions?.length > 0 && (
+              <div className="text-sm mt-2">
+                <strong>Permissions:</strong> {config.user.permissions.slice(0, 6).join(', ')}...
+              </div>
+            )}
+          </div>
+        </Card>
       )}
 
       {/* Render all sections dynamically from config */}
@@ -414,29 +416,33 @@ function DynamicDashboard({ config, user }) {
 
       {/* User Creation Modal */}
       {showUserModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="card" style={{ maxWidth: '500px', width: '100%' }}>
-            <h3>Create New User</h3>
-            <div className="form-group">
-              <label>Username</label>
-              <input type="text" value={userForm.username} onChange={(e) => setUserForm({...userForm, username: e.target.value})} />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card variant="elevated" className="w-full max-w-md">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">Create New User</h3>
+              <button onClick={() => setShowUserModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
-            <div className="form-group">
-              <label>Name</label>
-              <input type="text" value={userForm.name} onChange={(e) => setUserForm({...userForm, name: e.target.value})} />
-            </div>
-            <div className="form-group">
-              <label>Password</label>
-              <input type="password" value={userForm.password} onChange={(e) => setUserForm({...userForm, password: e.target.value})} />
-            </div>
-            <div className="form-group">
-              <label>Role</label>
-              <select value={userForm.role} onChange={(e) => setUserForm({...userForm, role: e.target.value})}>
-                {roles.map(r => (
-                  <option key={r.role_id} value={r.role_id}>{r.name}</option>
-                ))}
-              </select>
-            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <input type="text" value={userForm.username} onChange={(e) => setUserForm({...userForm, username: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input type="text" value={userForm.name} onChange={(e) => setUserForm({...userForm, name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input type="password" value={userForm.password} onChange={(e) => setUserForm({...userForm, password: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select value={userForm.role} onChange={(e) => setUserForm({...userForm, role: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                  {roles.map(r => (
+                    <option key={r.role_id} value={r.role_id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
               <button onClick={() => setShowUserModal(false)} style={{ background: '#6b7280' }}>Cancel</button>
               <button onClick={createUser} style={{ background: '#2563eb' }}>Create</button>
