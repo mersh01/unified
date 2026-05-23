@@ -1959,18 +1959,6 @@ tbody tr:hover {
 }
 }
 
-.dashboard-stats-icon.error {
-  background: var(--color-error-light);
-  color: var(--color-error);
-}
-
-.dashboard-stats-label {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-gray-600);
-  margin-bottom: var(--spacing-1);
-}
-
 .dashboard-stats-value {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
