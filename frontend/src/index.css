@@ -1957,15 +1957,6 @@ tbody tr:hover {
     padding: var(--spacing-6);
   }
 }
-  color: var(--color-gray-600);
-  font-weight: var(--font-weight-medium);
-}
-
-.dashboard-empty-state {
-  text-align: center;
-  padding: var(--spacing-12);
-  color: var(--color-gray-500);
-}
 
 .dashboard-empty-icon {
   font-size: var(--font-size-4xl);
