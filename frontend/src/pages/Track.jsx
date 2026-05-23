@@ -286,7 +286,8 @@ function Track() {
 
     if (typeof value === 'string') {
       const trimmed = value.trim();
-      const coordsMatch = trimmed.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+      // Updated regex to match both decimal and integer coordinates
+      const coordsMatch = trimmed.match(/(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/);
       if (coordsMatch) {
         const lat = coordsMatch[1];
         const lng = coordsMatch[2];
