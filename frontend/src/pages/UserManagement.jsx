@@ -486,22 +486,24 @@ function UserManagement({ user }) {
             Showing {users.length} users
           </div>
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={() => fetchUsers(Math.max(0, page - 1))}
               disabled={page === 0}
-              style={{ padding: '8px 16px', background: page === 0 ? '#cbd5e1' : 'var(--primary)', color: page === 0 ? '#64748b' : 'white', borderRadius: '6px', fontWeight: '500' }}
+              variant="secondary"
+              size="sm"
             >
               Previous
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => fetchUsers(page + 1)}
               disabled={(page + 1) * pageSize >= totalUsers}
-              style={{ padding: '8px 16px', background: (page + 1) * pageSize >= totalUsers ? '#cbd5e1' : 'var(--primary)', color: (page + 1) * pageSize >= totalUsers ? '#64748b' : 'white', borderRadius: '6px', fontWeight: '500' }}
+              variant="secondary"
+              size="sm"
             >
               Next
-            </button>
+            </Button>
           </div>
         </div>
       </div>
