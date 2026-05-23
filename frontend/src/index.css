@@ -1957,16 +1957,6 @@ tbody tr:hover {
     padding: var(--spacing-6);
   }
 }
-  justify-content: center;
-  align-items: center;
-  gap: var(--spacing-3);
-  margin-top: var(--spacing-6);
-}
-
-.dashboard-pagination-btn {
-  padding: var(--spacing-2) var(--spacing-4);
-  background: var(--color-primary-600);
-  color: white;
   border: none;
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
