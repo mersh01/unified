@@ -2,105 +2,6 @@ import React, { useState, useEffect } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
-// Helper functions for rendering form data
-const normalizeDocumentUrl = (rawUrl) => {
-  if (typeof rawUrl !== 'string') return rawUrl;
-  if (rawUrl.startsWith('/api/uploads/')) return `${API_URL}${rawUrl}`;
-  try {
-    const parsed = new URL(rawUrl);
-    const pathParts = parsed.pathname.split('/').filter(Boolean);
-    const documentsIndex = pathParts.findIndex(part => part === 'documents');
-    if (documentsIndex >= 0 && pathParts.length > documentsIndex + 1) {
-      return `${API_URL}/api/uploads/documents/${pathParts[documentsIndex + 1]}`;
-    }
-    return rawUrl;
-  } catch {
-    return rawUrl;
-  }
-};
-
-const isValidUrl = (value) => {
-  if (typeof value !== 'string') return false;
-  try {
-    new URL(value);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-const renderFormValue = (value) => {
-  if (value === null || value === undefined || value === '') {
-    return 'Not provided';
-  }
-
-  if (Array.isArray(value)) {
-    return (
-      <ul style={{ margin: 0, paddingLeft: '18px', color: '#1f2937' }}>
-        {value.map((item, index) => (
-          <li key={`${item}-${index}`}>{renderFormValue(item)}</li>
-        ))}
-      </ul>
-    );
-  }
-
-  if (typeof value === 'object') {
-    return <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#1f2937', margin: 0 }}>{JSON.stringify(value, null, 2)}</pre>;
-  }
-
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    // Updated regex to match both decimal and integer coordinates
-    const coordsMatch = trimmed.match(/(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/);
-    if (coordsMatch) {
-      const lat = coordsMatch[1];
-      const lng = coordsMatch[2];
-      const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-      return (
-        <div style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '12px', background: '#f8fafc' }}>
-          <strong style={{ display: 'block', marginBottom: '6px', color: '#1f2937' }}>Map Location</strong>
-          <div style={{ color: '#4b5563', marginBottom: '12px' }}>{trimmed}</div>
-          <a href={mapUrl} target="_blank" rel="noreferrer" style={{ color: '#2563eb', textDecoration: 'underline' }}>
-            Open in Google Maps
-          </a>
-        </div>
-      );
-    }
-
-    if (isValidUrl(trimmed)) {
-      const normalizedUrl = normalizeDocumentUrl(trimmed);
-      const fileName = trimmed.split('/').pop();
-      const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(trimmed);
-
-      return (
-        <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '12px', background: '#ffffff' }}>
-          {isImage ? (
-            <img
-              src={normalizedUrl}
-              alt={fileName}
-              style={{ width: '120px', height: '90px', objectFit: 'cover', borderRadius: '12px', cursor: 'pointer', border: '1px solid #d1d5db' }}
-              onClick={() => window.open(normalizedUrl, '_blank')}
-            />
-          ) : (
-            <div style={{ width: '120px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px', background: '#f3f4f6', color: '#475569', border: '1px solid #d1d5db', textAlign: 'center', padding: '8px', fontSize: '13px' }}>
-              {fileName?.toUpperCase() || 'FILE'}
-            </div>
-          )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: '600', marginBottom: '6px', color: '#111827' }}>{fileName || trimmed}</div>
-            <a href={normalizedUrl} target="_blank" rel="noreferrer" style={{ color: '#2563eb', textDecoration: 'underline', display: 'inline-block', marginBottom: '8px' }}>
-              Open in new tab
-            </a>
-          </div>
-        </div>
-      );
-    }
-    return trimmed;
-  }
-
-  return String(value);
-};
-
 function AdminDashboard({ user }) {
   const [dashboardData, setDashboardData] = useState(null);
   const [applications, setApplications] = useState([]);
@@ -607,18 +508,58 @@ const fetchUsers = async () => {
                         <div style={{ marginBottom: '20px' }}>
                           <h5 style={{ marginBottom: '10px', color: '#374151' }}>Submitted Information:</h5>
                           <div style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-                            {console.log('Form data:', app.form_data)}
                             {Object.entries(app.form_data).map(([key, value]) => {
-                              if (key.startsWith('_')) return null; // Skip internal fields
-                              console.log(`Rendering field: ${key}`, value);
+                              // If value is an object (like step data) or a URL, render it nicely
+                              if (typeof value === 'object' && value !== null) {
+                                return (
+                                  <div key={key} style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', flexDirection: 'column' }}>
+                                    <span style={{ fontWeight: 'bold', color: '#374151', textTransform: 'capitalize' }}>
+                                      {key.replace(/_/g, ' ')}:
+                                    </span>
+                                    <pre style={{ background: '#e5e7eb', padding: '5px', borderRadius: '4px', fontSize: '11px', marginTop: '5px' }}>
+                                      {JSON.stringify(value, null, 2)}
+                                    </pre>
+                                  </div>
+                                );
+                              }
+                              // Handle URLs (files/images)
+                              if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('/api/uploads/'))) {
+                                const normalizedUrl = value.startsWith('/api/uploads/') ? `${API_URL}${value}` : value;
+                                const fileName = value.split('/').pop();
+                                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(value);
+                                return (
+                                  <div key={key} style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                                    <span style={{ fontWeight: 'bold', color: '#374151', textTransform: 'capitalize' }}>
+                                      {key.replace(/_/g, ' ')}:
+                                    </span>
+                                    {isImage ? (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <img
+                                          src={normalizedUrl}
+                                          alt={fileName}
+                                          style={{ width: '80px', height: '60px', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer', border: '1px solid #d1d5db' }}
+                                          onClick={() => window.open(normalizedUrl, '_blank')}
+                                        />
+                                        <a href={normalizedUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline', fontSize: '12px' }}>
+                                          View Image
+                                        </a>
+                                      </div>
+                                    ) : (
+                                      <a href={normalizedUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline', fontSize: '12px' }}>
+                                        View File
+                                      </a>
+                                    )}
+                                  </div>
+                                );
+                              }
                               return (
-                                <div key={key} style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid #e5e7eb' }}>
-                                  <div style={{ fontWeight: 'bold', color: '#374151', marginBottom: '8px', textTransform: 'capitalize' }}>
+                                <div key={key} style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                                  <span style={{ fontWeight: 'bold', color: '#374151', textTransform: 'capitalize' }}>
                                     {key.replace(/_/g, ' ')}:
-                                  </div>
-                                  <div style={{ color: '#1f2937' }}>
-                                    {renderFormValue(value)}
-                                  </div>
+                                  </span>
+                                  <span style={{ color: '#6b7280' }}>
+                                    {value || 'Not provided'}
+                                  </span>
                                 </div>
                               );
                             })}
