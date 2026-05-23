@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Card, Badge } from './ui';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
@@ -34,23 +35,35 @@ function PaginatedApplicationsList({ applications, section }) {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
+  const getStatusColor = (status) => {
+    const colors = {
+      'SUBMITTED': 'warning',
+      'VERIFICATION': 'info',
+      'DOCUMENT_VERIFICATION': 'info',
+      'PAYMENT_PENDING': 'warning',
+      'COMPLETED': 'success',
+      'REJECTED': 'danger',
+      'ASSIGNED': 'primary',
+      'RESOLVED': 'success',
+    };
+    return colors[status] || 'default';
+  };
+
   return (
-    <div className="card">
-      <h3>{section.title}</h3>
-      
+    <Card title={section.title}>
       {applications.length > 0 && (
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <div className="flex flex-wrap gap-3 mb-6">
           <input 
             type="text" 
             placeholder="Search by ID, Applicant or Service..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', flex: 1, minWidth: '200px' }}
+            className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           <select 
             value={statusFilter} 
             onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="">All Statuses</option>
             <option value="SUBMITTED">Submitted</option>
@@ -66,38 +79,59 @@ function PaginatedApplicationsList({ applications, section }) {
       )}
 
       {filteredApps.length === 0 ? (
-        <p>{applications.length === 0 ? "No applications found." : "No applications match your search."}</p>
+        <div className="text-center py-12 text-gray-500">
+          <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <p className="text-lg font-medium">{applications.length === 0 ? "No applications found." : "No applications match your search."}</p>
+        </div>
       ) : (
-        currentApps.map(app => (
-          <div key={app.application_id} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '15px', marginBottom: '15px' }}>
-            <p><strong>ID:</strong> {app.application_id}</p>
-            <p><strong>Service:</strong> {app.service_type?.replace(/_/g, ' ').toUpperCase()}</p>
-            <p><strong>Applicant:</strong> {app.user_name}</p>
-            <p><strong>Status:</strong> {app.current_state}</p>
-            <p><strong>Submitted:</strong> {new Date(app.created_at).toLocaleDateString()}</p>
-            <Link to={`/track?appId=${app.application_id}`}>
-              <button style={{ marginTop: '10px' }}>View Details →</button>
-            </Link>
-          </div>
-        ))
+        <div className="space-y-4">
+          {currentApps.map(app => (
+            <div key={app.application_id} className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-sm font-semibold text-gray-900">{app.application_id}</span>
+                    <Badge variant={getStatusColor(app.current_state)}>{app.current_state}</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-medium">Service:</span> {app.service_type?.replace(/_/g, ' ').toUpperCase()}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-medium">Applicant:</span> {app.user_name}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    <span className="font-medium">Submitted:</span> {new Date(app.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <Link to={`/track?appId=${app.application_id}`}>
+                  <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium">
+                    View Details →
+                  </button>
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '20px' }}>
+        <div className="flex items-center justify-center gap-4 mt-6">
           <button 
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
             disabled={currentPage === 1}
-            style={{ padding: '6px 12px', background: currentPage === 1 ? '#e5e7eb' : '#2563eb', color: currentPage === 1 ? '#9ca3af' : 'white', border: 'none', borderRadius: '4px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors text-sm font-medium"
           >
             Previous
           </button>
-          <span style={{ fontSize: '14px' }}>
+          <span className="text-sm text-gray-700">
             Page {currentPage} of {totalPages}
           </span>
           <button 
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
             disabled={currentPage === totalPages}
-            style={{ padding: '6px 12px', background: currentPage === totalPages ? '#e5e7eb' : '#2563eb', color: currentPage === totalPages ? '#9ca3af' : 'white', border: 'none', borderRadius: '4px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors text-sm font-medium"
           >
             Next
           </button>
@@ -105,13 +139,15 @@ function PaginatedApplicationsList({ applications, section }) {
       )}
 
       {section.show_view_all && applications.length > itemsPerPage && (
-        <div style={{ textAlign: 'center', marginTop: '15px' }}>
+        <div className="text-center mt-6">
           <Link to={section.view_all_link}>
-            <button style={{ background: '#6b7280' }}>View All {applications.length} Applications</button>
+            <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium">
+              View All {applications.length} Applications
+            </button>
           </Link>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
