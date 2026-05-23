@@ -1958,16 +1958,6 @@ tbody tr:hover {
   }
 }
 
-.dashboard-empty-icon {
-  font-size: var(--font-size-4xl);
-  margin-bottom: var(--spacing-4);
-}
-
-.dashboard-empty-text {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-}
-
 /* Dashboard Responsive */
 @media (max-width: 1024px) {
   .dashboard-grid {
