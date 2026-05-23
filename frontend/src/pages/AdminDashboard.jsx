@@ -607,8 +607,10 @@ const fetchUsers = async () => {
                         <div style={{ marginBottom: '20px' }}>
                           <h5 style={{ marginBottom: '10px', color: '#374151' }}>Submitted Information:</h5>
                           <div style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                            {console.log('Form data:', app.form_data)}
                             {Object.entries(app.form_data).map(([key, value]) => {
                               if (key.startsWith('_')) return null; // Skip internal fields
+                              console.log(`Rendering field: ${key}`, value);
                               return (
                                 <div key={key} style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid #e5e7eb' }}>
                                   <div style={{ fontWeight: 'bold', color: '#374151', marginBottom: '8px', textTransform: 'capitalize' }}>
