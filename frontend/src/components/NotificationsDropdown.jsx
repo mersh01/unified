@@ -228,17 +228,6 @@ export default function NotificationsDropdown() {
               </button>
             </div>
           </div>
-                style={{
-                  background: 'transparent', border: 'none',
-                  cursor: 'pointer', color: '#9ca3af',
-                  padding: '4px', borderRadius: '6px',
-                  display: 'flex', alignItems: 'center',
-                }}
-              >
-                <CloseIcon />
-              </button>
-            </div>
-          </div>
 
           {/* Body */}
           <div style={{ overflowY: 'auto', flex: 1 }}>

@@ -485,9 +485,7 @@ function UserManagement({ user }) {
           <div className="text-sm text-gray-500">
             Showing {users.length} users
           </div>
-            Showing {users.length} of {totalUsers} users
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={() => fetchUsers(Math.max(0, page - 1))}
