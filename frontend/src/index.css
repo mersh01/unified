@@ -1214,6 +1214,129 @@ tbody tr:hover {
 }
 
 /* ============================================
+   Sidebar Navigation Icons
+   ============================================ */
+
+.sidebar-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-right: var(--spacing-3);
+  color: var(--color-primary-200);
+  transition: color var(--transition-base);
+}
+
+.sidebar-nav a:hover .sidebar-nav-icon,
+.sidebar-nav button:hover .sidebar-nav-icon {
+  color: white;
+}
+
+.sidebar-nav a.active .sidebar-nav-icon,
+.sidebar-nav button.active .sidebar-nav-icon {
+  color: white;
+}
+
+.sidebar-section-label {
+  margin-top: var(--spacing-6);
+  margin-bottom: var(--spacing-3);
+  padding: 0 var(--spacing-4);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-200);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.department-chevron {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--color-primary-200);
+  transition: color var(--transition-base);
+}
+
+.department-item:hover .department-chevron {
+  color: white;
+}
+
+.department-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary-200);
+}
+
+/* ============================================
+   Header Icons
+   ============================================ */
+
+.header-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-right: var(--spacing-3);
+  color: var(--color-primary-600);
+}
+
+.header-avatar-placeholder {
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-accent-500));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+}
+
+.header-role-info {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-600);
+  margin-top: var(--spacing-1);
+}
+
+.header-language-select {
+  padding: var(--spacing-3) var(--spacing-4);
+  font-size: var(--font-size-sm);
+  border: 2px solid var(--color-gray-300);
+  border-radius: var(--radius-lg);
+  background: var(--bg-primary);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-weight: var(--font-weight-medium);
+  box-shadow: var(--shadow-sm);
+}
+
+.header-language-select:hover {
+  border-color: var(--color-primary-500);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.header-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-5);
+  background: linear-gradient(135deg, var(--color-error), var(--color-error-dark));
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+}
+
+.header-logout-btn:hover {
+  background: linear-gradient(135deg, var(--color-error-dark), #b91c1c);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* ============================================
    Modern Login Page Styles
    ============================================ */
 

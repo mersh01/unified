@@ -13,6 +13,96 @@ import LocalizationManagement from './pages/LocalizationManagement';
 import NotificationsDropdown from './components/NotificationsDropdown';
 import { translate, getStoredLocale, saveLocale } from './utils/i18n';
 
+// Simple SVG Icons (monochrome)
+const Icons = {
+  Dashboard: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7"></rect>
+      <rect x="14" y="3" width="7" height="7"></rect>
+      <rect x="14" y="14" width="7" height="7"></rect>
+      <rect x="3" y="14" width="7" height="7"></rect>
+    </svg>
+  ),
+  Track: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <polyline points="12 6 12 12 16 14"></polyline>
+    </svg>
+  ),
+  Users: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+      <circle cx="9" cy="7" r="4"></circle>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+    </svg>
+  ),
+  Roles: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+    </svg>
+  ),
+  Services: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+    </svg>
+  ),
+  Workflow: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+    </svg>
+  ),
+  Localization: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="2" y1="12" x2="22" y2="12"></line>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+    </svg>
+  ),
+  Menu: () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  ),
+  Logout: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+      <polyline points="16 17 21 12 16 7"></polyline>
+      <line x1="21" y1="12" x2="9" y2="12"></line>
+    </svg>
+  ),
+  ChevronDown: () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9"></polyline>
+    </svg>
+  ),
+  ChevronRight: () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  ),
+  Document: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <polyline points="14 2 14 8 20 8"></polyline>
+    </svg>
+  ),
+  Camera: () => (
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+      <circle cx="12" cy="13" r="4"></circle>
+    </svg>
+  ),
+  Close: () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  )
+};
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Login wrapper component to handle path-based login type
@@ -335,15 +425,21 @@ function App() {
               </div>
             </div>
           </div>
-          <div className="sidebar-header" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="sidebar-header">
             <h2>DMS</h2>
           </div>
           <nav className="sidebar-nav">
             {user?.type === 'citizen' || user?.role === 'citizen' ? (
               <>
-                <Link to="/" onClick={() => setIsSidebarOpen(false)}>Dashboard</Link>
-                <Link to="/track" onClick={() => setIsSidebarOpen(false)}>Track Applications</Link>
-                <div style={{ marginTop: '20px', fontWeight: 'bold', fontSize: '0.75rem', color: '#9ca3af', padding: '0 16px', letterSpacing: '0.05em' }}>DEPARTMENTS</div>
+                <Link to="/" onClick={() => setIsSidebarOpen(false)}>
+                  <span className="sidebar-nav-icon"><Icons.Dashboard /></span>
+                  <span>Dashboard</span>
+                </Link>
+                <Link to="/track" onClick={() => setIsSidebarOpen(false)}>
+                  <span className="sidebar-nav-icon"><Icons.Track /></span>
+                  <span>Track Applications</span>
+                </Link>
+                <div className="sidebar-section-label">DEPARTMENTS</div>
                 {Object.entries(getServicesByDepartment()).map(([department, deptServices]) => (
                   <div key={department}>
                     <button 
@@ -353,8 +449,9 @@ function App() {
                       <span>
                         {department.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </span>
-                      <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                        {selectedDepartment === department ? '▼' : '▶'} ({deptServices.length})
+                      <span className="department-chevron">
+                        {selectedDepartment === department ? <Icons.ChevronDown /> : <Icons.ChevronRight />}
+                        <span className="department-count">({deptServices.length})</span>
                       </span>
                     </button>
                     {selectedDepartment === department && (
@@ -366,6 +463,7 @@ function App() {
                             className="service-item"
                             onClick={() => setIsSidebarOpen(false)}
                           >
+                            <span className="sidebar-nav-icon"><Icons.Document /></span>
                             {service.name}
                           </Link>
                         ))}
@@ -377,7 +475,8 @@ function App() {
             ) : (
               navigation.map(item => (
                 <Link key={item.path} to={item.path} onClick={() => setIsSidebarOpen(false)}>
-                  {item.icon} {item.label}
+                  <span className="sidebar-nav-icon">{item.icon}</span>
+                  <span>{item.label}</span>
                 </Link>
               ))
             )}
@@ -391,16 +490,16 @@ function App() {
                 className="mobile-menu-btn" 
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               >
-                &#9776;
+                <Icons.Menu />
               </button>
               <div className="header-info">
-                <h1>📄 {translate(translations, 'app_title', 'Document Management System')}</h1>
+                <h1><span className="header-title-icon"><Icons.Document /></span> {translate(translations, 'app_title', 'Document Management System')}</h1>
                 <p>{translate(translations, 'welcome_message', 'Welcome')}, {frontendConfig.user?.name || 'User'}!</p>
                 {frontendConfig.user?.role !== 'citizen' && (
-                <p style={{ fontSize: '12px' }}>
+                <p className="header-role-info">
                   {translate(translations, 'role_label', 'Role')}: {frontendConfig.user?.role} | {translate(translations, 'department_label', 'Department')}: {frontendConfig.user?.department || 'N/A'}
                 </p>
-              )}
+                )}
             </div>
             </div>
             <div className="header-actions">
@@ -414,8 +513,7 @@ function App() {
                 />
               ) : (
                 <div 
-                  className="header-user-avatar" 
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}
+                  className="header-user-avatar header-avatar-placeholder"
                   onClick={() => { setEditName(frontendConfig?.user?.full_name || frontendConfig?.user?.name || ''); setIsProfileModalOpen(true); }}
                   title="Update Profile Picture"
                 >
@@ -425,7 +523,7 @@ function App() {
               <select
                 value={locale}
                 onChange={(e) => handleLocaleChange(e.target.value)}
-                style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                className="header-language-select"
               >
                 {availableLocales.length > 0 ? (
                   availableLocales.map((localeEntry) => (
@@ -438,7 +536,8 @@ function App() {
                 )}
               </select>
               <NotificationsDropdown />
-              <button onClick={handleLogout} style={{ background: '#dc2626', padding: '8px 20px', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white' }}>
+              <button onClick={handleLogout} className="header-logout-btn">
+                <Icons.Logout />
                 {translate(translations, 'logout', 'Logout')}
               </button>
             </div>
@@ -490,7 +589,7 @@ function App() {
           <div className="profile-modal">
             <div className="profile-modal-header">
               <div className="profile-modal-title">Edit Profile</div>
-              <button className="profile-modal-close" onClick={() => setIsProfileModalOpen(false)}>×</button>
+              <button className="profile-modal-close" onClick={() => setIsProfileModalOpen(false)}><Icons.Close /></button>
             </div>
             
             <div className="profile-modal-avatar-section">
@@ -530,7 +629,7 @@ function App() {
               <label className="profile-edit-label">Profile Picture</label>
               {!previewUrl ? (
                 <div className="profile-upload-zone" onClick={() => document.getElementById('profile-upload-input').click()}>
-                  <div className="profile-upload-zone-icon">📸</div>
+                  <div className="profile-upload-zone-icon"><Icons.Camera /></div>
                   <div className="profile-upload-zone-text">Click to browse or drag image here</div>
                   <div className="profile-upload-zone-hint">JPG, PNG or WebP (max. 5MB)</div>
                   <input 
