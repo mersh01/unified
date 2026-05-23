@@ -35,22 +35,24 @@ function PaginatedApplicationsList({ applications, section }) {
   }, [searchTerm, statusFilter]);
 
   return (
-    <div className="card">
-      <h3>{section.title}</h3>
+    <div className="dashboard-section">
+      <div className="dashboard-section-header">
+        <h3 className="dashboard-section-title">{section.title}</h3>
+      </div>
       
       {applications.length > 0 && (
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <div className="dashboard-search-bar">
           <input 
             type="text" 
             placeholder="Search by ID, Applicant or Service..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', flex: 1, minWidth: '200px' }}
+            className="dashboard-search-input"
           />
           <select 
             value={statusFilter} 
             onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            className="dashboard-filter-select"
           >
             <option value="">All Statuses</option>
             <option value="SUBMITTED">Submitted</option>
@@ -66,38 +68,60 @@ function PaginatedApplicationsList({ applications, section }) {
       )}
 
       {filteredApps.length === 0 ? (
-        <p>{applications.length === 0 ? "No applications found." : "No applications match your search."}</p>
+        <div className="dashboard-empty-state">
+          <div className="dashboard-empty-icon">📋</div>
+          <p className="dashboard-empty-text">{applications.length === 0 ? "No applications found." : "No applications match your search."}</p>
+        </div>
       ) : (
         currentApps.map(app => (
-          <div key={app.application_id} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '15px', marginBottom: '15px' }}>
-            <p><strong>ID:</strong> {app.application_id}</p>
-            <p><strong>Service:</strong> {app.service_type?.replace(/_/g, ' ').toUpperCase()}</p>
-            <p><strong>Applicant:</strong> {app.user_name}</p>
-            <p><strong>Status:</strong> {app.current_state}</p>
-            <p><strong>Submitted:</strong> {new Date(app.created_at).toLocaleDateString()}</p>
-            <Link to={`/track?appId=${app.application_id}`}>
-              <button style={{ marginTop: '10px' }}>View Details →</button>
-            </Link>
+          <div key={app.application_id} className="dashboard-application-card">
+            <div className="dashboard-app-info">
+              <div className="dashboard-app-info-item">
+                <span className="dashboard-app-info-label">ID</span>
+                <span className="dashboard-app-info-value">{app.application_id}</span>
+              </div>
+              <div className="dashboard-app-info-item">
+                <span className="dashboard-app-info-label">Service</span>
+                <span className="dashboard-app-info-value">{app.service_type?.replace(/_/g, ' ').toUpperCase()}</span>
+              </div>
+              <div className="dashboard-app-info-item">
+                <span className="dashboard-app-info-label">Applicant</span>
+                <span className="dashboard-app-info-value">{app.user_name}</span>
+              </div>
+              <div className="dashboard-app-info-item">
+                <span className="dashboard-app-info-label">Status</span>
+                <span className="dashboard-app-info-value">{app.current_state}</span>
+              </div>
+              <div className="dashboard-app-info-item">
+                <span className="dashboard-app-info-label">Submitted</span>
+                <span className="dashboard-app-info-value">{new Date(app.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+            <div className="dashboard-app-actions">
+              <Link to={`/track?appId=${app.application_id}`} className="dashboard-view-btn">
+                View Details →
+              </Link>
+            </div>
           </div>
         ))
       )}
 
       {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '20px' }}>
+        <div className="dashboard-pagination">
           <button 
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
             disabled={currentPage === 1}
-            style={{ padding: '6px 12px', background: currentPage === 1 ? '#e5e7eb' : '#2563eb', color: currentPage === 1 ? '#9ca3af' : 'white', border: 'none', borderRadius: '4px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+            className="dashboard-pagination-btn"
           >
             Previous
           </button>
-          <span style={{ fontSize: '14px' }}>
+          <span className="dashboard-pagination-info">
             Page {currentPage} of {totalPages}
           </span>
           <button 
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
             disabled={currentPage === totalPages}
-            style={{ padding: '6px 12px', background: currentPage === totalPages ? '#e5e7eb' : '#2563eb', color: currentPage === totalPages ? '#9ca3af' : 'white', border: 'none', borderRadius: '4px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
+            className="dashboard-pagination-btn"
           >
             Next
           </button>
@@ -224,18 +248,21 @@ function DynamicDashboard({ config, user }) {
       case 'stats_cards':
         const stats = data || {};
         return (
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '24px' }}>
-            <div className="card" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#2563eb' }}>{stats.total || 0}</div>
-              <div>Total Applications</div>
+          <div className="dashboard-grid">
+            <div className="dashboard-stats-card">
+              <div className="dashboard-stats-icon primary">📊</div>
+              <div className="dashboard-stats-value">{stats.total || 0}</div>
+              <div className="dashboard-stats-label">Total Applications</div>
             </div>
-            <div className="card" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#f59e0b' }}>{stats.pending || 0}</div>
-              <div>In Progress</div>
+            <div className="dashboard-stats-card">
+              <div className="dashboard-stats-icon warning">⏳</div>
+              <div className="dashboard-stats-value">{stats.pending || 0}</div>
+              <div className="dashboard-stats-label">In Progress</div>
             </div>
-            <div className="card" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#22c55e' }}>{stats.completed || 0}</div>
-              <div>Completed</div>
+            <div className="dashboard-stats-card">
+              <div className="dashboard-stats-icon success">✓</div>
+              <div className="dashboard-stats-value">{stats.completed || 0}</div>
+              <div className="dashboard-stats-label">Completed</div>
             </div>
           </div>
         );
