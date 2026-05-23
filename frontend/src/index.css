@@ -1959,16 +1959,6 @@ tbody tr:hover {
 }
 }
 
-.dashboard-stats-icon.success {
-  background: var(--color-success-light);
-  color: var(--color-success);
-}
-
-.dashboard-stats-icon.warning {
-  background: var(--color-warning-light);
-  color: var(--color-warning);
-}
-
 .dashboard-stats-icon.error {
   background: var(--color-error-light);
   color: var(--color-error);
