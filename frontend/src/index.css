@@ -567,6 +567,43 @@ textarea:focus-visible {
 .border-dashed { border-style: dashed; }
 
 /* ============================================
+   Component-Specific Classes
+   ============================================ */
+.card {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-6);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.badge-blue {
+  background: var(--color-info-50);
+  color: var(--color-info-700);
+}
+
+.grid {
+  display: grid;
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-cols-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+/* ============================================
    Animation Keyframes
    ============================================ */
 @keyframes fadeIn {
