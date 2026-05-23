@@ -370,7 +370,6 @@ function App() {
                   <option value="en">English</option>
                 )}
               </select>
-              <NotificationsDropdown />
               <button onClick={handleLogout} style={{ background: '#dc2626', padding: '8px 20px', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white' }}>
                 {translate(translations, 'logout', 'Logout')}
               </button>
