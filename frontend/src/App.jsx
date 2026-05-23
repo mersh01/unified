@@ -304,86 +304,18 @@ function App() {
 
   return (
     <Router>
-      <div className="app-layout">
+      <div className="min-h-screen bg-gray-50">
         {/* Mobile Overlay */}
         <div 
           className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} 
           onClick={() => setIsSidebarOpen(false)}
         ></div>
 
-        <aside className={`app-sidebar ${isSidebarOpen ? 'open' : ''}`}>
-          <div className="sidebar-user-section" onClick={() => { setEditName(frontendConfig?.user?.full_name || frontendConfig?.user?.name || ''); setIsProfileModalOpen(true); }}>
-            <div className="sidebar-avatar-container">
-              {frontendConfig?.user?.profile_picture_url ? (
-                <img 
-                  src={`${API_URL}${frontendConfig.user.profile_picture_url}`} 
-                  alt="Profile" 
-                  className="sidebar-avatar"
-                />
-              ) : (
-                <div className="sidebar-avatar-placeholder">
-                  {(frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'U').charAt(0).toUpperCase()}
-                </div>
-              )}
-              <span className="sidebar-avatar-badge"></span>
-            </div>
-            <div className="sidebar-user-info">
-              <div className="sidebar-user-name">
-                {frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'User'}
-              </div>
-              <div className="sidebar-user-role">
-                {frontendConfig?.user?.phone_number || ''}
-              </div>
-            </div>
-          </div>
-          <div className="sidebar-header" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-            <h2>DMS</h2>
-          </div>
-          <nav className="sidebar-nav">
-            {user?.type === 'citizen' || user?.role === 'citizen' ? (
-              <>
-                <Link to="/" onClick={() => setIsSidebarOpen(false)}>Dashboard</Link>
-                <Link to="/track" onClick={() => setIsSidebarOpen(false)}>Track Applications</Link>
-                <div style={{ marginTop: '20px', fontWeight: 'bold', fontSize: '0.75rem', color: '#9ca3af', padding: '0 16px', letterSpacing: '0.05em' }}>DEPARTMENTS</div>
-                {Object.entries(getServicesByDepartment()).map(([department, deptServices]) => (
-                  <div key={department}>
-                    <button 
-                      className={`department-item ${selectedDepartment === department ? 'selected' : ''}`}
-                      onClick={() => handleDepartmentClick(department)}
-                    >
-                      <span>
-                        {department.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                        {selectedDepartment === department ? '▼' : '▶'} ({deptServices.length})
-                      </span>
-                    </button>
-                    {selectedDepartment === department && (
-                      <div>
-                        {deptServices.map(service => (
-                          <Link 
-                            key={service.service_id} 
-                            to={`/apply?service_id=${service.service_id}`}
-                            className="service-item"
-                            onClick={() => setIsSidebarOpen(false)}
-                          >
-                            {service.name}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </>
-            ) : (
-              navigation.map(item => (
-                <Link key={item.path} to={item.path} onClick={() => setIsSidebarOpen(false)}>
-                  {item.icon} {item.label}
-                </Link>
-              ))
-            )}
-          </nav>
-        </aside>
+        <DynamicNavigation 
+          user={frontendConfig?.user || user}
+          isOpen={isSidebarOpen}
+          onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
 
         <main className="app-main">
           <header className="app-header">
@@ -445,7 +377,7 @@ function App() {
             </div>
           </header>
 
-          <div className="app-content">
+          <div className="p-4 lg:p-8">
             <Routes>
               {/* Dashboard - Main page */}
               <Route path="/" element={<DynamicDashboard config={frontendConfig} user={user} />} />
