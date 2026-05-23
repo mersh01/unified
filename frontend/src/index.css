@@ -1957,16 +1957,6 @@ tbody tr:hover {
     padding: var(--spacing-6);
   }
 }
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.dashboard-pagination-btn:hover:not(:disabled) {
-  background: var(--color-primary-700);
 }
 
 .dashboard-pagination-btn:disabled {
