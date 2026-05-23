@@ -350,31 +350,29 @@ function DynamicDashboard({ config, user }) {
       case 'roles_table':
         const rolesList = data || [];
         return (
-          <div className="card">
-            <h3>{section.title}</h3>
+          <Card variant="elevated">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">{section.title}</h3>
             {rolesList.length === 0 ? (
-              <p>No roles found.</p>
+              <p className="text-gray-500 text-center py-8">No roles found.</p>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
                   <thead>
-                    <tr style={{ background: '#f3f4f6', textAlign: 'left' }}>
-                      <th style={{ padding: '12px' }}>Role ID</th>
-                      <th style={{ padding: '12px' }}>Name</th>
-                      <th style={{ padding: '12px' }}>Description</th>
-                      <th style={{ padding: '12px' }}>Permissions</th>
+                    <tr className="bg-gray-50 text-left">
+                      <th className="px-4 py-3 font-semibold text-gray-700">Role ID</th>
+                      <th className="px-4 py-3 font-semibold text-gray-700">Name</th>
+                      <th className="px-4 py-3 font-semibold text-gray-700">Description</th>
+                      <th className="px-4 py-3 font-semibold text-gray-700">Permissions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rolesList.map(r => (
-                      <tr key={r.role_id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '12px' }}><code>{r.role_id}</code></td>
-                        <td style={{ padding: '12px' }}>{r.name}</td>
-                        <td style={{ padding: '12px' }}>{r.description}</td>
-                        <td style={{ padding: '12px' }}>
-                          <span style={{ background: '#e5e7eb', padding: '2px 8px', borderRadius: '20px', fontSize: '12px' }}>
-                            {r.permissions?.length || 0} permissions
-                          </span>
+                      <tr key={r.role_id} className="border-b border-gray-200 hover:bg-gray-50">
+                        <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-1 rounded text-sm">{r.role_id}</code></td>
+                        <td className="px-4 py-3">{r.name}</td>
+                        <td className="px-4 py-3">{r.description}</td>
+                        <td className="px-4 py-3">
+                          <Badge variant="secondary">{r.permissions?.length || 0} permissions</Badge>
                         </td>
                       </tr>
                     ))}
@@ -382,7 +380,7 @@ function DynamicDashboard({ config, user }) {
                 </table>
               </div>
             )}
-          </div>
+          </Card>
         );
 
       default:
