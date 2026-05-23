@@ -443,11 +443,12 @@ function DynamicDashboard({ config, user }) {
                   ))}
                 </select>
               </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button onClick={() => setShowUserModal(false)} style={{ background: '#6b7280' }}>Cancel</button>
-              <button onClick={createUser} style={{ background: '#2563eb' }}>Create</button>
+              <div className="flex gap-3 pt-4">
+                <Button onClick={() => setShowUserModal(false)} variant="secondary" className="flex-1">Cancel</Button>
+                <Button onClick={createUser} variant="primary" className="flex-1">Create</Button>
+              </div>
             </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>
