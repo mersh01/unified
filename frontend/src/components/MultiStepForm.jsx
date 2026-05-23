@@ -565,6 +565,7 @@ const renderField = (field, step) => {
             title={`${label} map`}
             src={mapSrc}
             style={{ width: '100%', minHeight: '250px', border: 0 }}
+            sandbox="allow-scripts allow-same-origin"
           />
         </div>
 
