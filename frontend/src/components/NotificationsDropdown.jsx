@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge, Button } from './ui';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
@@ -38,15 +37,15 @@ const ChevronUpIcon = ({ size = 16 }) => (
 
 // Map notification type → colour token
 const TYPE_COLORS = {
-  SUBMISSION:    { bg: 'bg-info-50', border: 'border-info-200', icon: '📋', dot: 'bg-info-500' },
-  STATUS_UPDATE: { bg: 'bg-success-50', border: 'border-success-200', icon: '🔄', dot: 'bg-success-500' },
-  ASSIGNMENT:    { bg: 'bg-purple-50', border: 'border-purple-200', icon: '👤', dot: 'bg-purple-500' },
-  PAYMENT:       { bg: 'bg-warning-50', border: 'border-warning-200', icon: '💳', dot: 'bg-warning-500' },
-  COMPLETION:    { bg: 'bg-success-50', border: 'border-success-200', icon: '✅', dot: 'bg-success-600' },
-  REJECTION:     { bg: 'bg-danger-50', border: 'border-danger-200', icon: '❌', dot: 'bg-danger-500' },
+  SUBMISSION:    { bg: '#eff6ff', border: '#bfdbfe', icon: '📋', dot: '#3b82f6' },
+  STATUS_UPDATE: { bg: '#f0fdf4', border: '#bbf7d0', icon: '🔄', dot: '#22c55e' },
+  ASSIGNMENT:    { bg: '#fdf4ff', border: '#e9d5ff', icon: '👤', dot: '#a855f7' },
+  PAYMENT:       { bg: '#fff7ed', border: '#fed7aa', icon: '💳', dot: '#f97316' },
+  COMPLETION:    { bg: '#f0fdf4', border: '#bbf7d0', icon: '✅', dot: '#16a34a' },
+  REJECTION:     { bg: '#fef2f2', border: '#fecaca', icon: '❌', dot: '#ef4444' },
 };
 
-const DEFAULT_COLOR = { bg: 'bg-gray-50', border: 'border-gray-200', icon: '🔔', dot: 'bg-gray-500' };
+const DEFAULT_COLOR = { bg: '#f9fafb', border: '#e5e7eb', icon: '🔔', dot: '#6b7280' };
 
 function timeAgo(dateStr) {
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -165,27 +164,66 @@ export default function NotificationsDropdown() {
   const hasUnread   = unreadCount > 0;
 
   return (
-    <div className="relative" id="notifications-wrapper">
+    <div style={{ position: 'relative' }} id="notifications-wrapper">
       {/* ── Bell button ─────────────────────────────────────────────────── */}
       <button
         ref={btnRef}
         id="notifications-bell-btn"
         onClick={() => { setOpen(o => !o); if (!open) fetchNotifications(); }}
         title="Notifications"
-        className={`
-          relative p-2 rounded-lg transition-all duration-200
-          ${open ? 'bg-info-50 text-info-700 border border-info-200' : 'text-gray-600 hover:bg-gray-100'}
-        `}
+        style={{
+          position:       'relative',
+          background:     open ? '#eff6ff' : 'transparent',
+          border:         open ? '1px solid #bfdbfe' : '1px solid transparent',
+          borderRadius:   '10px',
+          padding:        '8px',
+          cursor:         'pointer',
+          color:          open ? '#2563eb' : '#6b7280',
+          display:        'flex',
+          alignItems:     'center',
+          justifyContent: 'center',
+          transition:     'all 0.2s ease',
+        }}
+        onMouseEnter={e => {
+          if (!open) {
+            e.currentTarget.style.background = '#f3f4f6';
+            e.currentTarget.style.color = '#374151';
+          }
+        }}
+        onMouseLeave={e => {
+          if (!open) {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = '#6b7280';
+          }
+        }}
       >
         <BellIcon />
         {/* Badge */}
         {hasUnread && (
-          <Badge 
-            variant="danger" 
-            className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-xs font-bold border-2 border-white"
+          <span
+            id="notifications-badge"
+            style={{
+              position:      'absolute',
+              top:           '4px',
+              right:         '4px',
+              minWidth:      '18px',
+              height:        '18px',
+              padding:       '0 4px',
+              borderRadius:  '9px',
+              background:    '#ef4444',
+              color:         'white',
+              fontSize:      '11px',
+              fontWeight:    '700',
+              display:       'flex',
+              alignItems:    'center',
+              justifyContent:'center',
+              lineHeight:    1,
+              border:        '2px solid white',
+              animation:     'notif-pulse 2s ease-in-out infinite',
+            }}
           >
             {unreadCount > 99 ? '99+' : unreadCount}
-          </Badge>
+          </span>
         )}
       </button>
 
@@ -194,35 +232,76 @@ export default function NotificationsDropdown() {
         <div
           ref={panelRef}
           id="notifications-panel"
-          className="absolute top-full right-0 mt-2.5 w-[380px] max-h-[520px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50 overflow-hidden animate-slideDown"
+          style={{
+            position:     'absolute',
+            top:          'calc(100% + 10px)',
+            right:        '0',
+            width:        '380px',
+            maxHeight:    '520px',
+            background:   'white',
+            borderRadius: '16px',
+            boxShadow:    '0 20px 60px rgba(0,0,0,0.15), 0 4px 20px rgba(0,0,0,0.08)',
+            border:       '1px solid #e5e7eb',
+            display:      'flex',
+            flexDirection:'column',
+            zIndex:       9999,
+            overflow:     'hidden',
+            animation:    'notif-slide-in 0.2s ease',
+          }}
         >
           {/* Header */}
-          <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-br from-gray-50 to-white">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🔔</span>
-              <span className="font-bold text-gray-900">
+          <div style={{
+            padding:        '16px 20px',
+            borderBottom:   '1px solid #f3f4f6',
+            display:        'flex',
+            alignItems:     'center',
+            justifyContent: 'space-between',
+            background:     'linear-gradient(135deg, #f8faff 0%, #ffffff 100%)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '18px' }}>🔔</span>
+              <span style={{ fontWeight: '700', fontSize: '15px', color: '#111827' }}>
                 Notifications
               </span>
               {hasUnread && (
-                <Badge variant="danger">{unreadCount} new</Badge>
+                <span style={{
+                  background: '#ef4444', color: 'white',
+                  borderRadius: '12px', padding: '2px 8px',
+                  fontSize: '12px', fontWeight: '700',
+                }}>
+                  {unreadCount} new
+                </span>
               )}
             </div>
-            <div className="flex gap-2">
+            <div style={{ display: 'flex', gap: '8px' }}>
               {hasUnread && (
-                <Button
+                <button
                   id="notifications-mark-all-btn"
                   onClick={markAllRead}
                   disabled={markingAll}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1"
+                  title="Mark all as read"
+                  style={{
+                    display:     'flex', alignItems: 'center', gap: '4px',
+                    padding:     '6px 12px',
+                    background:  '#eff6ff', color: '#2563eb',
+                    border:      '1px solid #bfdbfe',
+                    borderRadius:'8px', cursor: 'pointer',
+                    fontSize:    '12px', fontWeight: '600',
+                    opacity:     markingAll ? 0.6 : 1,
+                    transition:  'all 0.15s',
+                  }}
                 >
                   <CheckAllIcon /> {markingAll ? 'Marking…' : 'Mark all read'}
-                </Button>
+                </button>
               )}
               <button
                 onClick={() => setOpen(false)}
-                className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                style={{
+                  background: 'transparent', border: 'none',
+                  cursor: 'pointer', color: '#9ca3af',
+                  padding: '4px', borderRadius: '6px',
+                  display: 'flex', alignItems: 'center',
+                }}
               >
                 <CloseIcon />
               </button>

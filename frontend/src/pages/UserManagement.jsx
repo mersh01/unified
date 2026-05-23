@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Input, Card, Badge } from '../components/ui';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
@@ -481,29 +480,27 @@ function UserManagement({ user }) {
             </tbody>
           </table>
         </div>
-        <div className="flex justify-between items-center mt-6">
-          <div className="text-sm text-gray-500">
-            Showing {users.length} users
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
+          <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+            Showing {users.length} of {totalUsers} users
           </div>
-          <div className="flex gap-2">
-            <Button
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
               type="button"
               onClick={() => fetchUsers(Math.max(0, page - 1))}
               disabled={page === 0}
-              variant="secondary"
-              size="sm"
+              style={{ padding: '8px 16px', background: page === 0 ? '#cbd5e1' : 'var(--primary)', color: page === 0 ? '#64748b' : 'white', borderRadius: '6px', fontWeight: '500' }}
             >
               Previous
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
               onClick={() => fetchUsers(page + 1)}
               disabled={(page + 1) * pageSize >= totalUsers}
-              variant="secondary"
-              size="sm"
+              style={{ padding: '8px 16px', background: (page + 1) * pageSize >= totalUsers ? '#cbd5e1' : 'var(--primary)', color: (page + 1) * pageSize >= totalUsers ? '#64748b' : 'white', borderRadius: '6px', fontWeight: '500' }}
             >
               Next
-            </Button>
+            </button>
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Menu, ChevronDown, ChevronUp } from 'lucide-react';
 import Login from './components/Login';
 import DynamicDashboard from './components/DynamicDashboard';
 import DynamicForm from './components/DynamicForm';
@@ -10,9 +11,14 @@ import RoleManagement from './pages/RoleManagement';
 import ServiceManagement from './pages/ServiceManagement';
 import WorkflowManagement from './pages/WorkflowManagement';
 import LocalizationManagement from './pages/LocalizationManagement';
-import DynamicNavigation from './components/DynamicNavigation';
-import Header from './components/Header';
+import NotificationsDropdown from './components/NotificationsDropdown';
 import { translate, getStoredLocale, saveLocale } from './utils/i18n';
+import Card from './components/ui/Card';
+import Button from './components/ui/Button';
+import Input from './components/ui/Input';
+import Select from './components/ui/Select';
+import Modal from './components/ui/Modal';
+import Badge from './components/ui/Badge';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -51,7 +57,7 @@ function App() {
   const [locale, setLocale] = useState(getStoredLocale());
   const [translations, setTranslations] = useState({});
   const [availableLocales, setAvailableLocales] = useState([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [services, setServices] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -298,41 +304,162 @@ function App() {
 
   const canApply = frontendConfig.features?.can_apply || false;
   const navigation = frontendConfig.navigation?.items || [];
-  const isAdmin = frontendConfig.user?.type === 'admin';
+  const isCitizen = frontendConfig.user?.type === 'citizen' || frontendConfig.user?.role === 'citizen';
+  const isAdmin = !isCitizen;
   const canManageUsers = frontendConfig.features?.can_manage_users || false;
   const canManageRoles = frontendConfig.features?.can_manage_roles || false;
+  const currentPath = window.location.pathname;
+  const isPathActive = (path) => currentPath === path || (path !== '/' && currentPath.startsWith(path));
+
+  const citizenMenu = [
+    { label: 'Dashboard', path: '/' },
+    ...(canApply ? [{ label: 'Apply for Service', path: '/apply' }] : []),
+    { label: 'Track Application', path: '/track' },
+  ];
+
+  const adminMenu = [
+    { label: 'Applications', path: '/admin/applications' },
+    ...(canManageUsers ? [{ label: 'Users', path: '/admin/users' }] : []),
+    ...(canManageRoles ? [{ label: 'Roles', path: '/admin/roles' }] : []),
+    ...(canManageRoles ? [{ label: 'Services', path: '/admin/services' }] : []),
+    ...(canManageRoles ? [{ label: 'Workflows', path: '/admin/workflows' }] : []),
+    ...(canManageRoles ? [{ label: 'Localizations', path: '/admin/localizations' }] : []),
+  ];
 
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
+      <div className="app-layout">
         {/* Mobile Overlay */}
         <div 
           className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} 
           onClick={() => setIsSidebarOpen(false)}
         ></div>
 
-        <DynamicNavigation 
-          user={frontendConfig?.user || user}
-          isOpen={isSidebarOpen}
-          onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-        />
+        <aside className={`app-sidebar fixed inset-y-0 left-0 z-40 transform bg-white px-4 py-5 shadow-lg transition-transform duration-300 md:static md:translate-x-0 md:shadow-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="mb-8 flex items-center gap-3 border-b border-slate-200 pb-5">
+            <div className="h-12 w-12 rounded-3xl bg-govblue-600 text-white grid place-items-center text-xl font-bold">D</div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Government Service</p>
+              <h2 className="text-lg font-semibold text-slate-950">Digital Service Hub</h2>
+            </div>
+          </div>
 
-        <main className="flex-1 flex flex-col">
-          <Header
-            user={frontendConfig?.user || user}
-            onLogout={handleLogout}
-            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-            onProfileClick={() => { setEditName(frontendConfig?.user?.full_name || frontendConfig?.user?.name || ''); setIsProfileModalOpen(true); }}
-            locale={locale}
-            availableLocales={availableLocales}
-            onLocaleChange={handleLocaleChange}
-            translations={translations}
-            translate={translate}
-          />
+          <nav className="space-y-1 mt-8">
+            {(isCitizen ? citizenMenu : adminMenu).map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => setIsSidebarOpen(false)}
+                className={`block rounded-3xl px-4 py-3 text-sm font-medium transition ${isPathActive(item.path) ? 'bg-govblue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100'}`}
+              >
+                {item.icon ? <span className="mr-2 inline-flex align-middle">{item.icon}</span> : null}
+                {item.label}
+              </Link>
+            ))}
+          </nav>
 
-          <div className="flex-1 p-4 lg:p-8 overflow-auto">
-            <div className="max-w-7xl mx-auto">
-              <Routes>
+          {user?.type === 'citizen' || user?.role === 'citizen' ? (
+            <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+              <p className="font-semibold text-slate-950">Departments</p>
+              <div className="mt-3 space-y-2">
+                {Object.entries(getServicesByDepartment()).map(([department, deptServices]) => (
+                  <div key={department}>
+                    <button
+                      onClick={() => handleDepartmentClick(department)}
+                      className="flex w-full items-center justify-between rounded-3xl bg-white px-4 py-3 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-100"
+                    >
+                      <span>{department.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                      <span className="text-slate-500">{selectedDepartment === department ? '▾' : '▸'} {deptServices.length}</span>
+                    </button>
+                    {selectedDepartment === department && (
+                      <div className="mt-2 space-y-1 px-3">
+                        {deptServices.map(service => (
+                          <Link
+                            key={service.service_id}
+                            to={`/apply?service_id=${service.service_id}`}
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="block rounded-2xl px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100"
+                          >
+                            {service.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </aside>
+
+        <main className="app-main">
+          <header className="app-header flex flex-col gap-4 px-4 py-4 md:px-6 md:flex-row md:items-start md:justify-between border-b border-slate-200 bg-white sticky top-0 z-30">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-govblue-500 hover:text-govblue-700 md:hidden"
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                aria-label="Toggle navigation"
+              >
+                <Menu size={20} />
+              </button>
+
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Welcome back</p>
+                <h1 className="text-2xl font-semibold text-slate-950">{translate(translations, 'app_title', 'Document Management System')}</h1>
+                <p className="mt-1 text-sm text-slate-600">{translate(translations, 'welcome_message', 'Welcome')}, {frontendConfig.user?.name || 'User'}.</p>
+                {frontendConfig.user?.role !== 'citizen' && (
+                  <p className="mt-2 text-sm text-slate-500">
+                    {translate(translations, 'role_label', 'Role')}: {frontendConfig.user?.role} · {translate(translations, 'department_label', 'Department')}: {frontendConfig.user?.department || 'N/A'}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+                <Select value={locale} onChange={(e) => handleLocaleChange(e.target.value)} className="bg-transparent border-none p-2 min-w-[120px] text-sm font-medium text-slate-900">
+                  {availableLocales && availableLocales.length > 0 ? (
+                    availableLocales.map((loc) => {
+                      const locCode = typeof loc === 'string'
+                        ? loc
+                        : loc?.locale || loc?.code || loc?.value || loc?.name || 'en';
+                      const locLabel = typeof loc === 'string'
+                        ? loc.toUpperCase()
+                        : loc?.display_name || loc?.name || String(locCode);
+                      return <option key={String(locCode)} value={String(locCode)}>{locLabel}</option>;
+                    })
+                  ) : (
+                    <>
+                      <option value="en">English</option>
+                      <option value="am">አማርኛ</option>
+                    </>
+                  )}
+                </Select>
+              </div>
+
+              <NotificationsDropdown />
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setEditName(frontendConfig?.user?.full_name || frontendConfig?.user?.name || ''); setIsProfileModalOpen(true); }}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 transition hover:bg-slate-200"
+                >
+                  {frontendConfig?.user?.profile_picture_url ? (
+                    <img src={`${API_URL}${frontendConfig.user.profile_picture_url}`} alt="Profile" className="block h-full w-full rounded-2xl object-cover" />
+                  ) : (
+                    (frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'U').charAt(0).toUpperCase()
+                  )}
+                </button>
+
+                <Button variant="danger" onClick={handleLogout}>{translate(translations, 'logout', 'Logout')}</Button>
+              </div>
+            </div>
+          </header>
+
+          <div className="app-content">
+            <Routes>
               {/* Dashboard - Main page */}
               <Route path="/" element={<DynamicDashboard config={frontendConfig} user={user} />} />
               
@@ -367,95 +494,96 @@ function App() {
               {/* Catch all */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-            </div>
           </div>
         </main>
 
-        {/* Profile Modal */}
-        <div className={`profile-modal-overlay ${isProfileModalOpen ? 'visible' : ''}`} onClick={(e) => {
-          if (e.target.className.includes('profile-modal-overlay')) setIsProfileModalOpen(false);
-        }}>
-          <div className="profile-modal">
-            <div className="profile-modal-header">
-              <div className="profile-modal-title">Edit Profile</div>
-              <button className="profile-modal-close" onClick={() => setIsProfileModalOpen(false)}>×</button>
-            </div>
+        <Modal
+          open={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          title="Edit Profile"
+          description="Update your name or upload a new profile picture."
+        >
             
-            <div className="profile-modal-avatar-section">
+          <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
+            <div className="space-y-4 rounded-3xl bg-slate-50 p-4 text-center">
               {previewUrl ? (
-                <img src={previewUrl} alt="Preview" className="profile-modal-avatar" />
+                <div className="mx-auto h-28 w-28 overflow-hidden rounded-3xl bg-slate-100">
+                  <img src={previewUrl} alt="Profile preview" className="block h-full w-full object-cover" />
+                </div>
               ) : frontendConfig?.user?.profile_picture_url ? (
-                <img src={`${API_URL}${frontendConfig.user.profile_picture_url}`} alt="Current" className="profile-modal-avatar" />
+                <div className="mx-auto h-28 w-28 overflow-hidden rounded-3xl bg-slate-100">
+                  <img src={`${API_URL}${frontendConfig.user.profile_picture_url}`} alt="Current profile" className="block h-full w-full object-cover" />
+                </div>
               ) : (
-                <div className="profile-modal-avatar-placeholder">
+                <div className="mx-auto grid h-28 w-28 place-items-center rounded-3xl bg-govblue-600 text-3xl font-semibold text-white">
                   {(frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'U').charAt(0).toUpperCase()}
                 </div>
               )}
-              <div className="profile-modal-role-badge">{frontendConfig?.user?.role}</div>
+              <Badge variant="info">{frontendConfig?.user?.role || 'Citizen'}</Badge>
             </div>
 
-            <div className="profile-edit-section">
-              <label className="profile-edit-label">Full Name</label>
-              <div className="profile-edit-row">
-                <input
-                  type="text"
-                  className="profile-edit-input"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Enter your name"
-                />
-                <button
-                  className="profile-edit-save-btn"
-                  disabled={!editName.trim() || editName.trim() === (frontendConfig?.user?.full_name || frontendConfig?.user?.name) || nameUpdateStatus === 'saving'}
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Full name</label>
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Enter your name" />
+                <Button
                   onClick={handleNameUpdate}
+                  disabled={!editName.trim() || editName.trim() === (frontendConfig?.user?.full_name || frontendConfig?.user?.name) || nameUpdateStatus === 'saving'}
+                  className="w-full"
                 >
-                  {nameUpdateStatus === 'saving' ? 'Saving...' : nameUpdateStatus === 'success' ? 'Saved!' : 'Update'}
-                </button>
+                  {nameUpdateStatus === 'saving' ? 'Saving...' : nameUpdateStatus === 'success' ? 'Saved' : 'Update Name'}
+                </Button>
               </div>
-            </div>
 
-            <div className="profile-edit-section">
-              <label className="profile-edit-label">Profile Picture</label>
-              {!previewUrl ? (
-                <div className="profile-upload-zone" onClick={() => document.getElementById('profile-upload-input').click()}>
-                  <div className="profile-upload-zone-icon">📸</div>
-                  <div className="profile-upload-zone-text">Click to browse or drag image here</div>
-                  <div className="profile-upload-zone-hint">JPG, PNG or WebP (max. 5MB)</div>
-                  <input 
-                    type="file" 
-                    id="profile-upload-input" 
-                    accept="image/jpeg, image/png, image/webp" 
-                    style={{ display: 'none' }} 
-                    onChange={handleFileSelect}
-                  />
-                </div>
-              ) : (
-                <div className="profile-upload-preview">
-                  <img src={previewUrl} alt="Selected" />
-                  <div className="profile-upload-preview-info">
-                    <div className="profile-upload-preview-name">{selectedFile?.name}</div>
-                    <div className="profile-upload-preview-size">{(selectedFile?.size / 1024 / 1024).toFixed(2)} MB</div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Profile picture</label>
+                {!previewUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('profile-upload-input').click()}
+                    className="flex min-h-[160px] w-full flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm text-slate-500 transition hover:border-govblue-500 hover:bg-slate-100"
+                  >
+                    <span className="text-3xl">📸</span>
+                    <span>Click to upload or drag file here</span>
+                    <span className="text-xs text-slate-400">JPG, PNG or WebP · max 5MB</span>
+                    <input
+                      id="profile-upload-input"
+                      type="file"
+                      accept="image/jpeg, image/png, image/webp"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                  </button>
+                ) : (
+                  <div className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="h-44 overflow-hidden rounded-3xl">
+                      <img src={previewUrl} alt="Selected file" className="block h-full w-full object-cover" />
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{selectedFile?.name}</p>
+                        <p className="text-sm text-slate-500">{(selectedFile?.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                      <button type="button" onClick={() => { setSelectedFile(null); setPreviewUrl(null); }} className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100">
+                        Remove
+                      </button>
+                    </div>
                   </div>
-                  <button className="profile-upload-remove" onClick={() => { setSelectedFile(null); setPreviewUrl(null); }}>Remove</button>
+                )}
+              </div>
+
+              {uploadStatus === 'success' && (
+                <div className="rounded-3xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                  Profile picture updated successfully.
                 </div>
               )}
+
+              <Button onClick={handleProfileUpload} disabled={!selectedFile || uploadStatus === 'uploading' || uploadStatus === 'success'} className="w-full">
+                {uploadStatus === 'uploading' ? 'Uploading...' : uploadStatus === 'success' ? 'Done' : 'Upload Picture'}
+              </Button>
             </div>
-
-            {uploadStatus === 'success' && (
-              <div className="profile-upload-success">
-                Profile picture updated successfully!
-              </div>
-            )}
-
-            <button 
-              className={`profile-upload-btn ${uploadStatus === 'uploading' ? 'uploading' : ''}`}
-              disabled={!selectedFile || uploadStatus === 'uploading' || uploadStatus === 'success'}
-              onClick={handleProfileUpload}
-            >
-              {uploadStatus === 'uploading' ? 'Uploading...' : uploadStatus === 'success' ? 'Done' : 'Upload Picture'}
-            </button>
           </div>
-        </div>
+        </Modal>
       </div>
     </Router>
   );

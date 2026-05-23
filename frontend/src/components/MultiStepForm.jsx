@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { FileText, GraduationCap, Building, CreditCard, Truck, BarChart, Award, ChevronLeft, ChevronRight, CheckCircle, Upload, Eye } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import RatingField from './RatingField';
-import { Button, Input, Card, Badge } from './ui';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
@@ -632,23 +631,16 @@ const getFieldConfig = (fieldName, step) => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading services...</p>
-        </div>
-      </div>
-    );
+    return <div className="loading">Loading services...</div>;
   }
 
   if (error) {
     return (
-      <Card variant="outlined" className="bg-danger-50 border-danger-200">
-        <h3 className="text-lg font-semibold text-danger-900">Error Loading Services</h3>
-        <p className="text-danger-700">{error}</p>
-        <Button onClick={loadServices} variant="danger" className="mt-4">Retry</Button>
-      </Card>
+      <div className="card" style={{ background: '#fee2e2', color: '#991b1b' }}>
+        <h3>Error Loading Services</h3>
+        <p>{error}</p>
+        <button onClick={loadServices}>Retry</button>
+      </div>
     );
   }
 
@@ -660,56 +652,38 @@ const getFieldConfig = (fieldName, step) => {
     const currentStepData = isMultiStep ? steps[currentStep] : null;
 
     return (
-      <Card>
-        <button 
-          onClick={() => setSelectedService(null)} 
-          className="mb-6 text-primary-600 hover:text-primary-700 font-medium flex items-center gap-2"
-        >
-          <ChevronLeft size={16} />
-          Back to Services
+      <div className="card">
+        <button onClick={() => setSelectedService(null)} style={{ marginBottom: '20px' }}>
+          ← Back to Services
         </button>
 
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">{config.name}</h2>
-        <p className="text-gray-600 mb-6">{config.description}</p>
+        <h2>{config.name}</h2>
+        <p className="text-muted">{config.description}</p>
 
         {isMultiStep && (
-          <div className="flex items-center justify-between mb-8 p-4 bg-gray-50 rounded-xl">
+          <div className="step-indicator">
             {steps.map((step, index) => (
               <div
                 key={step.id}
-                className={`flex items-center ${index !== steps.length - 1 ? 'flex-1' : ''}`}
+                className={`step ${index === currentStep ? 'active' : index < currentStep ? 'completed' : 'pending'}`}
               >
-                <div className="flex items-center">
-                  <div className={`
-                    w-10 h-10 rounded-full flex items-center justify-center font-semibold
-                    ${index === currentStep ? 'bg-primary-600 text-white' : index < currentStep ? 'bg-success-600 text-white' : 'bg-gray-300 text-gray-600'}
-                  `}>
-                    {index < currentStep ? <CheckCircle size={20} /> : index + 1}
-                  </div>
-                  <div className="ml-3">
-                    <p className={`text-sm font-medium ${index === currentStep ? 'text-primary-700' : 'text-gray-600'}`}>
-                      {step.title}
-                    </p>
-                  </div>
-                </div>
-                {index !== steps.length - 1 && (
-                  <div className={`flex-1 h-0.5 mx-4 ${index < currentStep ? 'bg-success-600' : 'bg-gray-300'}`}></div>
-                )}
+                <div className="step-number">{index + 1}</div>
+                <div className="step-title">{step.title}</div>
               </div>
             ))}
           </div>
         )}
 
-        <div className="flex flex-wrap gap-3 mb-6">
-          <Badge variant="primary">Fee: ₹{config.fee_amount}</Badge>
-          <Badge variant="info">Processing: {config.processing_time_days} days</Badge>
+        <div style={{ margin: '20px 0', display: 'flex', gap: '16px' }}>
+          <span className="badge badge-blue">Fee: ₹{config.fee_amount}</span>
+          <span className="badge badge-blue">Processing: {config.processing_time_days} days</span>
         </div>
 
         <form onSubmit={handleSubmit}>
           {isMultiStep ? (
             <div className="step-content">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">{currentStepData.title}</h3>
-              <p className="text-gray-600 mb-6">{currentStepData.description}</p>
+              <h3>{currentStepData.title}</h3>
+              <p className="text-muted">{currentStepData.description}</p>
 
               {currentStepData.type === 'verification' ? (
                 renderVerificationStep(currentStepData)
@@ -733,39 +707,39 @@ const getFieldConfig = (fieldName, step) => {
             </>
           )}
 
-          <div className="form-actions flex gap-3 mt-8">
+          <div className="form-actions">
             {isMultiStep && currentStep > 0 && (
-              <Button type="button" onClick={prevStep} variant="secondary" leftIcon={<ChevronLeft size={16} />}>
-                Previous
-              </Button>
+              <button type="button" onClick={prevStep} className="btn-secondary">
+                <ChevronLeft size={16} /> Previous
+              </button>
             )}
 
             {isMultiStep && currentStep < steps.length - 1 && (
-              <Button key="btn-next" type="button" onClick={nextStep} variant="primary" rightIcon={<ChevronRight size={16} />}>
-                Next
-              </Button>
+              <button key="btn-next" type="button" onClick={nextStep} className="btn-primary">
+                Next <ChevronRight size={16} />
+              </button>
             )}
 
             {(!isMultiStep || currentStep >= steps.length - 1) && (
-             <Button key="btn-submit" type="submit" disabled={submitting} variant="primary" loading={submitting}>
+             <button key="btn-submit" type="submit" disabled={submitting} className="btn-primary">
                {submitting ? 'Submitting...' : 'Submit Complaint'}
-             </Button>
+             </button>
             )}
           </div>
         </form>
-      </Card>
+      </div>
     );
   }
 
   // Show service list
   return (
-    <div className="space-y-6">
-      <Card>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Apply for a Service</h2>
-        <p className="text-gray-600">Select a service to begin your application:</p>
-      </Card>
+    <div>
+      <div className="card">
+        <h2>Apply for a Service</h2>
+        <p>Select a service to begin your application:</p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid">
         {services.map(service => {
           const getIcon = (category) => {
             const icons = {
@@ -782,36 +756,38 @@ const getFieldConfig = (fieldName, step) => {
 
           const Icon = getIcon(service.category);
           return (
-            <Card
+            <div
               key={service.service_id}
+              className="card"
               onClick={() => loadServiceForm(service.service_id)}
-              className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
-              variant="elevated"
+              style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              <div className="text-primary-600 mb-4">
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>
                 <Icon size={48} />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{service.name}</h3>
-              <p className="text-gray-600 text-sm mb-4">
+              <h3>{service.name}</h3>
+              <p className="text-muted" style={{ fontSize: '14px', margin: '8px 0' }}>
                 {service.description}
               </p>
-              <div className="flex justify-between items-center mt-4">
-                <Badge variant="primary">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                <span className="badge badge-blue">
                   {service.fee_amount === 0 ? 'Free' : `₹${service.fee_amount}`}
-                </Badge>
-                <span className="text-gray-500 text-sm">
+                </span>
+                <span className="text-muted" style={{ fontSize: '12px' }}>
                   {service.processing_time_days} days
                 </span>
               </div>
-            </Card>
+            </div>
           );
         })}
       </div>
 
       {services.length === 0 && (
-        <Card className="text-center py-12">
-          <p className="text-gray-500">No services available.</p>
-        </Card>
+        <div className="card" style={{ textAlign: 'center' }}>
+          <p>No services available.</p>
+        </div>
       )}
     </div>
   );

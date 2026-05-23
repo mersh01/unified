@@ -1,49 +1,18 @@
-import React from 'react';
+import React from 'react'
 
-const Badge = ({
-  children,
-  variant = 'default',
-  size = 'md',
-  className = '',
-  ...props
-}) => {
-  const baseStyles = `
-    inline-flex
-    items-center
-    font-semibold
-    rounded-full
-    transition-all
-    duration-200
-  `;
+const variants = {
+  primary: 'bg-govblue-600 text-white',
+  info: 'bg-sky-100 text-sky-700',
+  success: 'bg-emerald-100 text-emerald-700',
+  warning: 'bg-amber-100 text-amber-800',
+  danger: 'bg-rose-100 text-rose-700',
+  muted: 'bg-slate-100 text-slate-700',
+}
 
-  const variants = {
-    default: 'bg-gray-100 text-gray-800',
-    primary: 'bg-primary-100 text-primary-800',
-    secondary: 'bg-secondary-100 text-secondary-800',
-    success: 'bg-success-100 text-success-800',
-    warning: 'bg-warning-100 text-warning-800',
-    danger: 'bg-danger-100 text-danger-800',
-    info: 'bg-info-100 text-info-800',
-  };
-
-  const sizes = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-2.5 py-1 text-sm',
-    lg: 'px-3 py-1.5 text-base',
-  };
-
-  const classes = `
-    ${baseStyles}
-    ${variants[variant]}
-    ${sizes[size]}
-    ${className}
-  `.replace(/\s+/g, ' ').trim();
-
+export default function Badge({ children, variant = 'muted', className = '', ...props }) {
   return (
-    <span className={classes} {...props}>
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${variants[variant] || variants.muted} ${className}`} {...props}>
       {children}
     </span>
-  );
-};
-
-export default Badge;
+  )
+}
