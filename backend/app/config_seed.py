@@ -105,7 +105,7 @@ def seed_if_empty() -> bool:
             "departments": role_data.get("departments", []),
             "priority": role_data.get("priority", 0),
             "can_assign_roles": role_data.get("can_assign_roles", False),
-            "is_system_role": role_id in ("super_admin", "system_admin", "citizen"),
+            "is_system_role": role_id in ("super_admin", "citizen"),
             "updated_at": now,
         }
         try:

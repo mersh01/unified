@@ -1356,7 +1356,7 @@ async def get_roles(current_user = Depends(AuthHandler.get_current_user_required
 @app.get("/api/admin/workflow-permissions")
 async def get_workflow_permissions(current_user = Depends(AuthHandler.get_current_user_required)):
     """Get workflow-based permissions for role management"""
-    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin", "system_admin"):
+    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin"):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     workflow_perms = role_manager.config.get("workflow_permissions", {})
@@ -1376,7 +1376,7 @@ async def get_workflow_permissions(current_user = Depends(AuthHandler.get_curren
 @app.get("/api/admin/users/{user_id}/roles")
 async def get_user_roles(user_id: str, current_user = Depends(AuthHandler.get_current_user_required)):
     """Get roles for a specific user"""
-    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin", "system_admin"):
+    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin"):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     try:
@@ -1417,7 +1417,7 @@ async def admin_remove_user_role(
     role_name: str,
     current_user = Depends(AuthHandler.get_current_user_required),
 ):
-    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin", "system_admin"):
+    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin"):
         raise HTTPException(status_code=403, detail="Admin access required")
     from .supabase_client import supabase
 
@@ -1446,7 +1446,7 @@ async def admin_assign_user_role(
     payload: UserRoleAssign,
     current_user = Depends(AuthHandler.get_current_user_required),
 ):
-    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin", "system_admin"):
+    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin"):
         raise HTTPException(status_code=403, detail="Admin access required")
     from .supabase_client import supabase
 
@@ -1468,7 +1468,7 @@ async def create_user(user_data: UserCreate, current_user = Depends(AuthHandler.
     if current_user["type"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
         
-    has_manage_users = user_has_any_role(current_user, "super_admin", "system_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
+    has_manage_users = user_has_any_role(current_user, "super_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
     if not has_manage_users:
         raise HTTPException(status_code=403, detail="Permission 'manage_users' required")
 
@@ -1477,7 +1477,7 @@ async def create_user(user_data: UserCreate, current_user = Depends(AuthHandler.
         raise HTTPException(status_code=403, detail="Only super_admin can create super_admin users")
 
     # Security: Regional admins can only assign users to their own department
-    if not user_has_any_role(current_user, "super_admin", "system_admin"):
+    if not user_has_any_role(current_user, "super_admin"):
         if user_data.department != current_user.get("department"):
             raise HTTPException(status_code=403, detail="Regional admins can only assign users to their own department")
 
@@ -1536,11 +1536,11 @@ async def get_users(
     if current_user["type"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
         
-    has_manage_users = user_has_any_role(current_user, "super_admin", "system_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
+    has_manage_users = user_has_any_role(current_user, "super_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
     if not has_manage_users:
         raise HTTPException(status_code=403, detail="Permission 'manage_users' required")
         
-    if not user_has_any_role(current_user, "super_admin", "system_admin"):
+    if not user_has_any_role(current_user, "super_admin"):
         if current_user.get("department"):
             department = current_user.get("department")
 
@@ -1557,7 +1557,7 @@ async def get_users(
         result = user_manager.get_users_paginated(limit=limit, offset=offset, role=role, department=department)
         users = result.get('users', [])
         
-        if not user_has_any_role(current_user, "super_admin", "system_admin"):
+        if not user_has_any_role(current_user, "super_admin"):
             filtered_users = []
             for u in users:
                 target_hierarchy = {
@@ -1621,7 +1621,7 @@ async def get_user(user_id: str, current_user = Depends(AuthHandler.get_current_
     if current_user["type"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
         
-    has_manage_users = user_has_any_role(current_user, "super_admin", "system_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
+    has_manage_users = user_has_any_role(current_user, "super_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
     if not has_manage_users:
         raise HTTPException(status_code=403, detail="Permission 'manage_users' required")
 
@@ -1657,7 +1657,7 @@ async def update_user(
     if current_user["type"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
         
-    has_manage_users = user_has_any_role(current_user, "super_admin", "system_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
+    has_manage_users = user_has_any_role(current_user, "super_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
     if not has_manage_users:
         raise HTTPException(status_code=403, detail="Permission 'manage_users' required")
 
@@ -1678,7 +1678,7 @@ async def update_user(
             raise HTTPException(status_code=403, detail="Only super_admin can assign super_admin role")
 
         # Security: Regional admins can only assign users to their own department
-        if not user_has_any_role(current_user, "super_admin", "system_admin"):
+        if not user_has_any_role(current_user, "super_admin"):
             if user_data.department is not None and user_data.department != current_user.get("department"):
                 raise HTTPException(status_code=403, detail="Regional admins can only assign users to their own department")
 
@@ -1723,7 +1723,7 @@ async def delete_user(user_id: str, current_user = Depends(AuthHandler.get_curre
     if current_user["type"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
         
-    has_manage_users = user_has_any_role(current_user, "super_admin", "system_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
+    has_manage_users = user_has_any_role(current_user, "super_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
     if not has_manage_users:
         raise HTTPException(status_code=403, detail="Permission 'manage_users' required")
 
@@ -1765,7 +1765,7 @@ async def get_audit_logs(
     offset: int = 0
 ):
     """Get audit logs (admin only)"""
-    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin", "system_admin"):
+    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin"):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     try:
@@ -2161,7 +2161,7 @@ async def get_frontend_services(current_user = Depends(AuthHandler.get_current_u
 
 
 def _require_config_admin(current_user: Dict[str, Any]) -> None:
-    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin", "system_admin"):
+    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin"):
         raise HTTPException(status_code=403, detail="Configuration admin access required")
 
 
