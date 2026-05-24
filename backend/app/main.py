@@ -1475,7 +1475,12 @@ async def create_user(user_data: UserCreate, current_user = Depends(AuthHandler.
     # Security: Only super_admin can create super_admin users
     if user_data.role == "super_admin" and not user_has_any_role(current_user, "super_admin"):
         raise HTTPException(status_code=403, detail="Only super_admin can create super_admin users")
-        
+
+    # Security: Regional admins can only assign users to their own department
+    if not user_has_any_role(current_user, "super_admin", "system_admin"):
+        if user_data.department != current_user.get("department"):
+            raise HTTPException(status_code=403, detail="Regional admins can only assign users to their own department")
+
     target_hierarchy = {
         "country": user_data.hierarchy_country,
         "region": user_data.hierarchy_region,
@@ -1671,7 +1676,12 @@ async def update_user(
         # Security: Only super_admin can assign super_admin role
         if user_data.role == "super_admin" and not user_has_any_role(current_user, "super_admin"):
             raise HTTPException(status_code=403, detail="Only super_admin can assign super_admin role")
-            
+
+        # Security: Regional admins can only assign users to their own department
+        if not user_has_any_role(current_user, "super_admin", "system_admin"):
+            if user_data.department is not None and user_data.department != current_user.get("department"):
+                raise HTTPException(status_code=403, detail="Regional admins can only assign users to their own department")
+
         target_hierarchy = {
             "country": existing_user.get("hierarchy_country"),
             "region": existing_user.get("hierarchy_region"),
@@ -1684,7 +1694,7 @@ async def update_user(
 
         # Prepare update data
         update_data = user_data.dict(exclude_unset=True)
-        
+
         # Verify new target scope if hierarchy or department is updated
         new_hierarchy = {**target_hierarchy}
         if "hierarchy_country" in update_data: new_hierarchy["country"] = update_data["hierarchy_country"]
