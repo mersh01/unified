@@ -1471,6 +1471,10 @@ async def create_user(user_data: UserCreate, current_user = Depends(AuthHandler.
     has_manage_users = user_has_any_role(current_user, "super_admin", "system_admin") or role_manager.has_any_permission(_roles_list(current_user), "manage_users")
     if not has_manage_users:
         raise HTTPException(status_code=403, detail="Permission 'manage_users' required")
+
+    # Security: Only super_admin can create super_admin users
+    if user_data.role == "super_admin" and not user_has_any_role(current_user, "super_admin"):
+        raise HTTPException(status_code=403, detail="Only super_admin can create super_admin users")
         
     target_hierarchy = {
         "country": user_data.hierarchy_country,
@@ -1659,6 +1663,14 @@ async def update_user(
         existing_user = user_manager.get_user_by_id(user_id)
         if not existing_user:
             raise HTTPException(status_code=404, detail="User not found")
+
+        # Security: Prevent users from changing their own role
+        if user_id == current_user.get("user_id") and user_data.role is not None:
+            raise HTTPException(status_code=403, detail="Cannot change your own role")
+
+        # Security: Only super_admin can assign super_admin role
+        if user_data.role == "super_admin" and not user_has_any_role(current_user, "super_admin"):
+            raise HTTPException(status_code=403, detail="Only super_admin can assign super_admin role")
             
         target_hierarchy = {
             "country": existing_user.get("hierarchy_country"),
