@@ -143,7 +143,7 @@ function Login({ loginType = 'citizen', onLogin, onAdminLogin, translations, loc
         <select
           value={locale}
           onChange={(e) => onLocaleChange(e.target.value)}
-          className="rounded-2xl border border-white/30 bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-medium text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-white/50"
+          className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 shadow-lg focus:outline-none focus:ring-2 focus:ring-[#0b4f8a]"
         >
           {availableLocales && availableLocales.length > 0 ? (
             availableLocales.map((localeEntry) => (
