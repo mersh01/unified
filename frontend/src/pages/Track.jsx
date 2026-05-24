@@ -297,6 +297,7 @@ function Track() {
         const lat = coordsMatch[1];
         const lng = coordsMatch[2];
         const bbox = `${lng - 0.02}%2C${lat - 0.02}%2C${lng + 0.02}%2C${lat + 0.02}`;
+        // Use OpenStreetMap with marker parameter
         const embedMapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
         const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
         
@@ -306,11 +307,12 @@ function Track() {
             <div style={{ color: '#4b5563', marginBottom: '12px', fontSize: '13px' }}>
               Coordinates: {lat}, {lng}
             </div>
-            <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1', marginBottom: '12px', minHeight: '200px' }}>
+            <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1', marginBottom: '12px', minHeight: '250px', position: 'relative' }}>
               <iframe
                 title="Map Preview"
                 src={embedMapUrl}
-                style={{ width: '100%', minHeight: '200px', border: 0 }}
+                style={{ width: '100%', minHeight: '250px', border: 0 }}
+                sandbox="allow-scripts allow-same-origin"
               />
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
