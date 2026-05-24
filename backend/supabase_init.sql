@@ -123,12 +123,12 @@ ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for users table
 CREATE POLICY "Users can view their own profile" ON users
-FOR SELECT USING (auth.uid()::text = user_id OR role IN ('super_admin', 'system_admin'));
+FOR SELECT USING (auth.uid()::text = user_id OR role = 'super_admin');
 
 CREATE POLICY "Admins can manage users" ON users
 FOR ALL USING (EXISTS (
     SELECT 1 FROM users u WHERE u.user_id = auth.uid()::text 
-    AND u.role IN ('super_admin', 'system_admin')
+    AND u.role = 'super_admin'
 ));
 
 -- Create policies for roles table
@@ -138,7 +138,7 @@ FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Admins can manage roles" ON roles
 FOR ALL USING (EXISTS (
     SELECT 1 FROM users u WHERE u.user_id = auth.uid()::text 
-    AND u.role IN ('super_admin', 'system_admin')
+    AND u.role = 'super_admin'
 ));
 
 -- Create policies for applications table
@@ -151,14 +151,14 @@ FOR INSERT WITH CHECK (user_id = auth.uid()::text);
 CREATE POLICY "Assigned officers can update applications" ON applications
 FOR UPDATE USING (
     assigned_to = auth.uid()::text OR 
-    EXISTS (SELECT 1 FROM users u WHERE u.user_id = auth.uid()::text AND u.role IN ('super_admin', 'system_admin'))
+    EXISTS (SELECT 1 FROM users u WHERE u.user_id = auth.uid()::text AND u.role = 'super_admin')
 );
 
 -- Create policies for audit_logs table
 CREATE POLICY "Admins can view audit logs" ON audit_logs
 FOR SELECT USING (EXISTS (
     SELECT 1 FROM users u WHERE u.user_id = auth.uid()::text 
-    AND u.role IN ('super_admin', 'system_admin')
+    AND u.role = 'super_admin'
 ));
 
 CREATE POLICY "System can insert audit logs" ON audit_logs

@@ -8,7 +8,7 @@ from supabase import create_client
 sb = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_SERVICE_KEY'))
 
 # 1. Get admin users
-admins = sb.table('users').select('username,role,password_hash').in_('role', ['super_admin','system_admin']).execute()
+admins = sb.table('users').select('username,role,password_hash').in_('role', ['super_admin']).execute()
 print("Admin users:")
 for u in admins.data[:5]:
     print(f"  {u['username']} ({u['role']})")
