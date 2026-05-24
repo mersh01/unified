@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { translate } from '../utils/i18n';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
@@ -13,8 +13,22 @@ function Login({ loginType = 'citizen', onLogin, onAdminLogin, translations, loc
   const [error, setError] = useState('');
   const [isNewUser, setIsNewUser] = useState(false);
   const [fullName, setFullName] = useState('');
+  const [currentFeature, setCurrentFeature] = useState(0);
 
   const isCitizenLogin = loginType === 'citizen';
+
+  const features = [
+    { text: 'Secure Authentication', icon: '🔒' },
+    { text: 'Real-time Tracking', icon: '📊' },
+    { text: 'Multi-language Support', icon: '🌍' }
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentFeature((prev) => (prev + 1) % features.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const sendOTP = async () => {
     if (!phoneNumber.match(/^[0-9]{10}$/)) {
@@ -123,34 +137,65 @@ function Login({ loginType = 'citizen', onLogin, onAdminLogin, translations, loc
   };
 
   return (
-    <div className="min-h-screen flex bg-surface-2">
+    <div className="min-h-screen flex bg-surface-2 relative">
+      {/* Language Selector - Top Right */}
+      <div className="absolute top-6 right-6 z-10">
+        <select
+          value={locale}
+          onChange={(e) => onLocaleChange(e.target.value)}
+          className="rounded-2xl border border-white/30 bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-medium text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-white/50"
+        >
+          {availableLocales && availableLocales.length > 0 ? (
+            availableLocales.map((localeEntry) => (
+              <option key={localeEntry.locale} value={localeEntry.locale}>
+                {localeEntry.display_name || localeEntry.locale}
+              </option>
+            ))
+          ) : (
+            <option value="en">English</option>
+          )}
+        </select>
+      </div>
+
       {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#0b4f8a] to-[#0f4e88] items-center justify-center p-12">
-        <div className="text-white max-w-lg">
-          <div className="mb-8">
-            <div className="h-20 w-20 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-4xl font-bold mb-6">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#0b4f8a] to-[#0f4e88] items-center justify-center p-12 relative overflow-hidden">
+        <div className="text-white max-w-lg text-center">
+          <div className="mb-12">
+            <div className="h-24 w-24 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-5xl font-bold mb-8 mx-auto">
               D
             </div>
-            <h1 className="text-4xl font-bold mb-4">
+            <h1 className="text-5xl font-bold mb-6">
               {translate(translations, 'app_title', 'Document Management System')}
             </h1>
-            <p className="text-lg text-white/80">
-              {translate(translations, 'hero_subtitle', 'Secure, efficient, and transparent document processing.')}
-            </p>
           </div>
-          <div className="space-y-4 text-white/70">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">✓</div>
-              <span>Secure authentication</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">✓</div>
-              <span>Real-time tracking</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">✓</div>
-              <span>Multi-language support</span>
-            </div>
+
+          {/* Animated Feature Display */}
+          <div className="h-32 flex items-center justify-center">
+            {features.map((feature, index) => (
+              <div
+                key={index}
+                className={`absolute transition-all duration-700 ease-in-out ${
+                  index === currentFeature
+                    ? 'opacity-100 transform scale-100 translate-y-0'
+                    : 'opacity-0 transform scale-95 translate-y-4'
+                }`}
+              >
+                <div className="text-6xl mb-4 animate-bounce">{feature.icon}</div>
+                <p className="text-3xl font-semibold">{feature.text}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Feature Indicators */}
+          <div className="flex justify-center gap-2 mt-8">
+            {features.map((_, index) => (
+              <div
+                key={index}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  index === currentFeature ? 'w-8 bg-white' : 'w-2 bg-white/40'
+                }`}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -158,25 +203,6 @@ function Login({ loginType = 'citizen', onLogin, onAdminLogin, translations, loc
       {/* Right side - Login Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          {/* Language Selector */}
-          <div className="flex justify-end mb-6">
-            <select
-              value={locale}
-              onChange={(e) => onLocaleChange(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0b4f8a]"
-            >
-              {availableLocales && availableLocales.length > 0 ? (
-                availableLocales.map((localeEntry) => (
-                  <option key={localeEntry.locale} value={localeEntry.locale}>
-                    {localeEntry.display_name || localeEntry.locale}
-                  </option>
-                ))
-              ) : (
-                <option value="en">English</option>
-              )}
-            </select>
-          </div>
-
           {/* Login Card */}
           <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg">
             <div className="mb-8">
