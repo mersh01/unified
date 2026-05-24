@@ -14,7 +14,6 @@ function Login({ loginType = 'citizen', onLogin, onAdminLogin, translations, loc
   const [isNewUser, setIsNewUser] = useState(false);
   const [fullName, setFullName] = useState('');
 
-  // Determine which login form to show
   const isCitizenLogin = loginType === 'citizen';
 
   const sendOTP = async () => {
@@ -124,158 +123,195 @@ function Login({ loginType = 'citizen', onLogin, onAdminLogin, translations, loc
   };
 
   return (
-    <div className="login-container">
-      {/* Left side abstract background */}
-      <div className="login-image-side">
-        <div className="login-image-overlay">
-          <h1 className="login-hero-title">
-            {translate(translations, 'app_title', 'Document Management System')}
-          </h1>
-          <p className="login-hero-subtitle">
-            {translate(translations, 'hero_subtitle', 'Secure, efficient, and transparent document processing.')}
-          </p>
+    <div className="min-h-screen flex bg-surface-2">
+      {/* Left side - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#0b4f8a] to-[#0f4e88] items-center justify-center p-12">
+        <div className="text-white max-w-lg">
+          <div className="mb-8">
+            <div className="h-20 w-20 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-4xl font-bold mb-6">
+              D
+            </div>
+            <h1 className="text-4xl font-bold mb-4">
+              {translate(translations, 'app_title', 'Document Management System')}
+            </h1>
+            <p className="text-lg text-white/80">
+              {translate(translations, 'hero_subtitle', 'Secure, efficient, and transparent document processing.')}
+            </p>
+          </div>
+          <div className="space-y-4 text-white/70">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">✓</div>
+              <span>Secure authentication</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">✓</div>
+              <span>Real-time tracking</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">✓</div>
+              <span>Multi-language support</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Right side login panel */}
-      <div className="login-form-side">
-        <div className="language-selector-wrapper">
-          <select
-            value={locale}
-            onChange={(e) => onLocaleChange(e.target.value)}
-            className="language-select"
-          >
-            {availableLocales && availableLocales.length > 0 ? (
-              availableLocales.map((localeEntry) => (
-                <option key={localeEntry.locale} value={localeEntry.locale}>
-                  {localeEntry.display_name || localeEntry.locale}
-                </option>
-              ))
-            ) : (
-              <option value="en">English</option>
-            )}
-          </select>
-        </div>
-
-        <div className="login-glass-card">
-          <div className="login-header">
-            <h2>{translate(translations, 'welcome_back', 'Welcome Back')}</h2>
-            <p>
-              {isCitizenLogin 
-                ? translate(translations, 'citizen_login_desc', 'Login to manage your applications.') 
-                : translate(translations, 'admin_login_desc', 'Employee portal access.')}
-            </p>
+      {/* Right side - Login Form */}
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          {/* Language Selector */}
+          <div className="flex justify-end mb-6">
+            <select
+              value={locale}
+              onChange={(e) => onLocaleChange(e.target.value)}
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0b4f8a]"
+            >
+              {availableLocales && availableLocales.length > 0 ? (
+                availableLocales.map((localeEntry) => (
+                  <option key={localeEntry.locale} value={localeEntry.locale}>
+                    {localeEntry.display_name || localeEntry.locale}
+                  </option>
+                ))
+              ) : (
+                <option value="en">English</option>
+              )}
+            </select>
           </div>
 
-          {error && (
-            <div className="login-error-message">
-              {error}
-            </div>
-          )}
-
-          {isCitizenLogin ? (
-            <div className="login-form">
-              {!otpSent ? (
-                <>
-                  <div className="input-group">
-                    <label>{translate(translations, 'phone_number', 'Phone Number')}</label>
-                    <input
-                      type="tel"
-                      placeholder={translate(translations, 'phone_placeholder', 'Enter 10-digit mobile number')}
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="login-input"
-                    />
-                  </div>
-                  <button 
-                    onClick={sendOTP} 
-                    disabled={loading} 
-                    className="login-primary-btn"
-                  >
-                    {loading ? translate(translations, 'sending', 'Sending...') : translate(translations, 'send_otp', 'Send OTP')}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div className="input-group">
-                    <label>{translate(translations, 'enter_otp_label', 'Enter OTP')}</label>
-                    <input
-                      type="text"
-                      placeholder={translate(translations, 'otp_placeholder', 'Enter 4-digit OTP')}
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      maxLength="4"
-                      className="login-input"
-                    />
-                  </div>
-                  {isNewUser && (
-                    <div className="input-group" style={{marginTop: '15px'}}>
-                      <label>{translate(translations, 'full_name', 'Full Name')}</label>
-                      <input
-                        type="text"
-                        placeholder={translate(translations, 'full_name_placeholder', 'Enter your full name')}
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="login-input"
-                      />
-                    </div>
-                  )}
-                  <button 
-                    onClick={verifyOTP} 
-                    disabled={loading} 
-                    className="login-primary-btn"
-                  >
-                    {loading ? translate(translations, 'verifying', 'Verifying...') : translate(translations, 'verify_login', 'Verify & Login')}
-                  </button>
-                  <button 
-                    onClick={() => setOtpSent(false)} 
-                    className="login-secondary-btn"
-                  >
-                    ← {translate(translations, 'change_phone', 'Change Phone Number')}
-                  </button>
-                </>
-              )}
-              <p className="demo-hint">
-                {translate(translations, 'demo_otp_hint', 'Demo OTP: 1234')}
+          {/* Login Card */}
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg">
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold text-slate-950 mb-2">
+                {translate(translations, 'welcome_back', 'Welcome Back')}
+              </h2>
+              <p className="text-sm text-slate-600">
+                {isCitizenLogin 
+                  ? translate(translations, 'citizen_login_desc', 'Login to manage your applications.') 
+                  : translate(translations, 'admin_login_desc', 'Employee portal access.')}
               </p>
             </div>
-          ) : (
-            <div className="login-form">
-              <div className="input-group">
-                <label>{translate(translations, 'username', 'Username')}</label>
-                <input
-                  type="text"
-                  placeholder={translate(translations, 'username_placeholder', 'Enter username')}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="login-input"
-                />
+
+            {error && (
+              <div className="mb-6 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
               </div>
-              <div className="input-group">
-                <label>{translate(translations, 'password', 'Password')}</label>
-                <input
-                  type="password"
-                  placeholder={translate(translations, 'password_placeholder', 'Enter password')}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="login-input"
-                />
+            )}
+
+            {isCitizenLogin ? (
+              <div className="space-y-4">
+                {!otpSent ? (
+                  <>
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">
+                        {translate(translations, 'phone_number', 'Phone Number')}
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder={translate(translations, 'phone_placeholder', 'Enter 10-digit mobile number')}
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-[#0b4f8a] focus:ring-2 focus:ring-[#0b4f8a] focus:outline-none"
+                      />
+                    </div>
+                    <button 
+                      onClick={sendOTP} 
+                      disabled={loading} 
+                      className="w-full rounded-2xl bg-[#0b4f8a] px-4 py-3 text-white font-medium transition hover:bg-[#0f4e88] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? translate(translations, 'sending', 'Sending...') : translate(translations, 'send_otp', 'Send OTP')}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">
+                        {translate(translations, 'enter_otp_label', 'Enter OTP')}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder={translate(translations, 'otp_placeholder', 'Enter 4-digit OTP')}
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        maxLength="4"
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-[#0b4f8a] focus:ring-2 focus:ring-[#0b4f8a] focus:outline-none"
+                      />
+                    </div>
+                    {isNewUser && (
+                      <div>
+                        <label className="mb-2 block text-sm font-semibold text-slate-700">
+                          {translate(translations, 'full_name', 'Full Name')}
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={translate(translations, 'full_name_placeholder', 'Enter your full name')}
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-[#0b4f8a] focus:ring-2 focus:ring-[#0b4f8a] focus:outline-none"
+                        />
+                      </div>
+                    )}
+                    <button 
+                      onClick={verifyOTP} 
+                      disabled={loading} 
+                      className="w-full rounded-2xl bg-[#0b4f8a] px-4 py-3 text-white font-medium transition hover:bg-[#0f4e88] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? translate(translations, 'verifying', 'Verifying...') : translate(translations, 'verify_login', 'Verify & Login')}
+                    </button>
+                    <button 
+                      onClick={() => setOtpSent(false)} 
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700 font-medium transition hover:bg-slate-50"
+                    >
+                      ← {translate(translations, 'change_phone', 'Change Phone Number')}
+                    </button>
+                  </>
+                )}
+                <div className="rounded-2xl bg-slate-50 px-4 py-3 text-center text-sm text-slate-600">
+                  {translate(translations, 'demo_otp_hint', 'Demo OTP: 1234')}
+                </div>
               </div>
-              <button 
-                onClick={handleAdminLogin} 
-                disabled={loading} 
-                className="login-primary-btn"
-              >
-                {loading ? translate(translations, 'logging_in', 'Logging in...') : translate(translations, 'login', 'Login')}
-              </button>
-              
-              <div className="demo-accounts">
-                <p><strong>{translate(translations, 'demo_admin_accounts', 'Demo Admin Accounts:')}</strong></p>
-                <p>• Super Admin: admin / admin123</p>
-                <p>• Verifier: verification_officer / verify123</p>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    {translate(translations, 'username', 'Username')}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={translate(translations, 'username_placeholder', 'Enter username')}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-[#0b4f8a] focus:ring-2 focus:ring-[#0b4f8a] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    {translate(translations, 'password', 'Password')}
+                  </label>
+                  <input
+                    type="password"
+                    placeholder={translate(translations, 'password_placeholder', 'Enter password')}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-[#0b4f8a] focus:ring-2 focus:ring-[#0b4f8a] focus:outline-none"
+                  />
+                </div>
+                <button 
+                  onClick={handleAdminLogin} 
+                  disabled={loading} 
+                  className="w-full rounded-2xl bg-[#0b4f8a] px-4 py-3 text-white font-medium transition hover:bg-[#0f4e88] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? translate(translations, 'logging_in', 'Logging in...') : translate(translations, 'login', 'Login')}
+                </button>
+                
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  <p className="font-semibold text-slate-900 mb-2">
+                    {translate(translations, 'demo_admin_accounts', 'Demo Admin Accounts:')}
+                  </p>
+                  <p>• Super Admin: admin / admin123</p>
+                  <p>• Verifier: verification_officer / verify123</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
