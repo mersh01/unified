@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import RatingField from '../components/RatingField';
+import Payment from '../components/Payment';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
@@ -277,7 +278,7 @@ function Track() {
 
     if (Array.isArray(value)) {
       return (
-        <ul style={{ margin: 0, paddingLeft: '18px', color: '#1f2937' }}>
+        <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--text-main)' }}>
           {value.map((item, index) => (
             <li key={`${item}-${index}`}>{renderFormValue(item)}</li>
           ))}
@@ -286,7 +287,7 @@ function Track() {
     }
 
     if (typeof value === 'object') {
-      return <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#1f2937', margin: 0 }}>{JSON.stringify(value, null, 2)}</pre>;
+      return <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: 'var(--text-main)', margin: 0 }}>{JSON.stringify(value, null, 2)}</pre>;
     }
 
     if (typeof value === 'string') {
@@ -302,9 +303,9 @@ function Track() {
         const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
         
         return (
-          <div style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '12px', background: '#f8fafc' }}>
-            <strong style={{ display: 'block', marginBottom: '8px', color: '#1f2937' }}>🗺️ Map Location</strong>
-            <div style={{ color: '#4b5563', marginBottom: '12px', fontSize: '13px' }}>
+          <div style={{ border: '1px solid var(--border-strong)', borderRadius: '12px', padding: '12px', background: 'var(--surface-alt-2)' }}>
+            <strong style={{ display: 'block', marginBottom: '8px', color: 'var(--text-main)' }}>🗺️ Map Location</strong>
+            <div style={{ color: 'var(--text-muted)', marginBottom: '12px', fontSize: '13px' }}>
               Coordinates: {lat}, {lng}
             </div>
             <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1', marginBottom: '12px', minHeight: '250px', position: 'relative' }}>
@@ -347,7 +348,7 @@ function Track() {
         };
 
         return (
-          <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '12px', background: '#ffffff' }}>
+          <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '12px', border: '1px solid var(--border-strong)', borderRadius: '12px', background: 'var(--card-bg)' }}>
             {isImage ? (
               <img
                 src={normalizedUrl}
@@ -356,12 +357,12 @@ function Track() {
                 style={{ width: '120px', height: '90px', objectFit: 'cover', borderRadius: '12px', cursor: 'pointer', border: '1px solid #d1d5db' }}
               />
             ) : (
-              <div style={{ width: '120px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px', background: '#f3f4f6', color: '#475569', border: '1px solid #d1d5db', textAlign: 'center', padding: '8px', fontSize: '24px' }}>
+              <div style={{ width: '120px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px', background: 'var(--surface-alt-2)', color: 'var(--text-muted)', border: '1px solid var(--border-strong)', textAlign: 'center', padding: '8px', fontSize: '24px' }}>
                 {getFileIcon()}
               </div>
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: '600', marginBottom: '6px', color: '#111827', fontSize: '14px' }}>{fileName || trimmed}</div>
+              <div style={{ fontWeight: '600', marginBottom: '6px', color: 'var(--text-main)', fontSize: '14px' }}>{fileName || trimmed}</div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <a href={normalizedUrl} target="_blank" rel="noreferrer" style={{ color: '#2563eb', textDecoration: 'underline', fontSize: '13px' }}>
                   Open in new tab
@@ -441,16 +442,16 @@ function Track() {
           if (Object.keys(fields).length === 0) return null;
           return (
             <div key={sectionTitle} style={{ marginBottom: '20px' }}>
-              <h4 style={{ color: '#374151', marginBottom: '12px', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>
+              <h4 style={{ color: 'var(--text-main)', marginBottom: '12px', borderBottom: '2px solid var(--border-strong)', paddingBottom: '8px' }}>
                 {sectionTitle}
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
                 {Object.entries(fields).map(([key, value]) => (
-                  <div key={key} style={{ padding: '12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-                    <div style={{ fontWeight: 'bold', color: '#374151', marginBottom: '4px', fontSize: '13px' }}>
+                  <div key={key} style={{ padding: '12px', background: 'var(--surface-alt-2)', borderRadius: '8px', border: '1px solid var(--border-strong)' }}>
+                    <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '4px', fontSize: '13px' }}>
                       {formatFieldName(key)}
                     </div>
-                    <div style={{ color: '#1f2937', fontSize: '14px' }}>
+                    <div style={{ color: 'var(--text-main)', fontSize: '14px' }}>
                       {value || 'Not provided'}
                     </div>
                   </div>
@@ -518,50 +519,65 @@ function Track() {
           </div>
           
           {/* Basic Information Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '24px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '24px', padding: '16px', background: 'var(--surface-alt-2)', borderRadius: '8px' }}>
             <div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>Application ID</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Application ID</div>
               <div style={{ fontWeight: 'bold' }}>{application.application_id}</div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>Service Type</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Service Type</div>
               <div style={{ fontWeight: 'bold' }}>{(application.service_type || application.document_type || '')?.replace(/_/g, ' ').toUpperCase()}</div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>Applicant Name</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Applicant Name</div>
               <div style={{ fontWeight: 'bold' }}>{application.user_name}</div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>Submitted</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Submitted</div>
               <div>{new Date(application.created_at).toLocaleString()}</div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>Fee Amount</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Fee Amount</div>
               <div>₹{application.fee_amount}</div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>Fee Paid</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Fee Paid</div>
               <div>{application.fee_paid ? '✅ Yes' : '❌ No'}</div>
             </div>
             {application.tracking_id && (
               <div>
-                <div style={{ fontSize: '12px', color: '#6b7280' }}>Tracking ID</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Tracking ID</div>
                 <div>{application.tracking_id}</div>
               </div>
             )}
             {application.rejection_reason && (
               <div>
-                <div style={{ fontSize: '12px', color: '#6b7280' }}>Rejection Reason</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Rejection Reason</div>
                 <div style={{ color: '#dc2626' }}>{application.rejection_reason}</div>
               </div>
             )}
           </div>
+
+          {application.fee_amount > 0 && !application.fee_paid && (
+            <div style={{ marginTop: '24px' }}>
+              <Payment
+                applicationId={application.application_id}
+                feeAmount={application.fee_amount}
+                serviceName={(application.service_type || application.document_type || '')?.replace(/_/g, ' ').toUpperCase()}
+                userEmail={application.user_email || application.email || user?.email || ''}
+                userName={application.user_name || user?.full_name || user?.username || 'Applicant'}
+                onPaymentSuccess={handlePaymentSuccess}
+                onPaymentCancel={handlePaymentCancel}
+                currency="ETB"
+              />
+            </div>
+          )}
           
           {/* ALL Submitted Form Data - This is what the admin needs to verify! */}
-          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e5e7eb' }}>
-            <h4 style={{ marginBottom: '16px', color: '#1f2937' }}>
+          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid var(--border-strong)' }}>
+            <h4 style={{ marginBottom: '16px', color: 'var(--text-main)' }}>
               📋 Submitted Information 
-              <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '10px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginLeft: '10px' }}>
                 (Data provided by citizen for verification)
               </span>
             </h4>
@@ -570,8 +586,8 @@ function Track() {
           
           {/* Action Buttons - Available to allowed roles */}
           {availableActions.length > 0 && (
-            <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #e5e7eb' }}>
-              <h4>Available Actions</h4>
+            <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border-strong)' }}>
+              <h4 style={{ color: 'var(--text-main)' }}>Available Actions</h4>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
                 {availableActions.map(action => (
                   <button
@@ -604,13 +620,13 @@ function Track() {
           {previewItem && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
               <div style={{ position: 'absolute', inset: 0 }} onClick={closePreview} />
-              <div style={{ position: 'relative', width: '100%', maxWidth: '900px', maxHeight: '90vh', overflow: 'auto', background: 'white', borderRadius: '18px', boxShadow: '0 20px 60px rgba(15,23,42,0.35)', padding: '18px' }}>
+              <div style={{ position: 'relative', width: '100%', maxWidth: '900px', maxHeight: '90vh', overflow: 'auto', background: 'var(--card-bg)', borderRadius: '18px', boxShadow: '0 20px 60px rgba(15,23,42,0.35)', padding: '18px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <h3 style={{ margin: 0, fontSize: '18px' }}>{previewItem.title || 'Preview'}</h3>
                   <button onClick={closePreview} style={{ background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer' }}>✕</button>
                 </div>
                 {previewItem.type === 'image' && (
-                  <img src={previewItem.url} alt={previewItem.title} style={{ width: '100%', maxHeight: '75vh', objectFit: 'contain', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
+                  <img src={previewItem.url} alt={previewItem.title} style={{ width: '100%', maxHeight: '75vh', objectFit: 'contain', borderRadius: '12px', border: '1px solid var(--border-strong)' }} />
                 )}
                 {previewItem.type === 'map' && (
                   <iframe src={previewItem.url} title={previewItem.title} style={{ width: '100%', minHeight: '70vh', border: 'none', borderRadius: '12px' }} />
@@ -625,12 +641,12 @@ function Track() {
           {/* Application History */}
           <h4 style={{ marginTop: '24px', marginBottom: '12px' }}>Application History</h4>
           {application.history && application.history.map((entry, index) => (
-            <div key={index} style={{ padding: '8px 0', borderBottom: '1px solid #e5e7eb' }}>
+            <div key={index} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-strong)' }}>
               <strong>{getStatusDisplayName(entry.state)}</strong> - {new Date(entry.timestamp).toLocaleString()}
-              {entry.actor_name && <span style={{ marginLeft: '10px', fontSize: '12px', background: '#f3f4f6', padding: '2px 8px', borderRadius: '10px' }}>👤 {entry.actor_name}</span>}
-              {entry.comment && <div style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px' }}>💬 {entry.comment}</div>}
+              {entry.actor_name && <span style={{ marginLeft: '10px', fontSize: '12px', background: 'var(--surface-alt-2)', padding: '2px 8px', borderRadius: '10px' }}>👤 {entry.actor_name}</span>}
+              {entry.comment && <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px' }}>💬 {entry.comment}</div>}
               {entry.payload && Object.keys(entry.payload).length > 0 && (
-                <div style={{ marginTop: '8px', padding: '8px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '12px' }}>
+                <div style={{ marginTop: '8px', padding: '8px', background: 'var(--surface-alt-2)', border: '1px solid var(--border-strong)', borderRadius: '4px', fontSize: '12px' }}>
                   {Object.entries(entry.payload).map(([k, v]) => (
                     <div key={k}><strong style={{color: '#475569'}}>{k.replace(/_/g, ' ').toUpperCase()}:</strong> {v}</div>
                   ))}
@@ -644,7 +660,7 @@ function Track() {
       {/* Action Modal */}
       {showModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', padding: '24px', borderRadius: '12px', width: '400px', maxWidth: '90%' }}>
+          <div style={{ background: 'var(--card-bg)', padding: '24px', borderRadius: '12px', width: '400px', maxWidth: '90%' }}>
             <h3 style={{ marginTop: 0 }}>Action: {getActionLabel(selectedAction)}</h3>
             
             {!actionDefinitions[selectedAction]?.fields && (
@@ -660,7 +676,7 @@ function Track() {
             )}
             
             {actionDefinitions[selectedAction]?.fields && (
-              <div style={{ marginBottom: '16px', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <div style={{ marginBottom: '16px', padding: '16px', background: 'var(--surface-alt-2)', borderRadius: '8px', border: '1px solid var(--border-strong)' }}>
                 <h4 style={{ marginTop: 0, marginBottom: '12px' }}>Required Information</h4>
                 {actionDefinitions[selectedAction].fields.map(field => (
                   <div key={field.name} style={{ marginBottom: '12px' }}>
@@ -713,7 +729,7 @@ function Track() {
                     ))}
                   </select>
                 )}
-                <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                   If left as Pool, any user with the required role in your department can claim it.
                 </div>
               </div>
@@ -722,7 +738,7 @@ function Track() {
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button 
                 onClick={() => setShowModal(false)}
-                style={{ padding: '8px 16px', background: '#f3f4f6', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                style={{ padding: '8px 16px', background: 'var(--surface-alt-2)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
               >
                 Cancel
               </button>

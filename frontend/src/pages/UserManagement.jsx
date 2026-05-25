@@ -366,23 +366,23 @@ function UserManagement({ user }) {
       )}
     >
       <>
-      <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+      <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid var(--border-strong)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Username</th>
-                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Name</th>
-                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Role</th>
-                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Department</th>
-                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Jurisdiction</th>
-                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Actions</th>
+              <tr style={{ background: 'var(--table-header-bg)', borderBottom: '2px solid var(--border-strong)', textAlign: 'left' }}>
+                <th style={{ padding: '14px 16px', fontWeight: '600', color: 'var(--text-main)' }}>Username</th>
+                <th style={{ padding: '14px 16px', fontWeight: '600', color: 'var(--text-main)' }}>Name</th>
+                <th style={{ padding: '14px 16px', fontWeight: '600', color: 'var(--text-main)' }}>Role</th>
+                <th style={{ padding: '14px 16px', fontWeight: '600', color: 'var(--text-main)' }}>Department</th>
+                <th style={{ padding: '14px 16px', fontWeight: '600', color: 'var(--text-main)' }}>Jurisdiction</th>
+                <th style={{ padding: '14px 16px', fontWeight: '600', color: 'var(--text-main)' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {users.map(u => (
-                <tr key={u.user_id || u.username} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.2s' }}>
+                <tr key={u.user_id || u.username} style={{ borderBottom: '1px solid var(--border-strong)', transition: 'background 0.2s' }}>
                   <td style={{ padding: '14px 16px' }}>
-                    <code style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', color: '#0f172a', fontWeight: '600' }}>
+                    <code style={{ background: 'var(--code-bg)', padding: '4px 8px', borderRadius: '4px', color: 'var(--text-main)', fontWeight: '600' }}>
                       {u.username}
                     </code>
                   </td>
@@ -393,21 +393,21 @@ function UserManagement({ user }) {
                   <td style={{ padding: '14px 16px' }}>
                     <Badge variant="primary">{u.role}</Badge>
                     {(u.extra_roles || []).filter(r => r !== u.role).map(r => (
-                      <span key={r} style={{ background: '#f1f5f9', color: '#475569', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', marginLeft: '4px' }}>
+                      <span key={r} style={{ background: 'var(--code-bg)', color: 'var(--text-main)', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', marginLeft: '4px' }}>
                         +{r}
                       </span>
                     ))}
                   </td>
                   <td style={{ padding: '14px 16px' }}>
                     {u.department ? (
-                      <span style={{ color: '#0369a1', background: '#e0f2fe', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '500' }}>
+                      <span style={{ color: 'var(--badge-text)', background: 'var(--badge-bg)', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '500' }}>
                         {u.department}
                       </span>
                     ) : (
                       <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '13px' }}>None</span>
                     )}
                   </td>
-                  <td style={{ padding: '14px 16px', fontSize: '13px', color: '#334155' }}>
+                  <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--text-main)' }}>
                     {u.hierarchy_country ? (
                       <div>
                         <strong>{u.hierarchy_country}</strong>

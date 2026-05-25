@@ -110,6 +110,22 @@ class NotificationService:
             
         return self._send_notification(self._get_val(application, 'user_email', 'Unknown'), f"Payment Reminder - {app_id}", message)
     
+    def send_payment_received(self, application) -> bool:
+        """Send payment received/confirmation notification"""
+        app_id = self._get_val(application, 'application_id', 'Unknown')
+        fee = self._get_val(application, 'fee_amount', 0)
+        message = f"Payment Received! We have received your payment of ₹{fee} for application {app_id}. Your application is now ready for processing."
+        
+        user_id = self._get_val(application, 'user_id')
+        user_phone = self._get_val(application, 'user_phone')
+        
+        if user_id:
+            self._create_db_notification(user_id, f"Payment Confirmed - {app_id}", message, "PAYMENT_CONFIRMED", app_id)
+        if user_phone:
+            self._send_sms_notification(user_phone, message)
+            
+        return self._send_notification(self._get_val(application, 'user_email', 'Unknown'), f"Payment Confirmed - {app_id}", message)
+    
     def send_completion_notification(self, application, tracking_id: str) -> bool:
         """Send completion notification"""
         app_id = self._get_val(application, 'application_id', 'Unknown')

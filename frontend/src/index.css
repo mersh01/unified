@@ -15,6 +15,44 @@
   --gov-warning: #f59e0b;
   --gov-danger: #dc2626;
   --gov-focus: #2563eb;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --card-bg: #ffffff;
+  --surface-alt-2: #f1f5f9;
+  --border-strong: #e2e8f0;
+  --table-header-bg: #f8fafc;
+  --code-bg: #f1f5f9;
+  --badge-bg: #e0f2fe;
+  --badge-text: #0369a1;
+  --button-bg: #f1f5f9;
+  --button-text: #1e293b;
+}
+
+html.dark,
+body.dark {
+  color-scheme: dark;
+  --gov-primary: #93c5fd;
+  --gov-secondary: #60a5fa;
+  --gov-accent: #3b82f6;
+  --gov-surface: #0f172a;
+  --gov-surface-alt: #111827;
+  --gov-border: #334155;
+  --gov-muted: #94a3b8;
+  --gov-success: #22c55e;
+  --gov-warning: #fbbf24;
+  --gov-danger: #f87171;
+  --gov-focus: #60a5fa;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+  --card-bg: #111827;
+  --surface-alt-2: #1f2937;
+  --border-strong: #334155;
+  --table-header-bg: #111827;
+  --code-bg: #111827;
+  --badge-bg: #1e3a8a;
+  --badge-text: #bfdbfe;
+  --button-bg: #1f2937;
+  --button-text: #f8fafc;
 }
 
 @layer base {
@@ -33,6 +71,12 @@
     background-color: var(--gov-surface);
   }
 
+  html.dark body,
+  body.dark {
+    background-color: var(--gov-surface);
+    color: #e2e8f0;
+  }
+
   button, input, select, textarea {
     font: inherit;
   }
@@ -49,6 +93,26 @@
   h1, h2, h3, h4, h5, h6 {
     color: #0f172a;
   }
+
+  html.dark h1,
+  html.dark h2,
+  html.dark h3,
+  html.dark h4,
+  html.dark h5,
+  html.dark h6,
+  body.dark h1,
+  body.dark h2,
+  body.dark h3,
+  body.dark h4,
+  body.dark h5,
+  body.dark h6 {
+    color: #f8fafc;
+  }
+
+  .card {
+    background-color: var(--card-bg);
+    color: var(--text-main);
+  }
 }
 
 @layer utilities {
@@ -62,9 +126,34 @@
 
 .app-layout { @apply min-h-screen flex bg-surface-2; }
 .app-sidebar { @apply bg-white w-72 border-r border-slate-200 hidden md:block; }
-.app-main { @apply flex-1 min-h-screen; }
 .app-header { @apply sticky top-0 z-30 border-b border-slate-200 bg-white backdrop-blur-md; }
 .app-content { @apply p-6 md:p-8; }
+
+.dark .app-layout { background-color: var(--gov-surface); }
+.dark .app-sidebar { background-color: var(--gov-surface-alt); border-color: var(--gov-border); }
+.dark .app-header { background-color: var(--gov-surface-alt); border-color: var(--gov-border); }
+.dark .bg-white { background-color: #111827 !important; }
+.dark .bg-slate-50 { background-color: #111827 !important; }
+.dark .bg-slate-100 { background-color: #1f2937 !important; }
+.dark .bg-slate-200 { background-color: #273449 !important; }
+.dark .bg-slate-300 { background-color: #374151 !important; }
+.dark .bg-slate-400 { background-color: #475569 !important; }
+.dark .text-slate-950,
+.dark .text-slate-900 { color: #f8fafc !important; }
+.dark .text-slate-800 { color: #e2e8f0 !important; }
+.dark .text-slate-700 { color: #cbd5e1 !important; }
+.dark .text-slate-600 { color: #94a3b8 !important; }
+.dark .text-slate-500 { color: #94a3b8 !important; }
+.dark .text-slate-400 { color: #cbd5e1 !important; }
+.dark .text-slate-300 { color: #9ca3af !important; }
+.dark .text-slate-200 { color: #cbd5e1 !important; }
+.dark .text-slate-100 { color: #f8fafc !important; }
+.dark .border-slate-200 { border-color: #334155 !important; }
+.dark .border-slate-300 { border-color: #475569 !important; }
+.dark .divide-slate-100 { border-color: #334155 !important; }
+.dark .hover\:bg-slate-100:hover { background-color: #1f2937 !important; }
+.dark .hover\:bg-slate-50:hover { background-color: #111827 !important; }
+.dark .shadow-surface { box-shadow: 0 25px 55px rgba(15, 23, 42, 0.35); }
 
 .loading {
   display: grid;

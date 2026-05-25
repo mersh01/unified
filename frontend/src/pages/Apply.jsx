@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, GraduationCap, Building, CreditCard, Truck, BarChart, Award } from 'lucide-react';
+import Payment from '../components/Payment';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
@@ -13,6 +14,7 @@ function Apply({ user }) {  // Add user prop
   const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [hierarchyData, setHierarchyData] = useState({});
+  const [submittedApplication, setSubmittedApplication] = useState(null);
 
   // Helper function to make authenticated API calls
   const authFetch = async (url, options = {}) => {
@@ -196,11 +198,17 @@ function Apply({ user }) {  // Add user prop
       const result = await response.json();
       console.log('Response:', result);
       
-      alert(`✅ Application Submitted!\nApplication ID: ${result.application_id}\n\nPlease save this ID for tracking.`);
+      // Store submitted application for payment or completion display
+      setSubmittedApplication(result);
       
-      // Reset form
-      setSelectedService(null);
-      setFormData({});
+      // Only reset form if no payment is needed
+      if (result.fee_amount === 0) {
+        alert(`✅ Application Submitted!\nApplication ID: ${result.application_id}\n\nPlease save this ID for tracking.`);
+        setTimeout(() => {
+          setSelectedService(null);
+          setFormData({});
+        }, 1500);
+      }
       
     } catch (error) {
       console.error('Error submitting:', error);
@@ -208,6 +216,23 @@ function Apply({ user }) {  // Add user prop
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handlePaymentSuccess = async (paymentResult) => {
+    // Payment successful - show confirmation
+    alert(`✅ Application Submitted!\nApplication ID: ${submittedApplication.application_id}\n✅ Payment Received!\n\nYour application is being processed.`);
+    
+    // Reset after showing confirmation
+    setTimeout(() => {
+      setSelectedService(null);
+      setFormData({});
+      setSubmittedApplication(null);
+    }, 2000);
+  };
+
+  const handlePaymentCancel = () => {
+    // User cancelled payment but application is still saved
+    console.log('Payment cancelled but application saved:', submittedApplication.application_id);
   };
 
   const handleChange = (field, value) => {
@@ -327,6 +352,40 @@ function Apply({ user }) {  // Add user prop
             {submitting ? 'Submitting...' : `Submit ${config.name} Application`}
           </button>
         </form>
+
+        {/* Show payment component after successful submission if needed */}
+        {submittedApplication && submittedApplication.fee_amount > 0 && !submittedApplication.fee_paid && (
+          <div style={{ marginTop: '32px', paddingTop: '32px', borderTop: '2px solid var(--border-strong)' }}>
+            <h3 style={{ color: 'var(--text-main)' }}>Next Step: Complete Payment</h3>
+            <Payment
+              applicationId={submittedApplication.application_id}
+              feeAmount={submittedApplication.fee_amount}
+              serviceName={config.name}
+              userEmail={submittedApplication.user_email}
+              userName={submittedApplication.user_name}
+              onPaymentSuccess={handlePaymentSuccess}
+              onPaymentCancel={handlePaymentCancel}
+              currency="ETB"
+            />
+          </div>
+        )}
+
+        {/* Show success message if application submitted without payment needed */}
+        {submittedApplication && submittedApplication.fee_amount === 0 && (
+          <div style={{
+            marginTop: '32px',
+            padding: '20px',
+            background: '#dcfce7',
+            borderRadius: '12px',
+            border: '1px solid #86efac',
+            color: '#166534',
+            textAlign: 'center'
+          }}>
+            <h3>✅ Application Submitted Successfully!</h3>
+            <p>Application ID: <strong>{submittedApplication.application_id}</strong></p>
+            <p>This service is free - your application is ready for processing.</p>
+          </div>
+        )}
       </div>
     );
   }

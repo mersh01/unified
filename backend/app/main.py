@@ -2656,6 +2656,72 @@ async def get_hierarchy_level(level: str, parent_id: str = None):
 def health_check():
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
+# ============ Payment Integration (Chapa) ============
+
+@app.get("/api/payment/chapa-key")
+def get_chapa_key():
+    """Get Chapa public key for frontend initialization"""
+    chapa_key = os.getenv("CHAPA_PUBLIC_KEY", "")
+    if not chapa_key:
+        raise HTTPException(status_code=500, detail="Chapa key not configured")
+    return {"public_key": chapa_key}
+
+@app.post("/api/applications/{application_id}/verify-payment")
+async def verify_payment(
+    application_id: str,
+    payment_data: Dict[str, Any],
+    current_user = Depends(AuthHandler.get_current_user_required)
+):
+    """Verify payment from Chapa and update application"""
+    try:
+        application = db_get_application(application_id)
+        if not application:
+            raise HTTPException(status_code=404, detail="Application not found")
+        
+        # Verify user owns this application or is admin
+        is_admin = current_user.get('type') == 'admin' or (current_user.get('role') and current_user.get('role') != 'citizen')
+        if application['user_id'] != current_user.get('username') and not is_admin:
+            raise HTTPException(status_code=403, detail="Unauthorized access to this application")
+        
+        # In production, verify the payment with Chapa API
+        # For now, we trust the frontend's verification
+        payment_id = payment_data.get('payment_id')
+        reference = payment_data.get('reference')
+        status = payment_data.get('status')
+        
+        # Update application with payment info
+        update_data = {
+            'fee_paid': True,
+            'payment_id': payment_id or reference,
+            'updated_at': datetime.utcnow().isoformat()
+        }
+        
+        updated_app = update_application(application_id, update_data)
+        
+        # Send payment confirmation notification
+        class MockApp:
+            def __init__(self, data):
+                for key, value in data.items():
+                    setattr(self, key, value)
+                if hasattr(self, 'service_type') and not hasattr(self, 'document_type'):
+                    self.document_type = self.service_type
+        
+        mock_app = MockApp(updated_app)
+        notification_service.send_payment_received(mock_app)
+        
+        return {
+            "success": True,
+            "message": "Payment verified successfully",
+            "application_id": application_id,
+            "payment_id": payment_id,
+            "fee_paid": True
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error verifying payment: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

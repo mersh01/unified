@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, NavLink, Navigate, useLocation, useSearchParams } from 'react-router-dom';
-import { Menu, ChevronDown, ChevronUp } from 'lucide-react';
+import { Menu, ChevronDown, ChevronUp, Moon, Sun } from 'lucide-react';
 import Login from './components/Login';
 import DynamicDashboard from './components/DynamicDashboard';
 import DynamicForm from './components/DynamicForm';
@@ -94,6 +94,7 @@ function App() {
   const [locale, setLocale] = useState(getStoredLocale());
   const [translations, setTranslations] = useState({});
   const [availableLocales, setAvailableLocales] = useState([]);
+  const [theme, setTheme] = useState('light');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [services, setServices] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -209,6 +210,26 @@ function App() {
     const token = localStorage.getItem('token');
     await fetchFrontendConfig(token);
     setLoading(false);
+  };
+
+  const applyTheme = (themeKey) => {
+    const isDark = themeKey === 'dark';
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', isDark);
+    }
+    localStorage.setItem('theme', themeKey);
+  };
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+    applyTheme(savedTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    applyTheme(nextTheme);
   };
 
   const handleLocaleChange = async (newLocale) => {
@@ -374,8 +395,10 @@ function App() {
 
         <aside className={`app-sidebar fixed inset-y-0 left-0 z-40 transform bg-white px-4 py-5 shadow-lg transition-transform duration-300 md:static md:translate-x-0 md:shadow-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="mb-8 flex items-center gap-3 border-b border-slate-200 pb-5">
-            <div className="h-12 w-12 rounded-3xl bg-govblue-600 text-white grid place-items-center text-xl font-bold">D</div>
-            <div>
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-govblue-600 text-white text-xl font-bold leading-none shadow-sm">
+              <span className="leading-none">D</span>
+            </div>
+            <div className="min-w-0">
               <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Government Service</p>
               <h2 className="text-lg font-semibold text-slate-950">Digital Service Hub</h2>
             </div>
@@ -476,7 +499,17 @@ function App() {
                 </Select>
               </div>
 
-              <NotificationsDropdown />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  aria-label="Toggle theme"
+                >
+                  {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                </button>
+                <NotificationsDropdown />
+              </div>
 
               <div className="flex items-center gap-3">
                 <button
