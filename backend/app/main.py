@@ -2496,7 +2496,23 @@ async def update_user_profile(
         update_data['address'] = request.address.strip() if request.address.strip() else None
     
     try:
-        supabase.table('users').update(update_data).eq('user_id', user_id).execute()
+        # Try to update, if address column doesn't exist, skip it
+        try:
+            supabase.table('users').update(update_data).eq('user_id', user_id).execute()
+        except Exception as db_error:
+            # If error is about column not existing, try without address
+            error_str = str(db_error).lower()
+            if 'address' in error_str or 'column' in error_str:
+                # Remove address from update_data and retry
+                update_data_without_address = {k: v for k, v in update_data.items() if k != 'address'}
+                if update_data_without_address != {'updated_at': datetime.now().isoformat()}:
+                    supabase.table('users').update(update_data_without_address).eq('user_id', user_id).execute()
+                else:
+                    raise HTTPException(status_code=400, detail="Address column not found in database. Please run: ALTER TABLE users ADD COLUMN address VARCHAR(500);")
+            else:
+                raise db_error
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error updating user profile: {e}")
         raise HTTPException(status_code=500, detail="Failed to update profile.")
