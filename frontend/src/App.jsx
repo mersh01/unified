@@ -669,147 +669,147 @@ function App() {
           title="Edit Profile"
           description="Update your profile information, address, and password."
         >
-            
-          <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
-            <div className="space-y-4 rounded-3xl bg-slate-50 p-4 text-center">
-              {previewUrl ? (
-                <div className="mx-auto h-28 w-28 overflow-hidden rounded-3xl bg-slate-100">
-                  <img src={previewUrl} alt="Profile preview" className="block h-full w-full object-cover" />
-                </div>
-              ) : frontendConfig?.user?.profile_picture_url ? (
-                <div className="mx-auto h-28 w-28 overflow-hidden rounded-3xl bg-slate-100">
-                  <img src={`${API_URL}${frontendConfig.user.profile_picture_url}`} alt="Current profile" className="block h-full w-full object-cover" />
-                </div>
-              ) : (
-                <div className="mx-auto grid h-28 w-28 place-items-center rounded-3xl bg-govblue-600 text-3xl font-semibold text-white">
-                  {(frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'U').charAt(0).toUpperCase()}
-                </div>
-              )}
-              <Badge variant="info">{frontendConfig?.user?.role || 'Citizen'}</Badge>
-            </div>
-
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Full name</label>
-                <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Enter your name" />
-                <Button
-                  onClick={handleNameUpdate}
-                  disabled={!editName.trim() || editName.trim() === (frontendConfig?.user?.full_name || frontendConfig?.user?.name) || nameUpdateStatus === 'saving'}
-                  className="w-full"
-                >
-                  {nameUpdateStatus === 'saving' ? 'Saving...' : nameUpdateStatus === 'success' ? 'Saved' : 'Update Name'}
-                </Button>
+          <div className="max-h-[70vh] overflow-y-auto pr-2">
+            <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
+              <div className="space-y-4 rounded-3xl bg-slate-50 p-4 text-center">
+                {previewUrl ? (
+                  <div className="mx-auto h-28 w-28 overflow-hidden rounded-3xl bg-slate-100">
+                    <img src={previewUrl} alt="Profile preview" className="block h-full w-full object-cover" />
+                  </div>
+                ) : frontendConfig?.user?.profile_picture_url ? (
+                  <div className="mx-auto h-28 w-28 overflow-hidden rounded-3xl bg-slate-100">
+                    <img src={`${API_URL}${frontendConfig.user.profile_picture_url}`} alt="Current profile" className="block h-full w-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="mx-auto grid h-28 w-28 place-items-center rounded-3xl bg-govblue-600 text-3xl font-semibold text-white">
+                    {(frontendConfig?.user?.full_name || frontendConfig?.user?.name || 'U').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <Badge variant="info">{frontendConfig?.user?.role || 'Citizen'}</Badge>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Address</label>
-                <Input 
-                  value={editAddress} 
-                  onChange={(e) => setEditAddress(e.target.value)} 
-                  placeholder="Enter your address" 
-                />
-                <Button
-                  onClick={handleAddressUpdate}
-                  disabled={addressUpdateStatus === 'saving'}
-                  className="w-full"
-                >
-                  {addressUpdateStatus === 'saving' ? 'Saving...' : addressUpdateStatus === 'success' ? 'Saved' : 'Update Address'}
-                </Button>
-              </div>
-
-              {/* Password change - Only for non-citizen users */}
-              {frontendConfig?.user?.role !== 'citizen' && frontendConfig?.user?.type !== 'citizen' && (
-                <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                  <h3 className="text-sm font-semibold text-slate-900">Change Password</h3>
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-600">Current password</label>
-                    <Input 
-                      type="password" 
-                      value={currentPassword} 
-                      onChange={(e) => setCurrentPassword(e.target.value)} 
-                      placeholder="Enter current password" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-600">New password</label>
-                    <Input 
-                      type="password" 
-                      value={newPassword} 
-                      onChange={(e) => setNewPassword(e.target.value)} 
-                      placeholder="Enter new password (min 8 characters)" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-600">Confirm new password</label>
-                    <Input 
-                      type="password" 
-                      value={confirmPassword} 
-                      onChange={(e) => setConfirmPassword(e.target.value)} 
-                      placeholder="Confirm new password" 
-                    />
-                  </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700">Full name</label>
+                  <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Enter your name" />
                   <Button
-                    onClick={handlePasswordUpdate}
-                    disabled={passwordUpdateStatus === 'saving'}
+                    onClick={handleNameUpdate}
+                    disabled={!editName.trim() || editName.trim() === (frontendConfig?.user?.full_name || frontendConfig?.user?.name) || nameUpdateStatus === 'saving'}
                     className="w-full"
-                    variant="secondary"
                   >
-                    {passwordUpdateStatus === 'saving' ? 'Changing...' : passwordUpdateStatus === 'success' ? 'Changed' : 'Change Password'}
+                    {nameUpdateStatus === 'saving' ? 'Saving...' : nameUpdateStatus === 'success' ? 'Saved' : 'Update Name'}
                   </Button>
-                  {passwordUpdateStatus === 'success' && (
-                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-                      Password changed successfully.
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700">Address</label>
+                  <Input 
+                    value={editAddress} 
+                    onChange={(e) => setEditAddress(e.target.value)} 
+                    placeholder="Enter your address" 
+                  />
+                  <Button
+                    onClick={handleAddressUpdate}
+                    disabled={addressUpdateStatus === 'saving'}
+                    className="w-full"
+                  >
+                    {addressUpdateStatus === 'saving' ? 'Saving...' : addressUpdateStatus === 'success' ? 'Saved' : 'Update Address'}
+                  </Button>
+                </div>
+
+                {/* Profile picture - moved up for better visibility */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700">Profile picture</label>
+                  {!previewUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('profile-upload-input').click()}
+                      className="flex min-h-[100px] w-full flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm text-slate-500 transition hover:border-govblue-500 hover:bg-slate-100"
+                    >
+                      <span className="text-2xl">📸</span>
+                      <span>Click to upload</span>
+                      <span className="text-xs text-slate-400">JPG, PNG or WebP · max 5MB</span>
+                      <input
+                        id="profile-upload-input"
+                        type="file"
+                        accept="image/jpeg, image/png, image/webp"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                    </button>
+                  ) : (
+                    <div className="grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-3">
+                      <div className="h-32 overflow-hidden rounded-3xl">
+                        <img src={previewUrl} alt="Selected file" className="block h-full w-full object-cover" />
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-900 truncate">{selectedFile?.name}</p>
+                          <p className="text-xs text-slate-500">{(selectedFile?.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                        <button type="button" onClick={() => { setSelectedFile(null); setPreviewUrl(null); }} className="rounded-2xl border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 transition hover:bg-slate-100">
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   )}
+                  {uploadStatus === 'success' && (
+                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                      Profile picture updated successfully.
+                    </div>
+                  )}
+                  <Button onClick={handleProfileUpload} disabled={!selectedFile || uploadStatus === 'uploading' || uploadStatus === 'success'} className="w-full">
+                    {uploadStatus === 'uploading' ? 'Uploading...' : uploadStatus === 'success' ? 'Done' : 'Upload Picture'}
+                  </Button>
                 </div>
-              )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Profile picture</label>
-                {!previewUrl ? (
-                  <button
-                    type="button"
-                    onClick={() => document.getElementById('profile-upload-input').click()}
-                    className="flex min-h-[160px] w-full flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm text-slate-500 transition hover:border-govblue-500 hover:bg-slate-100"
-                  >
-                    <span className="text-3xl">📸</span>
-                    <span>Click to upload or drag file here</span>
-                    <span className="text-xs text-slate-400">JPG, PNG or WebP · max 5MB</span>
-                    <input
-                      id="profile-upload-input"
-                      type="file"
-                      accept="image/jpeg, image/png, image/webp"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                  </button>
-                ) : (
-                  <div className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="h-44 overflow-hidden rounded-3xl">
-                      <img src={previewUrl} alt="Selected file" className="block h-full w-full object-cover" />
+                {/* Password change - Only for non-citizen users */}
+                {frontendConfig?.user?.role !== 'citizen' && frontendConfig?.user?.type !== 'citizen' && (
+                  <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                    <h3 className="text-sm font-semibold text-slate-900">Change Password</h3>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-600">Current password</label>
+                      <Input 
+                        type="password" 
+                        value={currentPassword} 
+                        onChange={(e) => setCurrentPassword(e.target.value)} 
+                        placeholder="Enter current password" 
+                      />
                     </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">{selectedFile?.name}</p>
-                        <p className="text-sm text-slate-500">{(selectedFile?.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-600">New password</label>
+                      <Input 
+                        type="password" 
+                        value={newPassword} 
+                        onChange={(e) => setNewPassword(e.target.value)} 
+                        placeholder="Min 8 characters" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-600">Confirm new password</label>
+                      <Input 
+                        type="password" 
+                        value={confirmPassword} 
+                        onChange={(e) => setConfirmPassword(e.target.value)} 
+                        placeholder="Confirm new password" 
+                      />
+                    </div>
+                    <Button
+                      onClick={handlePasswordUpdate}
+                      disabled={passwordUpdateStatus === 'saving'}
+                      className="w-full"
+                      variant="secondary"
+                    >
+                      {passwordUpdateStatus === 'saving' ? 'Changing...' : passwordUpdateStatus === 'success' ? 'Changed' : 'Change Password'}
+                    </Button>
+                    {passwordUpdateStatus === 'success' && (
+                      <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                        Password changed successfully.
                       </div>
-                      <button type="button" onClick={() => { setSelectedFile(null); setPreviewUrl(null); }} className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100">
-                        Remove
-                      </button>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
-
-              {uploadStatus === 'success' && (
-                <div className="rounded-3xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                  Profile picture updated successfully.
-                </div>
-              )}
-
-              <Button onClick={handleProfileUpload} disabled={!selectedFile || uploadStatus === 'uploading' || uploadStatus === 'success'} className="w-full">
-                {uploadStatus === 'uploading' ? 'Uploading...' : uploadStatus === 'success' ? 'Done' : 'Upload Picture'}
-              </Button>
             </div>
           </div>
         </Modal>
