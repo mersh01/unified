@@ -2059,7 +2059,8 @@ async def get_frontend_config(current_user = Depends(AuthHandler.get_current_use
             "department": department,
             "permissions": permissions,
             "profile_picture_url": current_user.get("profile_picture_url"),
-            "phone_number": current_user.get("phone_number")
+            "phone_number": current_user.get("phone_number"),
+            "address": current_user.get("address")
         },
         "navigation": {
             "items": []
