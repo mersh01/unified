@@ -405,7 +405,34 @@ let visibleFields = (step.fields || []).map(f => typeof f === 'string' ? f : f.n
       });
 
       const result = await response.json();
-      alert(`✅ Application Submitted!\nApplication ID: ${result.application_id}`);
+      
+      // If payment information is included, verify payment automatically
+      if (formData.payment_method && formData.transaction_id) {
+        try {
+          const paymentResponse = await authFetch(`${API_URL}/api/applications/${result.application_id}/verify-payment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              payment_method: formData.payment_method,
+              transaction_id: formData.transaction_id,
+              payment_amount: formData.payment_amount || selectedService?.config?.fee_amount
+            })
+          });
+          
+          const paymentResult = await paymentResponse.json();
+          if (paymentResult.success) {
+            alert(`✅ Application Submitted!\nApplication ID: ${result.application_id}\n💳 Payment Verified Successfully!`);
+          } else {
+            alert(`✅ Application Submitted!\nApplication ID: ${result.application_id}\n⚠️ Payment verification pending. Please complete payment separately.`);
+          }
+        } catch (paymentError) {
+          console.error('Payment verification error:', paymentError);
+          alert(`✅ Application Submitted!\nApplication ID: ${result.application_id}\n⚠️ Payment verification failed. Please contact support.`);
+        }
+      } else {
+        alert(`✅ Application Submitted!\nApplication ID: ${result.application_id}`);
+      }
+      
       setSelectedService(null);
       setCurrentStep(0);
       setFormData({});
