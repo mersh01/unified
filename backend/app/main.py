@@ -2666,6 +2666,81 @@ def get_chapa_key():
         raise HTTPException(status_code=500, detail="Chapa key not configured")
     return {"public_key": chapa_key}
 
+@app.post("/api/payment/initiate")
+async def initiate_payment(
+    payment_request: Dict[str, Any],
+    current_user = Depends(AuthHandler.get_current_user_required)
+):
+    """Initiate payment through payment gateway"""
+    try:
+        service_type = payment_request.get('service_type')
+        amount = payment_request.get('amount')
+        payment_method = payment_request.get('payment_method')
+        user_id = payment_request.get('user_id')
+        
+        # Get service configuration
+        from .config_engine import config_engine
+        service_config = config_engine.get_service_config(service_type)
+        
+        if not service_config:
+            raise HTTPException(status_code=400, detail="Service configuration not found")
+        
+        # Validate payment method
+        payment_config = service_config.get('payment', {})
+        if not payment_config.get('enabled', False):
+            raise HTTPException(status_code=400, detail="Payment is not enabled for this service")
+        
+        enabled_methods = [m for m in payment_config.get('methods', []) if m.get('enabled', False)]
+        valid_method = next((m for m in enabled_methods if m.get('type') == payment_method), None)
+        
+        if not valid_method:
+            raise HTTPException(status_code=400, detail=f"Payment method '{payment_method}' is not enabled for this service")
+        
+        # For testing/simulation, return a mock transaction ID
+        # In production, this would integrate with actual payment gateways
+        mock_transaction_id = f"TXN_{payment_method.upper()}_{int(datetime.now().timestamp())}"
+        
+        return {
+            "success": True,
+            "transaction_id": mock_transaction_id,
+            "payment_url": None,  # Would be actual gateway URL in production
+            "amount": amount,
+            "payment_method": payment_method
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error initiating payment: {str(e)}")
+
+@app.post("/api/payment/verify-bank-transfer")
+async def verify_bank_transfer_payment(
+    payment_data: Dict[str, Any],
+    current_user = Depends(AuthHandler.get_current_user_required)
+):
+    """Verify bank transfer payment"""
+    try:
+        payment_method = payment_data.get('payment_method')
+        transaction_id = payment_data.get('transaction_id')
+        payment_amount = payment_data.get('payment_amount')
+        
+        if not payment_method or not transaction_id:
+            raise HTTPException(status_code=400, detail="Payment method and transaction ID are required")
+        
+        # For testing, accept any transaction ID
+        # In production, this would verify with the bank
+        return {
+            "success": True,
+            "transaction_id": transaction_id,
+            "payment_method": payment_method,
+            "payment_amount": payment_amount
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error verifying bank transfer: {str(e)}")
+
 @app.post("/api/applications/{application_id}/verify-payment")
 async def verify_payment(
     application_id: str,

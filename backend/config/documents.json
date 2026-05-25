@@ -9,22 +9,25 @@
       "workflow": "standard_document_workflow",
       "payment": {
         "enabled": true,
-        "payment_step_order": 7,
+        "payment_flow": "before_submission",
         "methods": [
           {
             "type": "telebirr",
             "name": "Telebirr",
-            "enabled": true
+            "enabled": true,
+            "gateway_integration": true
           },
           {
             "type": "cbebirr",
             "name": "CBE Birr",
-            "enabled": true
+            "enabled": true,
+            "gateway_integration": true
           },
           {
             "type": "bank_transfer",
             "name": "Bank Transfer",
             "enabled": true,
+            "gateway_integration": false,
             "account_details": {
               "bank_name": "Commercial Bank of Ethiopia",
               "account_number": "1000123456789",
@@ -32,8 +35,7 @@
             }
           }
         ],
-        "auto_verify": true,
-        "verification_timeout_minutes": 30
+        "auto_verify": true
       },
       "multi_step": {
         "enabled": true,
@@ -277,40 +279,6 @@
                 "png"
               ],
               "max_size_mb": 5
-            }
-          ]
-        },
-        {
-          "id": "payment",
-          "order": 7,
-          "step_key": "step_7_payment",
-          "icon": "💳",
-          "type": "payment",
-          "payment_required": true,
-          "fields": [
-            {
-              "name": "payment_method",
-              "type": "select",
-              "required": true,
-              "label": "Payment Method",
-              "options": [
-                "telebirr",
-                "cbebirr",
-                "bank_transfer"
-              ]
-            },
-            {
-              "name": "transaction_id",
-              "type": "text",
-              "required": true,
-              "label": "Transaction ID / Reference Number"
-            },
-            {
-              "name": "payment_amount",
-              "type": "number",
-              "required": true,
-              "label": "Amount Paid (ETB)",
-              "readonly": true
             }
           ]
         }

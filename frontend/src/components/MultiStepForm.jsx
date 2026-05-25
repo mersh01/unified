@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { FileText, GraduationCap, Building, CreditCard, Truck, BarChart, Award, ChevronLeft, ChevronRight, CheckCircle, Upload, Eye } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import RatingField from './RatingField';
+import PaymentModal from './PaymentModal';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://unified-211c.vercel.app';
 
@@ -23,6 +24,8 @@ function MultiStepForm({ user }) {
   const [hierarchyData, setHierarchyData] = useState({});
   const [uploadedFiles, setUploadedFiles] = useState({});
   const [stepValidation, setStepValidation] = useState({});
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentData, setPaymentData] = useState(null);
 
   const authFetch = async (url, options = {}) => {
     const token = localStorage.getItem('token');
@@ -369,6 +372,18 @@ let visibleFields = (step.fields || []).map(f => typeof f === 'string' ? f : f.n
       }
     }
 
+    // Check if payment is required before submission
+    const paymentConfig = config?.payment;
+    if (paymentConfig?.enabled && paymentConfig?.payment_flow === 'before_submission') {
+      setShowPaymentModal(true);
+      return;
+    }
+
+    // If no payment required, submit directly
+    await submitApplication();
+  };
+
+  const submitApplication = async (paymentInfo = null) => {
     setSubmitting(true);
 
     try {
@@ -380,7 +395,12 @@ let visibleFields = (step.fields || []).map(f => typeof f === 'string' ? f : f.n
       formDataObj.append('user_name', formData.full_name || formData.student_name || storedUser?.name || 'Citizen');
       formDataObj.append('user_email', 'citizen@example.com');
       formDataObj.append('user_phone', storedUser?.phone_number || '');
-      formDataObj.append('form_data', JSON.stringify(formData));
+      
+      // Include payment info if provided
+      const formDataWithPayment = paymentInfo ? { ...formData, ...paymentInfo } : formData;
+      formDataObj.append('form_data', JSON.stringify(formDataWithPayment));
+      
+      const config = selectedService?.config;
       if (config.multi_step) {
         formDataObj.append('multi_step_data', JSON.stringify({
           steps_completed: config.steps.length,
@@ -406,43 +426,25 @@ let visibleFields = (step.fields || []).map(f => typeof f === 'string' ? f : f.n
 
       const result = await response.json();
       
-      // If payment information is included, verify payment automatically
-      if (formData.payment_method && formData.transaction_id) {
-        try {
-          const paymentResponse = await authFetch(`${API_URL}/api/applications/${result.application_id}/verify-payment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              payment_method: formData.payment_method,
-              transaction_id: formData.transaction_id,
-              payment_amount: formData.payment_amount || selectedService?.config?.fee_amount
-            })
-          });
-          
-          const paymentResult = await paymentResponse.json();
-          if (paymentResult.success) {
-            alert(`✅ Application Submitted!\nApplication ID: ${result.application_id}\n💳 Payment Verified Successfully!`);
-          } else {
-            alert(`✅ Application Submitted!\nApplication ID: ${result.application_id}\n⚠️ Payment verification pending. Please complete payment separately.`);
-          }
-        } catch (paymentError) {
-          console.error('Payment verification error:', paymentError);
-          alert(`✅ Application Submitted!\nApplication ID: ${result.application_id}\n⚠️ Payment verification failed. Please contact support.`);
-        }
-      } else {
-        alert(`✅ Application Submitted!\nApplication ID: ${result.application_id}`);
-      }
+      alert(`✅ Application Submitted!\nApplication ID: ${result.application_id}`);
       
       setSelectedService(null);
       setCurrentStep(0);
       setFormData({});
       setUploadedFiles({});
+      setShowPaymentModal(false);
     } catch (err) {
       console.error('Submit error:', err);
       alert('Error submitting application');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handlePaymentSuccess = (paymentInfo) => {
+    setPaymentData(paymentInfo);
+    setShowPaymentModal(false);
+    submitApplication(paymentInfo);
   };
 
 const renderField = (field, step) => {
@@ -1045,7 +1047,18 @@ const getFieldConfig = (fieldName, step) => {
           </div>
         </form>
       </div>
-    );
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        serviceConfig={selectedService?.config}
+        formData={formData}
+        onPaymentSuccess={handlePaymentSuccess}
+        API_URL={API_URL}
+      />
+    </div>
+  );
   }
 
   // Show service list
