@@ -1046,19 +1046,18 @@ const getFieldConfig = (fieldName, step) => {
             )}
           </div>
         </form>
-      </div>
 
-      {/* Payment Modal */}
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        serviceConfig={selectedService?.config}
-        formData={formData}
-        onPaymentSuccess={handlePaymentSuccess}
-        API_URL={API_URL}
-      />
-    </div>
-  );
+        {/* Payment Modal */}
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          serviceConfig={selectedService?.config}
+          formData={formData}
+          onPaymentSuccess={handlePaymentSuccess}
+          API_URL={API_URL}
+        />
+      </div>
+    );
   }
 
   // Show service list

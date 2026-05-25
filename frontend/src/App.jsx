@@ -105,6 +105,12 @@ function App() {
   const [uploadStatus, setUploadStatus] = useState(''); // '', 'uploading', 'success', 'error'
   const [editName, setEditName] = useState('');
   const [nameUpdateStatus, setNameUpdateStatus] = useState(''); // '', 'saving', 'success', 'error'
+  const [editAddress, setEditAddress] = useState('');
+  const [addressUpdateStatus, setAddressUpdateStatus] = useState(''); // '', 'saving', 'success', 'error'
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordUpdateStatus, setPasswordUpdateStatus] = useState(''); // '', 'saving', 'success', 'error'
 
   useEffect(() => {
     const initApp = async () => {
@@ -339,6 +345,88 @@ function App() {
     }
   };
 
+  const handleAddressUpdate = async () => {
+    const trimmed = editAddress.trim();
+    
+    setAddressUpdateStatus('saving');
+    const token = localStorage.getItem('token');
+
+    try {
+      const response = await fetch(`${API_URL}/api/users/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ address: trimmed || null })
+      });
+
+      if (response.ok) {
+        setAddressUpdateStatus('success');
+        await fetchFrontendConfig(token);
+        setTimeout(() => setAddressUpdateStatus(''), 2000);
+      } else {
+        const errData = await response.json();
+        alert(`Update failed: ${errData.detail || 'Unknown error'}`);
+        setAddressUpdateStatus('error');
+      }
+    } catch (error) {
+      console.error('Error updating address:', error);
+      alert('Network error during update');
+      setAddressUpdateStatus('error');
+    }
+  };
+
+  const handlePasswordUpdate = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      alert('Please fill in all password fields');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      alert('New password and confirm password do not match');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      alert('Password must be at least 8 characters long');
+      return;
+    }
+
+    setPasswordUpdateStatus('saving');
+    const token = localStorage.getItem('token');
+
+    try {
+      const response = await fetch(`${API_URL}/api/users/change-password`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword
+        })
+      });
+
+      if (response.ok) {
+        setPasswordUpdateStatus('success');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setTimeout(() => setPasswordUpdateStatus(''), 2000);
+      } else {
+        const errData = await response.json();
+        alert(`Password change failed: ${errData.detail || 'Unknown error'}`);
+        setPasswordUpdateStatus('error');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      alert('Network error during password change');
+      setPasswordUpdateStatus('error');
+    }
+  };
+
   if (loading) {
     return <div className="loading">Loading configuration...</div>;
   }
@@ -514,7 +602,14 @@ function App() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => { setEditName(frontendConfig?.user?.full_name || frontendConfig?.user?.name || ''); setIsProfileModalOpen(true); }}
+                  onClick={() => { 
+                    setEditName(frontendConfig?.user?.full_name || frontendConfig?.user?.name || ''); 
+                    setEditAddress(frontendConfig?.user?.address || '');
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                    setIsProfileModalOpen(true); 
+                  }}
                   className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 transition hover:bg-slate-200"
                 >
                   {frontendConfig?.user?.profile_picture_url ? (
@@ -572,7 +667,7 @@ function App() {
           open={isProfileModalOpen}
           onClose={() => setIsProfileModalOpen(false)}
           title="Edit Profile"
-          description="Update your name or upload a new profile picture."
+          description="Update your profile information, address, and password."
         >
             
           <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
@@ -605,6 +700,69 @@ function App() {
                   {nameUpdateStatus === 'saving' ? 'Saving...' : nameUpdateStatus === 'success' ? 'Saved' : 'Update Name'}
                 </Button>
               </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Address</label>
+                <Input 
+                  value={editAddress} 
+                  onChange={(e) => setEditAddress(e.target.value)} 
+                  placeholder="Enter your address" 
+                />
+                <Button
+                  onClick={handleAddressUpdate}
+                  disabled={addressUpdateStatus === 'saving'}
+                  className="w-full"
+                >
+                  {addressUpdateStatus === 'saving' ? 'Saving...' : addressUpdateStatus === 'success' ? 'Saved' : 'Update Address'}
+                </Button>
+              </div>
+
+              {/* Password change - Only for non-citizen users */}
+              {frontendConfig?.user?.role !== 'citizen' && frontendConfig?.user?.type !== 'citizen' && (
+                <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                  <h3 className="text-sm font-semibold text-slate-900">Change Password</h3>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-600">Current password</label>
+                    <Input 
+                      type="password" 
+                      value={currentPassword} 
+                      onChange={(e) => setCurrentPassword(e.target.value)} 
+                      placeholder="Enter current password" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-600">New password</label>
+                    <Input 
+                      type="password" 
+                      value={newPassword} 
+                      onChange={(e) => setNewPassword(e.target.value)} 
+                      placeholder="Enter new password (min 8 characters)" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-600">Confirm new password</label>
+                    <Input 
+                      type="password" 
+                      value={confirmPassword} 
+                      onChange={(e) => setConfirmPassword(e.target.value)} 
+                      placeholder="Confirm new password" 
+                    />
+                  </div>
+                  <Button
+                    onClick={handlePasswordUpdate}
+                    disabled={passwordUpdateStatus === 'saving'}
+                    className="w-full"
+                    variant="secondary"
+                  >
+                    {passwordUpdateStatus === 'saving' ? 'Changing...' : passwordUpdateStatus === 'success' ? 'Changed' : 'Change Password'}
+                  </Button>
+                  {passwordUpdateStatus === 'success' && (
+                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                      Password changed successfully.
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Profile picture</label>

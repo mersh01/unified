@@ -2475,30 +2475,95 @@ if MINIO_AVAILABLE:
         print(f"MinIO profile-pictures bucket check failed: {e}")
 
 class UpdateProfileRequest(BaseModel):
-    full_name: str = Field(..., min_length=1, max_length=100)
+    full_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    address: Optional[str] = Field(None, max_length=500)
 
 @app.put("/api/users/profile")
 async def update_user_profile(
     request: UpdateProfileRequest,
     current_user = Depends(AuthHandler.get_current_user_required)
 ):
-    """Update user's profile (name)"""
+    """Update user's profile (name and/or address)"""
     from .supabase_client import supabase
 
     user_id = current_user.get("user_id")
+    update_data = {'updated_at': datetime.now().isoformat()}
+    
+    if request.full_name is not None:
+        update_data['full_name'] = request.full_name.strip()
+    
+    if request.address is not None:
+        update_data['address'] = request.address.strip() if request.address.strip() else None
+    
     try:
-        supabase.table('users').update({
-            'full_name': request.full_name.strip(),
-            'updated_at': datetime.now().isoformat()
-        }).eq('user_id', user_id).execute()
+        supabase.table('users').update(update_data).eq('user_id', user_id).execute()
     except Exception as e:
         print(f"Error updating user profile: {e}")
         raise HTTPException(status_code=500, detail="Failed to update profile.")
 
     return {
         "success": True,
-        "full_name": request.full_name.strip(),
         "message": "Profile updated successfully"
+    }
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8)
+
+@app.post("/api/users/change-password")
+async def change_password(
+    request: ChangePasswordRequest,
+    current_user = Depends(AuthHandler.get_current_user_required)
+):
+    """Change user password (only for non-citizen users)"""
+    from .supabase_client import supabase
+    
+    # Check if user is a citizen (citizens use OTP, no password)
+    user_role = current_user.get('role')
+    user_type = current_user.get('type')
+    
+    if user_role == 'citizen' or user_type == 'citizen':
+        raise HTTPException(status_code=403, detail="Citizen users use OTP login and cannot change password.")
+    
+    user_id = current_user.get("user_id")
+    
+    try:
+        # Get current user data
+        user_result = supabase.table('users').select('*').eq('user_id', user_id).execute()
+        if not user_result.data:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user = user_result.data[0]
+        current_hashed_password = user.get('password')
+        
+        if not current_hashed_password:
+            raise HTTPException(status_code=400, detail="No password set for this user. Contact administrator.")
+        
+        # Verify current password
+        from passlib.context import CryptContext
+        pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+        
+        if not pwd_context.verify(request.current_password, current_hashed_password):
+            raise HTTPException(status_code=401, detail="Current password is incorrect.")
+        
+        # Hash new password
+        new_hashed_password = pwd_context.hash(request.new_password)
+        
+        # Update password
+        supabase.table('users').update({
+            'password': new_hashed_password,
+            'updated_at': datetime.now().isoformat()
+        }).eq('user_id', user_id).execute()
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error changing password: {e}")
+        raise HTTPException(status_code=500, detail="Failed to change password.")
+    
+    return {
+        "success": True,
+        "message": "Password changed successfully"
     }
 
 @app.post("/api/users/profile-picture")
