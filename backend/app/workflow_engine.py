@@ -265,6 +265,69 @@ class WorkflowEngine:
         
         return next_state, notification, sla_warning
     
+    def transition_state(
+        self,
+        application_id: str,
+        action: str,
+        user_id: str,
+        auto_transition: bool = False
+    ) -> Dict[str, Any]:
+        """Transition application state and update in database"""
+        try:
+            from .supabase_client import supabase
+            
+            # Get application
+            app_result = supabase.table("applications").select("*").eq("application_id", application_id).execute()
+            if not app_result.data:
+                raise ValueError(f"Application {application_id} not found")
+            
+            application = app_result.data[0]
+            current_state = application.get('current_state', 'SUBMITTED')
+            workflow_name = application.get('workflow', 'standard_document_workflow')
+            
+            # Perform transition
+            next_state, notification, sla_warning = self.transition(
+                workflow_name=workflow_name,
+                current_state=current_state,
+                action=action,
+                application_data=application
+            )
+            
+            if not next_state:
+                raise ValueError(f"Cannot transition from {current_state} with action {action}")
+            
+            # Update application in database
+            update_data = {
+                'current_state': next_state,
+                'updated_at': datetime.utcnow().isoformat()
+            }
+            
+            # Add state history
+            state_history = application.get('state_history', [])
+            state_history.append({
+                'state': next_state,
+                'action': action,
+                'user_id': user_id,
+                'timestamp': datetime.utcnow().isoformat(),
+                'auto_transitioned': auto_transition
+            })
+            update_data['state_history'] = state_history
+            
+            supabase.table("applications").update(update_data).eq("application_id", application_id).execute()
+            
+            return {
+                'success': True,
+                'previous_state': current_state,
+                'next_state': next_state,
+                'action': action,
+                'notification': notification,
+                'sla_warning': sla_warning,
+                'auto_transitioned': auto_transition
+            }
+            
+        except Exception as e:
+            raise ValueError(f"Workflow transition failed: {str(e)}")
+    
     def get_workflow(self, workflow_name: str) -> Dict[str, Any]:
         """Get workflow configuration by name"""
         workflow = self.workflows.get(workflow_name, self.workflows.get("standard_document_workflow", {}))

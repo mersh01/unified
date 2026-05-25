@@ -2672,7 +2672,7 @@ async def verify_payment(
     payment_data: Dict[str, Any],
     current_user = Depends(AuthHandler.get_current_user_required)
 ):
-    """Verify payment from Chapa and update application"""
+    """Verify payment and automatically transition workflow if payment is valid"""
     try:
         application = db_get_application(application_id)
         if not application:
@@ -2683,20 +2683,75 @@ async def verify_payment(
         if application['user_id'] != current_user.get('username') and not is_admin:
             raise HTTPException(status_code=403, detail="Unauthorized access to this application")
         
-        # In production, verify the payment with Chapa API
-        # For now, we trust the frontend's verification
-        payment_id = payment_data.get('payment_id')
-        reference = payment_data.get('reference')
-        status = payment_data.get('status')
+        # Get payment method and transaction ID from form data
+        payment_method = payment_data.get('payment_method')
+        transaction_id = payment_data.get('transaction_id')
+        payment_amount = payment_data.get('payment_amount')
+        
+        if not payment_method or not transaction_id:
+            raise HTTPException(status_code=400, detail="Payment method and transaction ID are required")
+        
+        # Get service configuration to validate payment
+        service_type = application.get('service_type') or application.get('document_type')
+        from .config_engine import config_engine
+        service_config = config_engine.get_service_config(service_type)
+        
+        if not service_config:
+            raise HTTPException(status_code=400, detail="Service configuration not found")
+        
+        # Validate payment amount matches service fee
+        expected_amount = service_config.get('fee_amount', 0)
+        if payment_amount and float(payment_amount) != expected_amount:
+            raise HTTPException(status_code=400, detail=f"Payment amount mismatch. Expected: {expected_amount}, Received: {payment_amount}")
+        
+        # Validate payment method is enabled for this service
+        payment_config = service_config.get('payment', {})
+        if not payment_config.get('enabled', False):
+            raise HTTPException(status_code=400, detail="Payment is not enabled for this service")
+        
+        enabled_methods = [m for m in payment_config.get('methods', []) if m.get('enabled', False)]
+        valid_method = next((m for m in enabled_methods if m.get('type') == payment_method), None)
+        
+        if not valid_method:
+            raise HTTPException(status_code=400, detail=f"Payment method '{payment_method}' is not enabled for this service")
         
         # Update application with payment info
         update_data = {
             'fee_paid': True,
-            'payment_id': payment_id or reference,
+            'payment_id': transaction_id,
+            'payment_method': payment_method,
+            'payment_amount': payment_amount or expected_amount,
             'updated_at': datetime.utcnow().isoformat()
         }
         
+        # Add payment info to form_data
+        form_data = application.get('form_data', {})
+        form_data.update({
+            'payment_method': payment_method,
+            'transaction_id': transaction_id,
+            'payment_amount': payment_amount or expected_amount
+        })
+        update_data['form_data'] = form_data
+        
         updated_app = update_application(application_id, update_data)
+        
+        # Auto-verify and transition workflow if enabled
+        if payment_config.get('auto_verify', False):
+            from .workflow_engine import workflow_engine
+            current_state = application.get('current_state', 'SUBMITTED')
+            
+            # Transition from PAYMENT_PENDING to PAYMENT_COMPLETED
+            if current_state == 'PAYMENT_PENDING':
+                try:
+                    workflow_engine.transition_state(
+                        application_id=application_id,
+                        action='MAKE_PAYMENT',
+                        user_id=current_user.get('username'),
+                        auto_transition=True
+                    )
+                except Exception as workflow_error:
+                    print(f"Workflow transition failed: {workflow_error}")
+                    # Continue anyway, payment is recorded
         
         # Send payment confirmation notification
         class MockApp:
@@ -2713,8 +2768,10 @@ async def verify_payment(
             "success": True,
             "message": "Payment verified successfully",
             "application_id": application_id,
-            "payment_id": payment_id,
-            "fee_paid": True
+            "payment_id": transaction_id,
+            "payment_method": payment_method,
+            "fee_paid": True,
+            "auto_transitioned": payment_config.get('auto_verify', False)
         }
     
     except HTTPException:

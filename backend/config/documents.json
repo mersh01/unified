@@ -7,6 +7,34 @@
       "fee_amount": 500,
       "processing_time_days": 7,
       "workflow": "standard_document_workflow",
+      "payment": {
+        "enabled": true,
+        "payment_step_order": 7,
+        "methods": [
+          {
+            "type": "telebirr",
+            "name": "Telebirr",
+            "enabled": true
+          },
+          {
+            "type": "cbebirr",
+            "name": "CBE Birr",
+            "enabled": true
+          },
+          {
+            "type": "bank_transfer",
+            "name": "Bank Transfer",
+            "enabled": true,
+            "account_details": {
+              "bank_name": "Commercial Bank of Ethiopia",
+              "account_number": "1000123456789",
+              "account_name": "Government Service Portal"
+            }
+          }
+        ],
+        "auto_verify": true,
+        "verification_timeout_minutes": 30
+      },
       "multi_step": {
         "enabled": true,
         "auto_save": true,
@@ -249,6 +277,40 @@
                 "png"
               ],
               "max_size_mb": 5
+            }
+          ]
+        },
+        {
+          "id": "payment",
+          "order": 7,
+          "step_key": "step_7_payment",
+          "icon": "💳",
+          "type": "payment",
+          "payment_required": true,
+          "fields": [
+            {
+              "name": "payment_method",
+              "type": "select",
+              "required": true,
+              "label": "Payment Method",
+              "options": [
+                "telebirr",
+                "cbebirr",
+                "bank_transfer"
+              ]
+            },
+            {
+              "name": "transaction_id",
+              "type": "text",
+              "required": true,
+              "label": "Transaction ID / Reference Number"
+            },
+            {
+              "name": "payment_amount",
+              "type": "number",
+              "required": true,
+              "label": "Amount Paid (ETB)",
+              "readonly": true
             }
           ]
         }

@@ -638,6 +638,150 @@ const renderField = (field, step) => {
     );
   }
 
+  if (fieldType === 'payment') {
+    const serviceConfig = selectedService;
+    const paymentConfig = serviceConfig?.payment;
+    const feeAmount = serviceConfig?.fee_amount || 0;
+    const paymentMethods = paymentConfig?.methods || [];
+
+    const handlePaymentMethodChange = (e) => {
+      handleChange('payment_method', e.target.value);
+    };
+
+    const handleTransactionIdChange = (e) => {
+      handleChange('transaction_id', e.target.value);
+    };
+
+    const selectedPaymentMethod = paymentMethods.find(m => m.type === formData.payment_method);
+
+    return (
+      <div key={actualFieldName} className="form-group" style={{ marginBottom: '24px' }}>
+        <div style={{ 
+          borderRadius: '16px', 
+          border: '1px solid #e2e8f0', 
+          padding: '24px', 
+          backgroundColor: '#f8fafc',
+          marginBottom: '20px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ fontSize: '32px' }}>💳</div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#0f172a' }}>
+                Payment Required
+              </h3>
+              <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#64748b' }}>
+                Complete payment to proceed with your application
+              </p>
+            </div>
+          </div>
+
+          <div style={{ 
+            backgroundColor: '#0b4f8a', 
+            color: 'white', 
+            padding: '16px', 
+            borderRadius: '12px', 
+            marginBottom: '20px',
+            textAlign: 'center'
+          }}>
+            <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>Total Amount</p>
+            <p style={{ margin: '4px 0 0', fontSize: '32px', fontWeight: '700' }}>
+              ETB {feeAmount.toLocaleString()}
+            </p>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#334155' }}>
+              Select Payment Method *
+            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {paymentMethods.map((method) => (
+                <label
+                  key={method.type}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '12px',
+                    borderRadius: '12px',
+                    border: formData.payment_method === method.type ? '2px solid #0b4f8a' : '1px solid #cbd5e1',
+                    backgroundColor: formData.payment_method === method.type ? '#eff6ff' : 'white',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="payment_method"
+                    value={method.type}
+                    checked={formData.payment_method === method.type}
+                    onChange={handlePaymentMethodChange}
+                    style={{ width: '18px', height: '18px', accentColor: '#0b4f8a' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: 0, fontWeight: '500', color: '#0f172a' }}>{method.name}</p>
+                    {method.account_details && (
+                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b' }}>
+                        {method.account_details.bank_name} - {method.account_details.account_number}
+                      </p>
+                    )}
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {formData.payment_method && (
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#334155' }}>
+                Transaction ID / Reference Number *
+              </label>
+              <input
+                type="text"
+                value={formData.transaction_id || ''}
+                onChange={handleTransactionIdChange}
+                placeholder="Enter your transaction ID"
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '10px',
+                  border: '1px solid #d1d5db',
+                  fontSize: '14px'
+                }}
+              />
+              <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#64748b' }}>
+                Enter the transaction ID from your payment confirmation
+              </p>
+            </div>
+          )}
+
+          {formData.payment_method && selectedPaymentMethod?.account_details && (
+            <div style={{ 
+              backgroundColor: '#fef3c7', 
+              border: '1px solid #fcd34d', 
+              padding: '12px', 
+              borderRadius: '8px',
+              fontSize: '13px',
+              color: '#92400e'
+            }}>
+              <strong>Bank Transfer Details:</strong><br />
+              Bank: {selectedPaymentMethod.account_details.bank_name}<br />
+              Account Number: {selectedPaymentMethod.account_details.account_number}<br />
+              Account Name: {selectedPaymentMethod.account_details.account_name}
+            </div>
+          )}
+        </div>
+
+        <input
+          type="hidden"
+          name="payment_amount"
+          value={feeAmount}
+        />
+        {hasError && <span className="error-message">{hasError}</span>}
+      </div>
+    );
+  }
+
   if (fieldType === 'textarea') {
     return (
       <div key={actualFieldName} className="form-group">
