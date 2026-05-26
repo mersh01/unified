@@ -296,6 +296,87 @@
       ],
       "can_assign_roles": false,
       "priority": 0
+    },
+    "cs_office": {
+      "name": "Customer Service Office",
+      "description": "Handles initial application submissions and routes to screeners",
+      "permissions": [
+        "view_efda_applications",
+        "process_submission",
+        "assign_to_screener",
+        "add_comments"
+      ],
+      "departments": [
+        "efda"
+      ],
+      "can_assign_roles": false,
+      "priority": 65
+    },
+    "screener": {
+      "name": "Screener",
+      "description": "Pre-screens applications for completeness and compliance",
+      "permissions": [
+        "view_efda_applications",
+        "screen_application",
+        "request_info",
+        "reject_application",
+        "pass_to_desk",
+        "add_comments"
+      ],
+      "departments": [
+        "efda"
+      ],
+      "can_assign_roles": false,
+      "priority": 60
+    },
+    "inspector": {
+      "name": "Inspector",
+      "description": "Conducts facility inspections for EFDA licenses",
+      "permissions": [
+        "view_efda_applications",
+        "conduct_inspection",
+        "pass_inspection",
+        "fail_inspection",
+        "add_comments"
+      ],
+      "departments": [
+        "efda"
+      ],
+      "can_assign_roles": false,
+      "priority": 70
+    },
+    "desk_head": {
+      "name": "Desk Head",
+      "description": "Performs desk review and routes to Branch Office Head",
+      "permissions": [
+        "view_efda_applications",
+        "review_application",
+        "request_info",
+        "send_to_boh",
+        "add_comments"
+      ],
+      "departments": [
+        "efda"
+      ],
+      "can_assign_roles": false,
+      "priority": 75
+    },
+    "branch_office_head": {
+      "name": "Branch Office Head",
+      "description": "Final approval authority for EFDA licenses",
+      "permissions": [
+        "view_efda_applications",
+        "approve_application",
+        "reject_application",
+        "generate_certificate",
+        "issue_certificate",
+        "add_comments"
+      ],
+      "departments": [
+        "efda"
+      ],
+      "can_assign_roles": false,
+      "priority": 90
     }
   },
   "workflow_permissions": {
