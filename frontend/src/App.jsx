@@ -222,6 +222,19 @@ function App() {
     setIsAuthenticated(true);
     const token = localStorage.getItem('token');
     await fetchFrontendConfig(token);
+    
+    // Fetch services if user is a proxy user (CSR)
+    const proxyRoles = ['citizen_service_rep', 'csr'];
+    const userRoles = [
+      ...(adminData?.role ? [adminData.role] : []),
+      ...(Array.isArray(adminData?.roles) ? adminData.roles : [])
+    ].filter(Boolean);
+    const isProxyUser = userRoles.some(role => proxyRoles.includes(role));
+    
+    if (isProxyUser) {
+      await fetchServices(token);
+    }
+    
     setLoading(false);
   };
 
