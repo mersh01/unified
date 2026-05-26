@@ -104,7 +104,9 @@ function RoleManagement() {
       if (response.ok) {
         const data = await response.json();
         // Handle both old and new response formats
-        setWorkflowPermissions(data.workflow_permissions || data.workflow || []);
+        const permissions = data.workflow_permissions || data.workflow || [];
+        console.log('Workflow permissions fetched:', permissions);
+        setWorkflowPermissions(permissions);
       }
     } catch (error) {
       console.error('Error fetching workflow permissions:', error);

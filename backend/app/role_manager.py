@@ -281,6 +281,8 @@ class RoleManager:
             workflows = workflow_engine.workflows
             self._workflow_permissions = set()
             
+            print(f"RoleManager: Found {len(workflows)} workflows")
+            
             for workflow_name, workflow_def in workflows.items():
                 states = workflow_def.get("states", {})
                 for state_name, state_config in states.items():
@@ -290,9 +292,11 @@ class RoleManager:
                         permission = action.lower().replace(" ", "_")
                         self._workflow_permissions.add(permission)
             
-            print(f"RoleManager: Generated {len(self._workflow_permissions)} workflow-based permissions")
+            print(f"RoleManager: Generated {len(self._workflow_permissions)} workflow-based permissions: {sorted(list(self._workflow_permissions))}")
         except Exception as e:
             print(f"RoleManager: Failed to generate workflow permissions ({e})")
+            import traceback
+            traceback.print_exc()
             self._workflow_permissions = set()
 
     def get_all_permissions(self) -> Dict[str, List[str]]:

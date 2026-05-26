@@ -16,8 +16,10 @@ class WorkflowEngine:
 
     def reload(self) -> None:
         if self._hydrate_from_db():
+            print(f"WorkflowEngine: Loaded {len(self.workflows)} workflows from database")
             return
         self.workflows = self._load_workflows()
+        print(f"WorkflowEngine: Loaded {len(self.workflows)} workflows from file")
         self.hierarchy_config = self._load_hierarchy_config()
         self.service_level_mapping = self._load_service_level_mapping()
 
@@ -28,12 +30,14 @@ class WorkflowEngine:
             res = supabase.table("workflow_definitions").select("*").eq("is_active", True).execute()
             rows = res.data or []
             if not rows:
+                print(f"WorkflowEngine: No workflows found in database, will use files")
                 return False
             self.workflows = {}
             for row in rows:
                 name = row["workflow_name"]
                 definition = row.get("definition") or {}
                 self.workflows[name] = definition
+            print(f"WorkflowEngine: Loaded {len(self.workflows)} workflows from database")
             sl = supabase.table("app_settings").select("value").eq("key", "service_level_mapping").limit(1).execute()
             if sl.data:
                 self.service_level_mapping = sl.data[0]["value"] or {}
@@ -54,7 +58,9 @@ class WorkflowEngine:
         try:
             with open(self.config_path, 'r') as f:
                 config = json.load(f)
-                return config.get('workflows', {})
+                workflows = config.get('workflows', {})
+                print(f"WorkflowEngine: Loaded {len(workflows)} workflows from {self.config_path}")
+                return workflows
         except FileNotFoundError:
             print(f"Workflow config not found at {self.config_path}")
             return self._get_default_workflows()
