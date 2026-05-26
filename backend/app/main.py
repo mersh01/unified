@@ -1057,10 +1057,67 @@ async def get_users_by_role(role_name: str, current_user = Depends(AuthHandler.g
     return filtered_users
 
 @app.put("/api/applications/{application_id}/status")
-async def update_application_status(application_id: str, update: ApplicationUpdate, current_user = Depends(AuthHandler.get_current_user_required)):
+async def update_application_status(
+    application_id: str, 
+    request: Request,
+    current_user = Depends(AuthHandler.get_current_user_required)
+):
+    # Check if request is FormData (for file uploads) or JSON
+    content_type = request.headers.get("content-type", "")
+    
+    if "multipart/form-data" in content_type:
+        # Handle FormData with file uploads
+        form = await request.form()
+        action = form.get("action")
+        user_id = form.get("user_id")
+        comment = form.get("comment")
+        assign_to = form.get("assign_to")
+        
+        # Extract form data fields
+        form_data_updates = {}
+        for key, value in form.items():
+            if key.startswith("form_data_") and key not in ["action", "user_id", "comment", "assign_to"]:
+                field_name = key.replace("form_data_", "")
+                form_data_updates[field_name] = value
+        
+        # Handle file uploads
+        uploaded_files = form.getlist("uploaded_files")
+        file_updates = {}
+        for file in uploaded_files:
+            if file and hasattr(file, 'filename'):
+                # Parse filename format: field_name___filename
+                parts = file.filename.split("___")
+                if len(parts) >= 2:
+                    field_name = parts[0]
+                    file_updates[field_name] = file.filename
+        
+        # Update form_data with file updates
+        if file_updates:
+            form_data_updates.update(file_updates)
+        
+        # Create update object
+        update = ApplicationUpdate(
+            action=action,
+            user_id=user_id,
+            comment=comment,
+            assign_to=assign_to,
+            payload=form_data_updates if form_data_updates else None
+        )
+    else:
+        # Handle JSON request
+        try:
+            update = await request.json()
+            update = ApplicationUpdate(**update)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Error parsing JSON body: {str(e)}")
+    
     application = db_get_application(application_id)
     if not application:
         raise HTTPException(status_code=404, detail="Application not found")
+    
+    # Update form_data if payload exists (for RESUBMIT action)
+    if update.payload and isinstance(update.payload, dict):
+        application['form_data'] = {**application.get('form_data', {}), **update.payload}
     
     old_state = application['current_state']
     service_type = application.get('document_type') or application.get('service_type')
