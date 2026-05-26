@@ -1623,20 +1623,6 @@ async def get_workflow_permissions(current_user = Depends(AuthHandler.get_curren
     
     permissions = role_manager.get_all_permissions()
     return permissions
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
-    workflow_perms = role_manager.config.get("workflow_permissions", {})
-    
-    # Extract unique permissions from all workflow states
-    unique_permissions = set()
-    for state_config in workflow_perms.values():
-        allowed_perms = state_config.get("allowed_permissions", [])
-        unique_permissions.update(allowed_perms)
-    
-    return {
-        "workflow_permissions": list(unique_permissions),
-        "workflow_states": list(workflow_perms.keys())
-    }
 
 
 @app.get("/api/admin/users/{user_id}/roles")
