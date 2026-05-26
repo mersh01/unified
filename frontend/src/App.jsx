@@ -50,9 +50,25 @@ function ApplyWrapper({ user, services = [] }) {
     return <MultiStepForm user={user} />;
   }
 
+  // Filter services for proxy users (CSR)
+  const currentUserRoles = [
+    ...(user?.role ? [user.role] : []),
+    ...(Array.isArray(user?.roles) ? user.roles : [])
+  ].filter(Boolean);
+  const proxyRoles = ['citizen_service_rep', 'csr'];
+  const isProxyUser = currentUserRoles.some(role => proxyRoles.includes(role));
+  
+  const visibleServices = isProxyUser
+    ? services.filter(service =>
+        service?.config?.allow_proxy_submission === true &&
+        Array.isArray(service.config?.proxy_roles) &&
+        service.config.proxy_roles.some(role => currentUserRoles.includes(role))
+      )
+    : services;
+
   // Otherwise render a simple services selection list so the user can choose a service
   const departments = {};
-  services.forEach(s => {
+  visibleServices.forEach(s => {
     const dept = s.category || 'Other';
     if (!departments[dept]) departments[dept] = [];
     departments[dept].push(s);
@@ -64,7 +80,9 @@ function ApplyWrapper({ user, services = [] }) {
       <p className="text-sm text-slate-600">Select a department and then a service to start your application.</p>
 
       {Object.entries(departments).length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-600">No services available.</div>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-600">
+          {isProxyUser ? 'No proxy-enabled services are available for your role.' : 'No services available.'}
+        </div>
       ) : (
         <div className="space-y-4">
           {Object.entries(departments).map(([dept, deptServices]) => (
@@ -531,9 +549,9 @@ function App() {
             ))}
           </nav>
 
-          {user?.type === 'citizen' || user?.role === 'citizen' || isProxyUser ? (
+          {user?.type === 'citizen' || user?.role === 'citizen' ? (
             <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-              <p className="font-semibold text-slate-950">{isProxyUser ? 'Available Services' : 'Departments'}</p>
+              <p className="font-semibold text-slate-950">Departments</p>
               <div className="mt-3 space-y-2">
                 {Object.entries(getServicesByDepartment()).map(([department, deptServices]) => (
                   <div key={department}>
