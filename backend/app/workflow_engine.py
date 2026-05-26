@@ -229,7 +229,8 @@ class WorkflowEngine:
                 required_perm = action_permission_map.get(action)
                 if required_perm:
                     # If action has a specific permission mapping, check if user has it
-                    if required_perm in user_permissions:
+                    # OR if user has the state's allowed permissions (broader access)
+                    if required_perm in user_permissions or set(user_permissions) & set(allowed_permissions):
                         filtered_actions.append(action)
                 else:
                     # If no specific mapping, allow if user has any of the state's allowed permissions
