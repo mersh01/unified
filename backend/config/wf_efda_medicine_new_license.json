@@ -1,0 +1,142 @@
+{
+  "workflow_name": "wf_efda_medicine_new_license",
+  "definition": {
+    "workflow_id": "wf_efda_medicine_new_license",
+    "service_id": "efda_medicine_new_license",
+    "name": "wf_efda_medicine_new_license",
+    "states": {
+      "SUBMITTED": {
+        "type": "start",
+        "display_name": "Submitted",
+        "color": "#f59e0b",
+        "assigned_role": "cs_office",
+        "allowed_permissions": [
+          "process_submission"
+        ],
+        "actions": [
+          "ASSIGN_TO_SCREENER",
+          "REJECT"
+        ],
+        "next_states": {
+          "ASSIGN_TO_SCREENER": "PRESCREEN",
+          "REJECT": "REJECTED"
+        }
+      },
+      "PRESCREEN": {
+        "type": "internal",
+        "display_name": "Pre-screened",
+        "color": "#3b82f6",
+        "assigned_role": "screener",
+        "allowed_permissions": [
+          "screen_application"
+        ],
+        "actions": [
+          "PASS_TO_INSPECT",
+          "REQUEST_INFO",
+          "REJECT"
+        ],
+        "next_states": {
+          "PASS_TO_INSPECT": "INSPECTION",
+          "REQUEST_INFO": "RETURNED",
+          "REJECT": "REJECTED"
+        }
+      },
+      "INSPECTION": {
+        "type": "internal",
+        "display_name": "Inspection",
+        "color": "#8b5cf6",
+        "assigned_role": "inspector",
+        "allowed_permissions": [
+          "conduct_inspection"
+        ],
+        "actions": [
+          "PASS_INSPECTION",
+          "FAIL_INSPECTION"
+        ],
+        "next_states": {
+          "PASS_INSPECTION": "REVIEW",
+          "FAIL_INSPECTION": "RETURNED"
+        }
+      },
+      "REVIEW": {
+        "type": "internal",
+        "display_name": "Desk Review",
+        "color": "#2563eb",
+        "assigned_role": "desk_head",
+        "allowed_permissions": [
+          "review_application"
+        ],
+        "actions": [
+          "SEND_TO_BOH",
+          "REQUEST_INFO"
+        ],
+        "next_states": {
+          "SEND_TO_BOH": "BOH_REVIEW",
+          "REQUEST_INFO": "RETURNED"
+        }
+      },
+      "BOH_REVIEW": {
+        "type": "internal",
+        "display_name": "Branch Head Review",
+        "color": "#dc2626",
+        "assigned_role": "branch_office_head",
+        "allowed_permissions": [
+          "approve_application"
+        ],
+        "actions": [
+          "APPROVE",
+          "REJECT",
+          "REQUEST_INFO"
+        ],
+        "next_states": {
+          "APPROVE": "APPROVED",
+          "REJECT": "REJECTED",
+          "REQUEST_INFO": "RETURNED"
+        }
+      },
+      "APPROVED": {
+        "type": "internal",
+        "display_name": "Approved",
+        "color": "#059669",
+        "assigned_role": "branch_office_head",
+        "allowed_permissions": [
+          "issue_certificate"
+        ],
+        "actions": [
+          "ISSUE_CERTIFICATE"
+        ],
+        "next_states": {
+          "ISSUE_CERTIFICATE": "ISSUED"
+        }
+      },
+      "ISSUED": {
+        "type": "end",
+        "display_name": "Certificate Issued",
+        "color": "#22c55e",
+        "actions": []
+      },
+      "RETURNED": {
+        "type": "internal",
+        "display_name": "Returned",
+        "color": "#f97316",
+        "assigned_role": "citizen",
+        "allowed_permissions": [
+          "create_application"
+        ],
+        "actions": [
+          "RESUBMIT"
+        ],
+        "next_states": {
+          "RESUBMIT": "SUBMITTED"
+        }
+      },
+      "REJECTED": {
+        "type": "end",
+        "display_name": "Rejected",
+        "color": "#ef4444",
+        "actions": []
+      }
+    }
+  },
+  "is_active": true
+}

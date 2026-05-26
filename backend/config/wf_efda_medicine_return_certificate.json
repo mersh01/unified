@@ -1,0 +1,93 @@
+{
+  "workflow_name": "wf_efda_medicine_return_certificate",
+  "definition": {
+    "workflow_id": "wf_efda_medicine_return_certificate",
+    "service_id": "efda_medicine_return_certificate",
+    "name": "wf_efda_medicine_return_certificate",
+    "states": {
+      "SUBMITTED": {
+        "type": "start",
+        "display_name": "Submitted",
+        "color": "#f59e0b",
+        "assigned_role": "cs_office",
+        "allowed_permissions": [
+          "process_submission"
+        ],
+        "actions": [
+          "ASSIGN_TO_SCREENER",
+          "REJECT"
+        ],
+        "next_states": {
+          "ASSIGN_TO_SCREENER": "PRESCREEN",
+          "REJECT": "REJECTED"
+        }
+      },
+      "PRESCREEN": {
+        "type": "internal",
+        "display_name": "Pre-screened",
+        "color": "#3b82f6",
+        "assigned_role": "screener",
+        "allowed_permissions": [
+          "screen_application"
+        ],
+        "actions": [
+          "PASS_TO_DESK",
+          "REQUEST_INFO",
+          "REJECT"
+        ],
+        "next_states": {
+          "PASS_TO_DESK": "DESK_REVIEW",
+          "REQUEST_INFO": "RETURNED",
+          "REJECT": "REJECTED"
+        }
+      },
+      "DESK_REVIEW": {
+        "type": "internal",
+        "display_name": "Desk Review",
+        "color": "#3b82f6",
+        "assigned_role": "desk_head",
+        "allowed_permissions": [
+          "review_application"
+        ],
+        "actions": [
+          "APPROVE",
+          "REJECT"
+        ],
+        "next_states": {
+          "APPROVE": "BOH_APPROVAL",
+          "REJECT": "REJECTED"
+        }
+      },
+      "BOH_APPROVAL": {
+        "type": "internal",
+        "display_name": "Branch Head Approve",
+        "color": "#dc2626",
+        "assigned_role": "branch_office_head",
+        "allowed_permissions": [
+          "approve_application"
+        ],
+        "actions": [
+          "APPROVE",
+          "REJECT"
+        ],
+        "next_states": {
+          "APPROVE": "ISSUED",
+          "REJECT": "REJECTED"
+        }
+      },
+      "ISSUED": {
+        "type": "end",
+        "display_name": "Closure Issued",
+        "color": "#22c55e",
+        "actions": []
+      },
+      "REJECTED": {
+        "type": "end",
+        "display_name": "Rejected",
+        "color": "#ef4444",
+        "actions": []
+      }
+    }
+  },
+  "is_active": true
+}
