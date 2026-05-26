@@ -26,6 +26,7 @@ function Track() {
   const [actionDefinitions, setActionDefinitions] = useState({});
   const [actionPayload, setActionPayload] = useState({});
   const [previewItem, setPreviewItem] = useState(null);
+  const [resubmitFiles, setResubmitFiles] = useState({});
 
   // Get current user from localStorage
   useEffect(() => {
@@ -162,6 +163,7 @@ function Track() {
     setActionComment('');
     setAssignTo('');
     setActionPayload({});
+    setResubmitFiles({});
     setShowModal(true);
     
     const details = actionDetails[action];
@@ -191,21 +193,55 @@ function Track() {
     
     setActionLoading(true);
     try {
-      const response = await authFetch(`${API_URL}/api/applications/${applicationId}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({
+      // Handle file uploads for RESUBMIT action
+      let bodyData;
+      let headers = {};
+      
+      if (selectedAction === 'RESUBMIT' && Object.keys(resubmitFiles).length > 0) {
+        // Use FormData for file uploads
+        const formData = new FormData();
+        formData.append('action', selectedAction);
+        formData.append('user_id', user?.username || user?.user_id || 'admin');
+        formData.append('comment', actionComment);
+        if (assignTo) formData.append('assign_to', assignTo);
+        
+        // Add form data payload
+        Object.keys(actionPayload).forEach(key => {
+          if (!resubmitFiles[key]) {
+            formData.append(`form_data_${key}`, actionPayload[key]);
+          }
+        });
+        
+        // Add files
+        Object.entries(resubmitFiles).forEach(([key, file]) => {
+          formData.append('uploaded_files', file, `${key}___${file.name}`);
+        });
+        
+        bodyData = formData;
+        // Don't set Content-Type header for FormData - browser will set it with boundary
+      } else {
+        // Use JSON for non-file actions
+        bodyData = JSON.stringify({
           action: selectedAction,
           user_id: user?.username || user?.user_id || 'admin',
           comment: actionComment,
           assign_to: assignTo || null,
           payload: Object.keys(actionPayload).length > 0 ? actionPayload : null
-        })
+        });
+        headers = { 'Content-Type': 'application/json' };
+      }
+      
+      const response = await authFetch(`${API_URL}/api/applications/${applicationId}/status`, {
+        method: 'PUT',
+        headers,
+        body: bodyData
       });
       
       if (response.ok) {
         const result = await response.json();
         alert(`✅ Application ${selectedAction} successful! New state: ${result.new_state}`);
         setShowModal(false);
+        setResubmitFiles({});
         await trackApplication();
       } else {
         const errorData = await response.json();
@@ -679,27 +715,64 @@ function Track() {
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>
                   Please provide the requested information to resubmit your application.
                 </p>
-                {Object.entries(application.form_data).map(([key, value]) => (
-                  <div key={key} style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>
-                      {key.replace(/_/g, ' ').toUpperCase()}
-                    </label>
-                    {typeof value === 'string' && value.length > 100 ? (
-                      <textarea
-                        value={actionPayload[key] || value}
-                        onChange={e => setActionPayload({...actionPayload, [key]: e.target.value})}
-                        style={{ width: '100%', height: '80px', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-                      />
-                    ) : (
-                      <input
-                        type="text"
-                        value={actionPayload[key] || value}
-                        onChange={e => setActionPayload({...actionPayload, [key]: e.target.value})}
-                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-                      />
-                    )}
-                  </div>
-                ))}
+                {Object.entries(application.form_data).map(([key, value]) => {
+                  // Check if this is a file field (by common naming patterns or value format)
+                  const isFileField = key.toLowerCase().includes('file') || 
+                                     key.toLowerCase().includes('document') || 
+                                     key.toLowerCase().includes('image') ||
+                                     key.toLowerCase().includes('photo') ||
+                                     key.toLowerCase().includes('certificate') ||
+                                     key.toLowerCase().includes('license') ||
+                                     (typeof value === 'string' && (value.startsWith('http') || value.includes('.')));
+                  
+                  if (isFileField) {
+                    return (
+                      <div key={key} style={{ marginBottom: '12px' }}>
+                        <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>
+                          {key.replace(/_/g, ' ').toUpperCase()}
+                        </label>
+                        {value && (
+                          <div style={{ marginBottom: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                            Current: {typeof value === 'string' ? value.split('/').pop() : 'File uploaded'}
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setResubmitFiles(prev => ({ ...prev, [key]: file }));
+                              setActionPayload(prev => ({ ...prev, [key]: file.name }));
+                            }
+                          }}
+                          style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div key={key} style={{ marginBottom: '12px' }}>
+                      <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>
+                        {key.replace(/_/g, ' ').toUpperCase()}
+                      </label>
+                      {typeof value === 'string' && value.length > 100 ? (
+                        <textarea
+                          value={actionPayload[key] || value}
+                          onChange={e => setActionPayload({...actionPayload, [key]: e.target.value})}
+                          style={{ width: '100%', height: '80px', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={actionPayload[key] || value}
+                          onChange={e => setActionPayload({...actionPayload, [key]: e.target.value})}
+                          style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
             
