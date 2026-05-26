@@ -1695,6 +1695,13 @@ async def sync_workflow_permissions(current_user = Depends(AuthHandler.get_curre
         with open(roles_path, 'w', encoding='utf-8') as f:
             json.dump(roles_data, f, indent=2)
         
+        # Update database app_settings for workflow_permissions
+        from .supabase_client import supabase
+        supabase.table("app_settings").upsert(
+            {"key": "workflow_permissions", "value": workflow_permissions},
+            on_conflict="key",
+        ).execute()
+        
         # Reload role_manager to pick up changes
         role_manager.reload()
         
