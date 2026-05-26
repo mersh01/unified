@@ -194,6 +194,12 @@ class WorkflowEngine:
                 'REASSIGN': 'reassign_complaints',
                 'ASSIGN_TO_LME': 'assign_complaints',
                 'REOPEN': 'reopen_complaint',
+                # EFDA-specific actions
+                'ASSIGN_TO_SCREENER': 'assign_to_screener',
+                'PASS_TO_DESK': 'pass_to_desk',
+                'PASS_TO_INSPECT': 'pass_to_inspect',
+                'PASS_INSPECTION': 'pass_inspection',
+                'FAIL_INSPECTION': 'fail_inspection',
                 # Standard document workflow actions
                 'PROCESS': 'verify_applications',
                 'APPROVE': 'verify_applications',
@@ -204,14 +210,16 @@ class WorkflowEngine:
                 'MAKE_PAYMENT': 'process_payments',
                 # Certificate actions
                 'GENERATE_CERTIFICATE': 'issue_certificates',
+                'ISSUE_CERTIFICATE': 'issue_certificates',
                 'DISPATCH': 'dispatch_certificates',
                 'EMAIL': 'dispatch_certificates',
                 # General actions
-                'REJECT': 'reject_complaints',
+                'REJECT': 'reject_application',
                 'APPEAL': 'appeal_decision',
                 'RATE': 'rate_service',
                 'CANCEL': 'cancel_applications',
                 'PROCESS_SERVICE': 'process_applications',
+                'RESUBMIT': 'create_application',
             }
             
             # Filter actions based on specific permissions

@@ -11,7 +11,8 @@
         "color": "#f59e0b",
         "assigned_role": "cs_office",
         "allowed_permissions": [
-          "process_submission"
+          "process_submission",
+          "assign_to_screener"
         ],
         "actions": [
           "ASSIGN_TO_SCREENER",
