@@ -1617,8 +1617,12 @@ async def get_roles(current_user = Depends(AuthHandler.get_current_user_required
 
 @app.get("/api/admin/workflow-permissions")
 async def get_workflow_permissions(current_user = Depends(AuthHandler.get_current_user_required)):
-    """Get workflow-based permissions for role management"""
+    """Get all available permissions categorized by type (standard and workflow-based)"""
     if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin"):
+        raise HTTPException(status_code=403, detail="Only super admins can access this endpoint")
+    
+    permissions = role_manager.get_all_permissions()
+    return permissions
         raise HTTPException(status_code=403, detail="Admin access required")
     
     workflow_perms = role_manager.config.get("workflow_permissions", {})

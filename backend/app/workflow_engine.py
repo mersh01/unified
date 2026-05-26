@@ -188,6 +188,7 @@ class WorkflowEngine:
             
             # Granular permission check for specific actions
             # Map actions to their required permissions based on action name
+            # Auto-generate permission from action name if not in explicit map
             action_permission_map = {
                 # Complaint-specific actions
                 'RESOLVE': 'resolve_complaints',
@@ -221,6 +222,14 @@ class WorkflowEngine:
                 'PROCESS_SERVICE': 'process_applications',
                 'RESUBMIT': 'create_application',
             }
+            
+            # Auto-generate permission for actions not in the map
+            # This allows new workflow actions to automatically work without manual mapping
+            for action in actions:
+                if action not in action_permission_map:
+                    # Convert action to permission name (lowercase, underscore)
+                    auto_permission = action.lower().replace(" ", "_")
+                    action_permission_map[action] = auto_permission
             
             # Filter actions based on specific permissions
             filtered_actions = []

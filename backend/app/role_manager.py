@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Set
 
 from .supabase_client import supabase
 
@@ -13,6 +13,7 @@ class RoleManager:
         self.config_path = Path(__file__).parent.parent / config_path
         self.config: Dict[str, Any] = {}
         self._use_db = False
+        self._workflow_permissions: Set[str] = set()
         self.reload()
 
     def reload(self) -> None:
@@ -59,6 +60,9 @@ class RoleManager:
         except Exception as e:
             print(f"RoleManager: database load failed ({e}), using JSON file")
             self._load_file()
+        
+        # Auto-generate workflow-based permissions
+        self._generate_workflow_permissions()
 
     def _load_file(self) -> None:
         self._use_db = False
@@ -146,7 +150,19 @@ class RoleManager:
 
     def get_service_department(self, service_type: str) -> str:
         mapping = self.config.get("service_to_department_mapping", {})
-        return mapping.get(service_type, "verification")
+        dept = mapping.get(service_type)
+        if dept:
+            return dept
+        # Fallback: use the service config's category field as department
+        try:
+            from .config_engine import ConfigEngine
+            ce = ConfigEngine()
+            svc_cfg = ce.get_service_config(service_type)
+            if svc_cfg and svc_cfg.get("category"):
+                return svc_cfg["category"]
+        except Exception:
+            pass
+        return "verification"
 
     def can_access_application(
         self, role: str, department: str, application_state: str, application_service: str = None
@@ -256,6 +272,46 @@ class RoleManager:
     def _save_file(self):
         with open(self.config_path, "w", encoding="utf-8") as f:
             json.dump(self.config, f, indent=2)
+
+    def _generate_workflow_permissions(self) -> None:
+        """Automatically generate permissions from all workflow definitions."""
+        try:
+            from .workflow_engine import workflow_engine
+            
+            workflows = workflow_engine.workflows
+            self._workflow_permissions = set()
+            
+            for workflow_name, workflow_def in workflows.items():
+                states = workflow_def.get("states", {})
+                for state_name, state_config in states.items():
+                    actions = state_config.get("actions", [])
+                    for action in actions:
+                        # Convert action to permission name (lowercase, underscore)
+                        permission = action.lower().replace(" ", "_")
+                        self._workflow_permissions.add(permission)
+            
+            print(f"RoleManager: Generated {len(self._workflow_permissions)} workflow-based permissions")
+        except Exception as e:
+            print(f"RoleManager: Failed to generate workflow permissions ({e})")
+            self._workflow_permissions = set()
+
+    def get_all_permissions(self) -> Dict[str, List[str]]:
+        """Get all available permissions categorized by type."""
+        # Standard/system permissions from roles
+        standard_permissions = set()
+        for role_config in self.config.get("roles", {}).values():
+            for perm in role_config.get("permissions", []):
+                if perm != "*":
+                    standard_permissions.add(perm)
+        
+        return {
+            "standard": sorted(list(standard_permissions)),
+            "workflow": sorted(list(self._workflow_permissions)),
+        }
+
+    def get_workflow_permissions(self) -> List[str]:
+        """Get all workflow-based permissions."""
+        return sorted(list(self._workflow_permissions))
 
 
 role_manager = RoleManager()
