@@ -32,25 +32,57 @@ def sync_workflow_permissions_direct():
         
         print(f"Found {len(workflows)} workflow files")
         
+        # Load roles.json first to get existing permissions
+        roles_path = config_dir / "roles.json"
+        with open(roles_path, 'r', encoding='utf-8') as f:
+            roles_data = json.load(f)
+        
         # Extract permissions from workflows
-        workflow_permissions = {}
+        new_workflow_permissions = {}
         for workflow_name, workflow_data in workflows.items():
             states = workflow_data.get('states', {})
             
             for state_name, state_config in states.items():
-                if state_name not in workflow_permissions:
-                    workflow_permissions[state_name] = {
+                if state_name not in new_workflow_permissions:
+                    new_workflow_permissions[state_name] = {
                         "allowed_permissions": set(),
                         "allowed_actions": set()
                     }
                 
                 allowed_perms = state_config.get('allowed_permissions', [])
                 if allowed_perms:
-                    workflow_permissions[state_name]["allowed_permissions"].update(allowed_perms)
+                    new_workflow_permissions[state_name]["allowed_permissions"].update(allowed_perms)
                 
                 allowed_actions = state_config.get('actions', [])
                 if allowed_actions:
-                    workflow_permissions[state_name]["allowed_actions"].update(allowed_actions)
+                    new_workflow_permissions[state_name]["allowed_actions"].update(allowed_actions)
+        
+        # Merge with existing workflow_permissions from roles.json
+        existing_workflow_permissions = roles_data.get('workflow_permissions', {})
+        workflow_permissions = {}
+        
+        print(f"Found {len(existing_workflow_permissions)} existing workflow states")
+        
+        # Copy ALL existing permissions first (preserve old states)
+        for state_name, state_config in existing_workflow_permissions.items():
+            workflow_permissions[state_name] = {
+                "allowed_permissions": set(state_config.get('allowed_permissions', [])),
+                "allowed_actions": set(state_config.get('allowed_actions', []))
+            }
+        
+        print(f"Copied {len(workflow_permissions)} existing states")
+        
+        # Merge new permissions (add to existing or create new states)
+        for state_name, state_config in new_workflow_permissions.items():
+            if state_name not in workflow_permissions:
+                workflow_permissions[state_name] = {
+                    "allowed_permissions": set(),
+                    "allowed_actions": set()
+                }
+            workflow_permissions[state_name]["allowed_permissions"].update(state_config["allowed_permissions"])
+            workflow_permissions[state_name]["allowed_actions"].update(state_config["allowed_actions"])
+        
+        print(f"After merge: {len(workflow_permissions)} total states")
         
         # Convert sets to lists
         for state_name in workflow_permissions:
@@ -58,11 +90,6 @@ def sync_workflow_permissions_direct():
             workflow_permissions[state_name]["allowed_actions"] = sorted(list(workflow_permissions[state_name]["allowed_actions"]))
         
         print(f"Extracted permissions for {len(workflow_permissions)} states")
-        
-        # Load roles.json
-        roles_path = config_dir / "roles.json"
-        with open(roles_path, 'r', encoding='utf-8') as f:
-            roles_data = json.load(f)
         
         # Update workflow_permissions in roles.json
         roles_data['workflow_permissions'] = workflow_permissions

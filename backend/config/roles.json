@@ -5,7 +5,6 @@
       "description": "Full system access - can manage everything",
       "permissions": [
         "view_all_applications",
-        "create_application",
         "update_any_application",
         "delete_any_application",
         "manage_users",
@@ -191,22 +190,6 @@
       "can_assign_roles": false,
       "priority": 40
     },
-    "citizen_service_rep": {
-      "name": "Citizen Service Representative",
-      "description": "Submits applications on behalf of citizens when authorized",
-      "permissions": [
-        "create_application",
-        "submit_proxy_applications",
-        "view_assigned_applications",
-        "add_comments"
-      ],
-      "departments": [
-        "citizen_services",
-        "complaints"
-      ],
-      "can_assign_roles": false,
-      "priority": 45
-    },
     "medical_officer": {
       "name": "Medical Officer",
       "description": "Conducts medical tests for license renewals",
@@ -313,99 +296,273 @@
       ],
       "can_assign_roles": false,
       "priority": 0
-    },
-    "cs_office": {
-      "name": "Customer Service Office",
-      "description": "Handles initial application submissions and routes to screeners",
-      "permissions": [
-        "view_efda_applications",
-        "process_submission",
-        "assign_to_screener",
-        "add_comments"
-      ],
-      "departments": [
-        "efda"
-      ],
-      "can_assign_roles": false,
-      "priority": 65
-    },
-    "screener": {
-      "name": "Screener",
-      "description": "Pre-screens applications for completeness and compliance",
-      "permissions": [
-        "view_efda_applications",
-        "screen_application",
-        "request_info",
-        "reject_application",
-        "pass_to_desk",
-        "add_comments"
-      ],
-      "departments": [
-        "efda"
-      ],
-      "can_assign_roles": false,
-      "priority": 60
-    },
-    "inspector": {
-      "name": "Inspector",
-      "description": "Conducts facility inspections for EFDA licenses",
-      "permissions": [
-        "view_efda_applications",
-        "conduct_inspection",
-        "pass_inspection",
-        "fail_inspection",
-        "add_comments"
-      ],
-      "departments": [
-        "efda"
-      ],
-      "can_assign_roles": false,
-      "priority": 70
-    },
-    "desk_head": {
-      "name": "Desk Head",
-      "description": "Performs desk review and routes to Branch Office Head",
-      "permissions": [
-        "view_efda_applications",
-        "review_application",
-        "request_info",
-        "send_to_boh",
-        "add_comments"
-      ],
-      "departments": [
-        "efda"
-      ],
-      "can_assign_roles": false,
-      "priority": 75
-    },
-    "branch_office_head": {
-      "name": "Branch Office Head",
-      "description": "Final approval authority for EFDA licenses",
-      "permissions": [
-        "view_efda_applications",
-        "approve_application",
-        "reject_application",
-        "generate_certificate",
-        "issue_certificate",
-        "add_comments"
-      ],
-      "departments": [
-        "efda"
-      ],
-      "can_assign_roles": false,
-      "priority": 90
     }
   },
   "workflow_permissions": {
     "SUBMITTED": {
       "allowed_permissions": [
+        "assign_complaints",
         "assign_to_screener",
-        "process_submission"
+        "process_submission",
+        "reject_complaints",
+        "verify_applications"
       ],
       "allowed_actions": [
+        "ASSIGN_TO_LME",
         "ASSIGN_TO_SCREENER",
+        "PROCESS",
         "REJECT"
       ]
+    },
+    "DOCUMENT_CHECK": {
+      "allowed_permissions": [
+        "verify_applications"
+      ],
+      "allowed_actions": [
+        "APPROVE",
+        "REJECT",
+        "REQUEST_DOCUMENTS"
+      ]
+    },
+    "VERIFICATION": {
+      "allowed_permissions": [
+        "verify_applications"
+      ],
+      "allowed_actions": [
+        "APPROVE",
+        "ESCALATE",
+        "REJECT",
+        "REQUEST_INFO"
+      ]
+    },
+    "SENIOR_VERIFICATION": {
+      "allowed_permissions": [
+        "override_verification",
+        "verify_applications"
+      ],
+      "allowed_actions": [
+        "APPROVE",
+        "REJECT",
+        "RETURN_TO_OFFICER"
+      ]
+    },
+    "DOCUMENT_VERIFICATION": {
+      "allowed_permissions": [
+        "verify_documents"
+      ],
+      "allowed_actions": [
+        "APPROVE",
+        "FLAG_FRAUD",
+        "REJECT",
+        "REQUEST_ADDITIONAL_DOCS"
+      ]
+    },
+    "SENIOR_DOCUMENT_VERIFICATION": {
+      "allowed_permissions": [
+        "override_document_verification",
+        "verify_documents"
+      ],
+      "allowed_actions": [
+        "APPROVE",
+        "REJECT",
+        "RETURN_TO_VERIFIER"
+      ]
+    },
+    "PAYMENT_PENDING": {
+      "allowed_permissions": [
+        "make_payment",
+        "process_payments"
+      ],
+      "allowed_actions": [
+        "CANCEL",
+        "HOLD_PAYMENT",
+        "MAKE_PAYMENT"
+      ]
+    },
+    "PAYMENT_APPROVAL": {
+      "allowed_permissions": [
+        "approve_refunds",
+        "process_payments"
+      ],
+      "allowed_actions": [
+        "APPROVE_PAYMENT",
+        "REJECT_PAYMENT"
+      ]
+    },
+    "PAYMENT_COMPLETED": {
+      "allowed_permissions": [
+        "issue_certificates"
+      ],
+      "allowed_actions": [
+        "GENERATE_CERTIFICATE",
+        "PROCESS_SERVICE"
+      ]
+    },
+    "SERVICE_PROCESSED": {
+      "allowed_permissions": [
+        "issue_certificates"
+      ],
+      "allowed_actions": [
+        "COMPLETE"
+      ]
+    },
+    "CERTIFICATE_GENERATED": {
+      "allowed_permissions": [
+        "dispatch_certificates",
+        "issue_certificates"
+      ],
+      "allowed_actions": [
+        "DISPATCH",
+        "EMAIL"
+      ]
+    },
+    "MEDICAL_TEST": {
+      "allowed_permissions": [
+        "clear_medical_tests",
+        "conduct_medical_tests"
+      ],
+      "allowed_actions": [
+        "CLEAR",
+        "FAIL",
+        "RESCHEDULE"
+      ]
+    },
+    "LICENSE_GENERATED": {
+      "allowed_permissions": [
+        "dispatch_certificates"
+      ],
+      "allowed_actions": [
+        "DISPATCH"
+      ]
+    },
+    "DRAFT": {
+      "allowed_permissions": [
+        "assess_tax_returns",
+        "make_payment"
+      ],
+      "allowed_actions": [
+        "SAVE_DRAFT",
+        "SUBMIT"
+      ]
+    },
+    "VALIDATION": {
+      "allowed_permissions": [
+        "assess_tax_returns"
+      ],
+      "allowed_actions": [
+        "REJECT",
+        "VALIDATE"
+      ]
+    },
+    "ASSESSMENT": {
+      "allowed_permissions": [
+        "assess_tax_returns",
+        "issue_notices"
+      ],
+      "allowed_actions": [
+        "APPROVE",
+        "NOTICE",
+        "REJECT"
+      ]
+    },
+    "REFUND_PENDING": {
+      "allowed_permissions": [
+        "approve_refunds",
+        "process_payments"
+      ],
+      "allowed_actions": [
+        "PROCESS_REFUND"
+      ]
+    },
+    "REFUND_COMPLETED": {
+      "allowed_permissions": [
+        "assess_tax_returns"
+      ],
+      "allowed_actions": []
+    },
+    "DEMAND_PENDING": {
+      "allowed_permissions": [
+        "appeal_decision",
+        "make_payment"
+      ],
+      "allowed_actions": [
+        "APPEAL",
+        "PAY_TAX"
+      ]
+    },
+    "INCOME_VERIFICATION": {
+      "allowed_permissions": [
+        "approve_income_verification",
+        "verify_income_proofs"
+      ],
+      "allowed_actions": [
+        "APPROVE",
+        "REJECT"
+      ]
+    },
+    "QUALITY_CHECK": {
+      "allowed_permissions": [
+        "audit_applications",
+        "flag_issues"
+      ],
+      "allowed_actions": [
+        "APPROVE",
+        "FLAG_ISSUES",
+        "RETURN_FOR_CORRECTION"
+      ]
+    },
+    "COMPLETED": {
+      "allowed_permissions": [
+        "audit_applications"
+      ],
+      "allowed_actions": [
+        "APPROVE",
+        "AUDIT",
+        "FLAG_ISSUES"
+      ]
+    },
+    "REJECTED": {
+      "allowed_permissions": [
+        "appeal_decision"
+      ],
+      "allowed_actions": [
+        "APPEAL"
+      ]
+    },
+    "CORRECTION_PENDING": {
+      "allowed_permissions": [
+        "verify_applications"
+      ],
+      "allowed_actions": [
+        "MAKE_CORRECTION",
+        "REJECT"
+      ]
+    },
+    "CORRECTION_MADE": {
+      "allowed_permissions": [
+        "override_verification",
+        "verify_applications"
+      ],
+      "allowed_actions": [
+        "VERIFY_CORRECTION"
+      ]
+    },
+    "ASSIGNED": {
+      "allowed_permissions": [
+        "reassign_complaints",
+        "resolve_complaints"
+      ],
+      "allowed_actions": [
+        "REASSIGN",
+        "RESOLVE"
+      ]
+    },
+    "RESOLVED": {
+      "allowed_permissions": [
+        "rate_service",
+        "reopen_complaint"
+      ],
+      "allowed_actions": []
     },
     "PRESCREEN": {
       "allowed_permissions": [
@@ -467,10 +624,6 @@
       "allowed_actions": [
         "RESUBMIT"
       ]
-    },
-    "REJECTED": {
-      "allowed_permissions": [],
-      "allowed_actions": []
     },
     "REVIEW": {
       "allowed_permissions": [
@@ -539,19 +692,6 @@
       "RESOLVED",
       "REJECTED"
     ],
-    "efda": [
-      "SUBMITTED",
-      "PRESCREEN",
-      "INSPECTION",
-      "REVIEW",
-      "BOH_REVIEW",
-      "APPROVED",
-      "ISSUED",
-      "RETURNED",
-      "REJECTED",
-      "DESK_REVIEW",
-      "BOH_APPROVAL"
-    ],
     "view_only": [
       "ALL_STATES"
     ],
@@ -568,14 +708,6 @@
     "voter_id_correction": "verification",
     "income_tax_filing": "payment",
     "caste_certificate": "verification",
-    "complaint_submission": "complaints",
-    "efda_medicine_new_license": "efda",
-    "efda_medicine_renewal": "efda",
-    "efda_medicine_address_change": "efda",
-    "efda_medicine_owner_change": "efda",
-    "efda_medicine_technical_manager_change": "efda",
-    "efda_medicine_additional_store": "efda",
-    "efda_medicine_return_certificate": "efda",
-    "efda_medicine_replace_certificate": "efda"
+    "complaint_submission": "complaints"
   }
 }
