@@ -289,7 +289,8 @@
         "appeal_decision",
         "rate_service",
         "reopen_complaint",
-        "view_own_applications"
+        "view_own_applications",
+        "create_application"
       ],
       "departments": [
         "all"
