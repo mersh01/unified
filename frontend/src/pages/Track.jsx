@@ -223,6 +223,15 @@ function Track() {
     return statusColors[status] || '#6b7280';
   };
 
+  const handlePaymentSuccess = async () => {
+    alert('Payment successful!');
+    await trackApplication();
+  };
+
+  const handlePaymentCancel = () => {
+    console.log('Payment cancelled by user');
+  };
+
   const getStatusDisplayName = (status) => {
     return statusNames[status] || status;
   };
@@ -663,7 +672,38 @@ function Track() {
           <div style={{ background: 'var(--card-bg)', padding: '24px', borderRadius: '12px', width: '400px', maxWidth: '90%' }}>
             <h3 style={{ marginTop: 0 }}>Action: {getActionLabel(selectedAction)}</h3>
             
-            {!actionDefinitions[selectedAction]?.fields && (
+            {/* Special handling for RESUBMIT action - show form data for editing */}
+            {selectedAction === 'RESUBMIT' && application?.form_data && (
+              <div style={{ marginBottom: '16px', padding: '16px', background: 'var(--surface-alt-2)', borderRadius: '8px', border: '1px solid var(--border-strong)' }}>
+                <h4 style={{ marginTop: 0, marginBottom: '12px' }}>Update Application Information</h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                  Please provide the requested information to resubmit your application.
+                </p>
+                {Object.entries(application.form_data).map(([key, value]) => (
+                  <div key={key} style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>
+                      {key.replace(/_/g, ' ').toUpperCase()}
+                    </label>
+                    {typeof value === 'string' && value.length > 100 ? (
+                      <textarea
+                        value={actionPayload[key] || value}
+                        onChange={e => setActionPayload({...actionPayload, [key]: e.target.value})}
+                        style={{ width: '100%', height: '80px', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={actionPayload[key] || value}
+                        onChange={e => setActionPayload({...actionPayload, [key]: e.target.value})}
+                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {!actionDefinitions[selectedAction]?.fields && selectedAction !== 'RESUBMIT' && (
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Comment</label>
                 <textarea 
@@ -675,7 +715,7 @@ function Track() {
               </div>
             )}
             
-            {actionDefinitions[selectedAction]?.fields && (
+            {actionDefinitions[selectedAction]?.fields && selectedAction !== 'RESUBMIT' && (
               <div style={{ marginBottom: '16px', padding: '16px', background: 'var(--surface-alt-2)', borderRadius: '8px', border: '1px solid var(--border-strong)' }}>
                 <h4 style={{ marginTop: 0, marginBottom: '12px' }}>Required Information</h4>
                 {actionDefinitions[selectedAction].fields.map(field => (
