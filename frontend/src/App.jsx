@@ -23,7 +23,7 @@ import Badge from './components/ui/Badge';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Login wrapper component to handle path-based login type
-function LoginWrapper({ onLogin, onAdminLogin, translations, locale, availableLocales, handleLocaleChange }) {
+function LoginWrapper({ onLogin, onAdminLogin, translations, locale, availableLocales, handleLocaleChange, theme, onToggleTheme }) {
   const location = useLocation();
   const loginType = location.pathname === '/employee' ? 'admin' : 'citizen';
   
@@ -35,6 +35,8 @@ function LoginWrapper({ onLogin, onAdminLogin, translations, locale, availableLo
     locale={locale}
     availableLocales={availableLocales}
     onLocaleChange={handleLocaleChange}
+    theme={theme}
+    onToggleTheme={onToggleTheme}
   />;
 }
 
@@ -104,9 +106,8 @@ function App() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploadStatus, setUploadStatus] = useState(''); // '', 'uploading', 'success', 'error'
   const [editName, setEditName] = useState('');
-  const [nameUpdateStatus, setNameUpdateStatus] = useState(''); // '', 'saving', 'success', 'error'
   const [editAddress, setEditAddress] = useState('');
-  const [addressUpdateStatus, setAddressUpdateStatus] = useState(''); // '', 'saving', 'success', 'error'
+  const [saveStatus, setSaveStatus] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -125,8 +126,14 @@ function App() {
           setUser(userData);
           setIsAuthenticated(true);
           await fetchFrontendConfig(token);
-          if (userData.type === 'citizen' || userData.role === 'citizen') {
-              await fetchServices(token);
+          const proxyRoles = ['citizen_service_rep', 'csr'];
+          const userRoles = [
+            ...(userData?.role ? [userData.role] : []),
+            ...(Array.isArray(userData?.roles) ? userData.roles : [])
+          ].filter(Boolean);
+          const isProxyUser = userRoles.some(role => proxyRoles.includes(role));
+          if (userData.type === 'citizen' || userData.role === 'citizen' || isProxyUser) {
+            await fetchServices(token);
           }
         } catch (e) {
           console.error('Error parsing user data:', e);
@@ -246,7 +253,17 @@ function App() {
 
   const handleLogout = () => {
     const isEmployee = user?.type === 'admin' || (user?.role && user?.role !== 'citizen');
+    const savedTheme = localStorage.getItem('theme');
+    const savedLocale = localStorage.getItem('locale');
+
     localStorage.clear();
+    if (savedTheme) {
+      localStorage.setItem('theme', savedTheme);
+    }
+    if (savedLocale) {
+      localStorage.setItem('locale', savedLocale);
+    }
+
     setUser(null);
     setIsAuthenticated(false);
     setFrontendConfig(null);
@@ -312,45 +329,32 @@ function App() {
     }
   };
 
-  const handleNameUpdate = async () => {
-    const trimmed = editName.trim();
-    if (!trimmed) return;
-    
-    setNameUpdateStatus('saving');
+  const handleSaveProfile = async () => {
     const token = localStorage.getItem('token');
-
-    try {
-      const response = await fetch(`${API_URL}/api/users/profile`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ full_name: trimmed })
-      });
-
-      if (response.ok) {
-        setNameUpdateStatus('success');
-        await fetchFrontendConfig(token);
-        setTimeout(() => setNameUpdateStatus(''), 2000);
-      } else {
-        const errData = await response.json();
-        alert(`Update failed: ${errData.detail || 'Unknown error'}`);
-        setNameUpdateStatus('error');
-      }
-    } catch (error) {
-      console.error('Error updating name:', error);
-      alert('Network error during update');
-      setNameUpdateStatus('error');
+    if (!token) {
+      alert('You must be logged in to save changes.');
+      return;
     }
-  };
 
-  const handleAddressUpdate = async () => {
-    const trimmed = editAddress.trim();
-    
-    setAddressUpdateStatus('saving');
-    const token = localStorage.getItem('token');
+    const trimmedName = editName.trim();
+    const trimmedAddress = editAddress.trim();
+    const currentName = frontendConfig?.user?.full_name || frontendConfig?.user?.name || '';
+    const currentAddress = frontendConfig?.user?.address || '';
 
+    const payload = {};
+    if (trimmedName && trimmedName !== currentName) {
+      payload.full_name = trimmedName;
+    }
+    if (trimmedAddress !== currentAddress) {
+      payload.address = trimmedAddress || null;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      alert('No changes to save');
+      return;
+    }
+
+    setSaveStatus('saving');
     try {
       const response = await fetch(`${API_URL}/api/users/profile`, {
         method: 'PUT',
@@ -358,22 +362,22 @@ function App() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ address: trimmed || null })
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
-        setAddressUpdateStatus('success');
         await fetchFrontendConfig(token);
-        setTimeout(() => setAddressUpdateStatus(''), 2000);
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus(''), 2000);
       } else {
-        const errData = await response.json();
-        alert(`Update failed: ${errData.detail || 'Unknown error'}`);
-        setAddressUpdateStatus('error');
+        const err = await response.json();
+        alert(`Update failed: ${err.detail || 'Unknown error'}`);
+        setSaveStatus('error');
       }
     } catch (error) {
-      console.error('Error updating address:', error);
+      console.error('Error saving profile:', error);
       alert('Network error during update');
-      setAddressUpdateStatus('error');
+      setSaveStatus('error');
     }
   };
 
@@ -435,8 +439,8 @@ function App() {
     return (
       <Router>
         <Routes>
-          <Route path="/citizen" element={<LoginWrapper onLogin={handleLogin} onAdminLogin={handleAdminLogin} translations={translations} locale={locale} availableLocales={availableLocales} handleLocaleChange={handleLocaleChange} />} />
-          <Route path="/employee" element={<LoginWrapper onLogin={handleLogin} onAdminLogin={handleAdminLogin} translations={translations} locale={locale} availableLocales={availableLocales} handleLocaleChange={handleLocaleChange} />} />
+          <Route path="/citizen" element={<LoginWrapper onLogin={handleLogin} onAdminLogin={handleAdminLogin} translations={translations} locale={locale} availableLocales={availableLocales} handleLocaleChange={handleLocaleChange} theme={theme} onToggleTheme={toggleTheme} />} />
+          <Route path="/employee" element={<LoginWrapper onLogin={handleLogin} onAdminLogin={handleAdminLogin} translations={translations} locale={locale} availableLocales={availableLocales} handleLocaleChange={handleLocaleChange} theme={theme} onToggleTheme={toggleTheme} />} />
           <Route path="/" element={<Navigate to="/citizen" replace />} />
           <Route path="*" element={<Navigate to="/citizen" replace />} />
         </Routes>
@@ -448,7 +452,13 @@ function App() {
     return <div className="loading">Loading dashboard...</div>;
   }
 
-  const canApply = frontendConfig.features?.can_apply || false;
+  const proxyRoles = ['citizen_service_rep', 'csr'];
+  const currentUserRoles = [
+    ...(frontendConfig?.user?.role ? [frontendConfig.user.role] : []),
+    ...(Array.isArray(frontendConfig?.user?.roles) ? frontendConfig.user.roles : [])
+  ].filter(Boolean);
+  const isProxyUser = currentUserRoles.some(role => proxyRoles.includes(role));
+  const canApply = frontendConfig.features?.can_apply || isProxyUser;
   const navigation = frontendConfig.navigation?.items || [];
   const isCitizen = frontendConfig.user?.type === 'citizen' || frontendConfig.user?.role === 'citizen';
   const isAdmin = !isCitizen;
@@ -464,6 +474,7 @@ function App() {
   ];
 
   const adminMenu = [
+    ...(isProxyUser ? [{ label: 'Submit Application', path: '/apply' }] : []),
     { label: 'Applications', path: '/admin/applications' },
     ...(canManageUsers ? [{ label: 'Users', path: '/admin/users' }] : []),
     ...(canManageRoles ? [{ label: 'Roles', path: '/admin/roles' }] : []),
@@ -507,9 +518,9 @@ function App() {
             ))}
           </nav>
 
-          {user?.type === 'citizen' || user?.role === 'citizen' ? (
+          {user?.type === 'citizen' || user?.role === 'citizen' || isProxyUser ? (
             <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-              <p className="font-semibold text-slate-950">Departments</p>
+              <p className="font-semibold text-slate-950">{isProxyUser ? 'Available Services' : 'Departments'}</p>
               <div className="mt-3 space-y-2">
                 {Object.entries(getServicesByDepartment()).map(([department, deptServices]) => (
                   <div key={department}>
@@ -692,13 +703,6 @@ function App() {
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Full name</label>
                   <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Enter your name" />
-                  <Button
-                    onClick={handleNameUpdate}
-                    disabled={!editName.trim() || editName.trim() === (frontendConfig?.user?.full_name || frontendConfig?.user?.name) || nameUpdateStatus === 'saving'}
-                    className="w-full"
-                  >
-                    {nameUpdateStatus === 'saving' ? 'Saving...' : nameUpdateStatus === 'success' ? 'Saved' : 'Update Name'}
-                  </Button>
                 </div>
 
                 <div className="space-y-2">
@@ -708,12 +712,15 @@ function App() {
                     onChange={(e) => setEditAddress(e.target.value)} 
                     placeholder="Enter your address" 
                   />
+                </div>
+
+                <div className="space-y-2">
                   <Button
-                    onClick={handleAddressUpdate}
-                    disabled={addressUpdateStatus === 'saving'}
+                    onClick={handleSaveProfile}
+                    disabled={saveStatus === 'saving'}
                     className="w-full"
                   >
-                    {addressUpdateStatus === 'saving' ? 'Saving...' : addressUpdateStatus === 'success' ? 'Saved' : 'Update Address'}
+                    {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'success' ? 'Saved' : 'Save Changes'}
                   </Button>
                 </div>
 

@@ -43,6 +43,8 @@ INSERT INTO roles (role_name, display_name, description, permissions, is_system_
 ('payment_officer', 'Payment Officer', 'Handle payment processing', '["view_payment_applications", "process_payments", "refund_payments", "view_payment_reports"]'::jsonb, false),
 ('issuance_officer', 'Certificate Officer', 'Issue certificates and documents', '["view_ready_applications", "issue_certificates", "generate_tracking_ids", "print_documents"]'::jsonb, false),
 ('quality_checker', 'Quality Checker', 'Final quality assurance', '["view_completed_applications", "quality_check", "flag_issues", "approve_final"]'::jsonb, false),
+('citizen_service_rep', 'Citizen Service Representative', 'Submit applications on behalf of citizens and manage workflow', '["submit_proxy_applications", "view_own_submitted_applications", "track_applications", "update_application_status", "verify_documents", "add_comments"]'::jsonb, false),
+('csr', 'CSR', 'Citizen Service Representative - Short name', '["submit_proxy_applications", "view_own_submitted_applications", "track_applications", "update_application_status", "verify_documents", "add_comments"]'::jsonb, false),
 ('citizen', 'Citizen', 'Regular user submitting applications', '["submit_applications", "view_own_applications", "track_applications"]'::jsonb, true)
 ON CONFLICT (role_name) DO NOTHING;
 
