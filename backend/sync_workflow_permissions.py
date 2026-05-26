@@ -6,8 +6,12 @@ This extracts all allowed_permissions from all workflow states and updates the w
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Dict, Any, List, Set
+
+# Add the app directory to the path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
 def load_workflow_files(config_dir: str = "config") -> Dict[str, Any]:
     """Load all workflow JSON files"""
@@ -81,6 +85,32 @@ def save_roles_json(data: Dict[str, Any], config_dir: str = "config"):
         print(f"Error saving roles.json: {e}")
         return False
 
+def update_database_workflow_permissions(workflow_permissions: Dict[str, Any]):
+    """Update the database app_settings table with workflow permissions"""
+    try:
+        # Try to import supabase client
+        try:
+            from supabase_client import supabase
+        except ImportError:
+            # Fallback: try importing from app directory
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("supabase_client", os.path.join(os.path.dirname(__file__), 'app', 'supabase_client.py'))
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            supabase = module.supabase
+        
+        supabase.table("app_settings").upsert(
+            {"key": "workflow_permissions", "value": workflow_permissions},
+            on_conflict="key",
+        ).execute()
+        
+        print(f"✅ Updated database app_settings with workflow_permissions")
+        return True
+    except Exception as e:
+        print(f"Error updating database: {e}")
+        print("Note: You can also update the database by calling POST /api/admin/workflow-permissions/sync")
+        return False
+
 def sync_workflow_permissions():
     """Main function to sync workflow permissions"""
     print("="*70)
@@ -122,16 +152,30 @@ def sync_workflow_permissions():
     
     if save_roles_json(roles_data):
         print()
-        print("="*70)
-        print("✅ SUCCESS")
-        print("="*70)
-        print("Workflow permissions have been synced from workflow JSON files")
-        print("The role permission checklist will now show all workflow-based permissions")
-        print()
-        print("Next steps:")
-        print("1. Restart the backend server to load the updated permissions")
-        print("2. Check the role permission checklist to verify new permissions appear")
-        return True
+        
+        # Update database
+        print("Updating database app_settings...")
+        if update_database_workflow_permissions(extracted_permissions):
+            print()
+            print("="*70)
+            print("✅ SUCCESS")
+            print("="*70)
+            print("Workflow permissions have been synced from workflow JSON files")
+            print("Both roles.json and database app_settings have been updated")
+            print("The role permission checklist will now show all workflow-based permissions")
+            print()
+            print("Next steps:")
+            print("1. Reload the backend config by calling POST /api/admin/config/reload")
+            print("2. Check the role permission checklist to verify new permissions appear")
+            return True
+        else:
+            print()
+            print("="*70)
+            print("⚠️  PARTIAL SUCCESS")
+            print("="*70)
+            print("roles.json updated but database update failed")
+            print("The frontend may not see the updated permissions")
+            return False
     else:
         print()
         print("="*70)
