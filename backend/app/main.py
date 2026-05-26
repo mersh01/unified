@@ -1617,12 +1617,95 @@ async def get_roles(current_user = Depends(AuthHandler.get_current_user_required
 
 @app.get("/api/admin/workflow-permissions")
 async def get_workflow_permissions(current_user = Depends(AuthHandler.get_current_user_required)):
-    """Get all available permissions categorized by type (standard and workflow-based)"""
+    """Get workflow-based permissions for role management"""
     if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin"):
-        raise HTTPException(status_code=403, detail="Only super admins can access this endpoint")
+        raise HTTPException(status_code=403, detail="Admin access required")
     
-    permissions = role_manager.get_all_permissions()
-    return permissions
+    workflow_perms = role_manager.config.get("workflow_permissions", {})
+    
+    # Extract unique permissions from all workflow states
+    unique_permissions = set()
+    for state_config in workflow_perms.values():
+        allowed_perms = state_config.get("allowed_permissions", [])
+        unique_permissions.update(allowed_perms)
+    
+    return {
+        "workflow_permissions": list(unique_permissions),
+        "workflow_states": list(workflow_perms.keys())
+    }
+
+
+@app.post("/api/admin/workflow-permissions/sync")
+async def sync_workflow_permissions(current_user = Depends(AuthHandler.get_current_user_required)):
+    """Sync workflow permissions from workflow JSON files to roles.json"""
+    if current_user["type"] != "admin" or not user_has_any_role(current_user, "super_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    import json
+    from pathlib import Path
+    
+    try:
+        config_dir = Path(__file__).parent.parent / "config"
+        
+        # Load all workflow files
+        workflows = {}
+        for file_path in config_dir.glob("wf_*.json"):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    workflow_name = data.get('workflow_name', file_path.stem)
+                    workflows[workflow_name] = data.get('definition', data)
+            except Exception as e:
+                print(f"Error loading {file_path}: {e}")
+        
+        # Extract permissions from workflows
+        workflow_permissions = {}
+        for workflow_name, workflow_data in workflows.items():
+            states = workflow_data.get('states', {})
+            
+            for state_name, state_config in states.items():
+                if state_name not in workflow_permissions:
+                    workflow_permissions[state_name] = {
+                        "allowed_permissions": set(),
+                        "allowed_actions": set()
+                    }
+                
+                allowed_perms = state_config.get('allowed_permissions', [])
+                if allowed_perms:
+                    workflow_permissions[state_name]["allowed_permissions"].update(allowed_perms)
+                
+                allowed_actions = state_config.get('actions', [])
+                if allowed_actions:
+                    workflow_permissions[state_name]["allowed_actions"].update(allowed_actions)
+        
+        # Convert sets to lists
+        for state_name in workflow_permissions:
+            workflow_permissions[state_name]["allowed_permissions"] = sorted(list(workflow_permissions[state_name]["allowed_permissions"]))
+            workflow_permissions[state_name]["allowed_actions"] = sorted(list(workflow_permissions[state_name]["allowed_actions"]))
+        
+        # Load roles.json
+        roles_path = config_dir / "roles.json"
+        with open(roles_path, 'r', encoding='utf-8') as f:
+            roles_data = json.load(f)
+        
+        # Update workflow_permissions
+        roles_data['workflow_permissions'] = workflow_permissions
+        
+        # Save roles.json
+        with open(roles_path, 'w', encoding='utf-8') as f:
+            json.dump(roles_data, f, indent=2)
+        
+        # Reload role_manager to pick up changes
+        role_manager.reload()
+        
+        return {
+            "success": True,
+            "message": f"Synced permissions from {len(workflows)} workflows",
+            "states_updated": len(workflow_permissions),
+            "workflow_permissions": workflow_permissions
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to sync workflow permissions: {str(e)}")
 
 
 @app.get("/api/admin/users/{user_id}/roles")
