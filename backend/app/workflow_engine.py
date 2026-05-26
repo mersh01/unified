@@ -16,10 +16,8 @@ class WorkflowEngine:
 
     def reload(self) -> None:
         if self._hydrate_from_db():
-            print(f"WorkflowEngine: Loaded {len(self.workflows)} workflows from database")
             return
         self.workflows = self._load_workflows()
-        print(f"WorkflowEngine: Loaded {len(self.workflows)} workflows from file")
         self.hierarchy_config = self._load_hierarchy_config()
         self.service_level_mapping = self._load_service_level_mapping()
 
@@ -30,14 +28,12 @@ class WorkflowEngine:
             res = supabase.table("workflow_definitions").select("*").eq("is_active", True).execute()
             rows = res.data or []
             if not rows:
-                print(f"WorkflowEngine: No workflows found in database, will use files")
                 return False
             self.workflows = {}
             for row in rows:
                 name = row["workflow_name"]
                 definition = row.get("definition") or {}
                 self.workflows[name] = definition
-            print(f"WorkflowEngine: Loaded {len(self.workflows)} workflows from database")
             sl = supabase.table("app_settings").select("value").eq("key", "service_level_mapping").limit(1).execute()
             if sl.data:
                 self.service_level_mapping = sl.data[0]["value"] or {}
@@ -54,45 +50,17 @@ class WorkflowEngine:
             return False
     
     def _load_workflows(self) -> Dict[str, Any]:
-        """Load workflows from configuration file and individual workflow JSON files"""
-        workflows = {}
-        
-        # Load from main workflows.json file
+        """Load workflows from configuration file"""
         try:
             with open(self.config_path, 'r') as f:
                 config = json.load(f)
-                workflows.update(config.get('workflows', {}))
-                print(f"WorkflowEngine: Loaded {len(workflows)} workflows from {self.config_path}")
+                return config.get('workflows', {})
         except FileNotFoundError:
             print(f"Workflow config not found at {self.config_path}")
+            return self._get_default_workflows()
         except json.JSONDecodeError as e:
             print(f"Error parsing workflow config: {e}")
-        
-        # Load individual workflow JSON files (wf_*.json)
-        config_dir = self.config_path.parent
-        try:
-            import glob
-            workflow_files = glob.glob(str(config_dir / "wf_*.json"))
-            for workflow_file in workflow_files:
-                try:
-                    with open(workflow_file, 'r') as f:
-                        workflow_data = json.load(f)
-                        workflow_name = workflow_data.get('workflow_name')
-                        if workflow_name and workflow_data.get('definition'):
-                            workflows[workflow_name] = workflow_data['definition']
-                            print(f"WorkflowEngine: Loaded workflow '{workflow_name}' from {workflow_file}")
-                except Exception as e:
-                    print(f"WorkflowEngine: Failed to load {workflow_file}: {e}")
-            
-            print(f"WorkflowEngine: Total workflows loaded: {len(workflows)}")
-        except Exception as e:
-            print(f"WorkflowEngine: Failed to load individual workflow files: {e}")
-        
-        if not workflows:
-            print(f"WorkflowEngine: No workflows found, using defaults")
             return self._get_default_workflows()
-        
-        return workflows
     
     def _load_hierarchy_config(self) -> Dict[str, Any]:
         """Load hierarchy configuration"""
@@ -220,7 +188,6 @@ class WorkflowEngine:
             
             # Granular permission check for specific actions
             # Map actions to their required permissions based on action name
-            # Auto-generate permission from action name if not in explicit map
             action_permission_map = {
                 # Complaint-specific actions
                 'RESOLVE': 'resolve_complaints',
@@ -230,13 +197,14 @@ class WorkflowEngine:
                 # EFDA-specific actions
                 'ASSIGN_TO_SCREENER': 'assign_to_screener',
                 'PASS_TO_DESK': 'pass_to_desk',
-                'PASS_TO_INSPECT': 'pass_to_inspect',
+                'PASS_TO_INSPECT': 'pass_to_desk',
                 'PASS_INSPECTION': 'pass_inspection',
                 'FAIL_INSPECTION': 'fail_inspection',
+                'SEND_TO_BOH': 'send_to_boh',
                 # Standard document workflow actions
                 'PROCESS': 'verify_applications',
                 'APPROVE': 'verify_applications',
-                'REQUEST_INFO': 'verify_applications',
+                'REQUEST_INFO': 'request_info',
                 'REQUEST_ADDITIONAL_DOCS': 'verify_documents',
                 'REQUEST_SITE_VISIT': 'verify_applications',
                 # Payment actions
@@ -254,14 +222,6 @@ class WorkflowEngine:
                 'PROCESS_SERVICE': 'process_applications',
                 'RESUBMIT': 'create_application',
             }
-            
-            # Auto-generate permission for actions not in the map
-            # This allows new workflow actions to automatically work without manual mapping
-            for action in actions:
-                if action not in action_permission_map:
-                    # Convert action to permission name (lowercase, underscore)
-                    auto_permission = action.lower().replace(" ", "_")
-                    action_permission_map[action] = auto_permission
             
             # Filter actions based on specific permissions
             filtered_actions = []
