@@ -42,8 +42,10 @@ const PERMISSION_GROUPS = {
     { key: 'flag_issues', label: 'Flag Issues' },
     { key: 'approve_final', label: 'Approve Final' },
   ],
-  'Citizen & General': [
-    { key: 'submit_applications', label: 'Submit Applications' },
+  'Citizen & CSR Actions': [
+    { key: 'submit_applications', label: 'Submit Own Applications' },
+    { key: 'create_application', label: 'Create New Applications' },
+    { key: 'submit_proxy_applications', label: 'Submit Proxy Applications (CSR)' },
     { key: 'view_own_applications', label: 'View Own Applications' },
     { key: 'track_applications', label: 'Track Applications' },
   ]
@@ -101,7 +103,8 @@ function RoleManagement() {
       const response = await authFetch(`${API_URL}/api/admin/workflow-permissions`);
       if (response.ok) {
         const data = await response.json();
-        setWorkflowPermissions(data.workflow_permissions || []);
+        // Handle both old and new response formats
+        setWorkflowPermissions(data.workflow_permissions || data.workflow || []);
       }
     } catch (error) {
       console.error('Error fetching workflow permissions:', error);
@@ -277,8 +280,8 @@ function RoleManagement() {
     >
 
         {showForm && (
-          <div style={{ marginBottom: '32px', padding: '24px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <h3 style={{ marginTop: 0, borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '20px', fontWeight: '700' }}>
+          <div className="bg-slate-50 border border-slate-200" style={{ marginBottom: '32px', padding: '24px', borderRadius: '12px' }}>
+            <h3 className="text-slate-900 border-slate-200" style={{ marginTop: 0, borderBottomWidth: '1px', borderBottomStyle: 'solid', paddingBottom: '12px', marginBottom: '20px', fontWeight: '700' }}>
               {isEditing ? `Edit Role: ${form.display_name}` : 'Define New System Role'}
             </h3>
             
@@ -320,18 +323,18 @@ function RoleManagement() {
 
               {/* Grouped Permissions Checklist */}
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', borderBottom: '2px solid #e2e8f0', paddingBottom: '6px' }}>
+                <label className="text-slate-900 border-slate-200" style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', borderBottomWidth: '2px', borderBottomStyle: 'solid', paddingBottom: '6px' }}>
                   Role Permissions Checklist
                 </label>
                 
                 {/* Workflow-based Permissions */}
                 {workflowPermissions.length > 0 && (
-                  <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '16px', marginBottom: '14px' }}>
+                  <div className="bg-green-50 dark:bg-green-900/10 border border-green-300 dark:border-green-800" style={{ borderRadius: '8px', padding: '16px', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <span style={{ fontWeight: '600', color: '#166534', fontSize: '14px' }}>
+                      <span className="text-green-800 dark:text-green-400" style={{ fontWeight: '600', fontSize: '14px' }}>
                         🔄 Workflow-Based Permissions
                       </span>
-                      <span style={{ fontSize: '11px', color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '4px' }}>
+                      <span className="text-green-800 bg-green-100 dark:bg-green-900/30 dark:text-green-400" style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px' }}>
                         Auto-synced from workflows
                       </span>
                     </div>
@@ -341,19 +344,18 @@ function RoleManagement() {
                         return (
                           <label 
                             key={permKey} 
+                            className={isChecked ? "bg-green-100 border-green-500 text-green-800 dark:bg-green-900/30 dark:border-green-600 dark:text-green-400" : "bg-slate-50 border-slate-200 text-slate-700 dark:text-slate-300"}
                             style={{ 
                               display: 'flex', 
                               alignItems: 'center', 
                               gap: '8px', 
                               padding: '8px 12px', 
-                              background: isChecked ? '#dcfce7' : '#f8fafc',
-                              border: isChecked ? '1px solid #22c55e' : '1px solid #e2e8f0',
+                              borderWidth: '1px', borderStyle: 'solid',
                               borderRadius: '6px',
                               cursor: 'pointer',
                               transition: 'all 0.15s ease',
                               margin: 0,
                               fontWeight: isChecked ? '500' : 'normal',
-                              color: isChecked ? '#166534' : 'var(--text-main)'
                             }}
                           >
                             <input 
@@ -379,21 +381,23 @@ function RoleManagement() {
                   const isSomeChecked = allGroupKeys.some(k => form.permissions.includes(k));
 
                   return (
-                    <div key={groupName} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '14px' }}>
+                    <div key={groupName} className="bg-white border border-slate-200" style={{ borderRadius: '8px', padding: '16px', marginBottom: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <span style={{ fontWeight: '600', color: '#1e293b', fontSize: '14px' }}>{groupName}</span>
+                        <span className="text-slate-900" style={{ fontWeight: '600', fontSize: '14px' }}>{groupName}</span>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button
                             type="button"
                             onClick={() => handleGroupToggle(groupName, true)}
-                            style={{ background: '#eff6ff', color: '#2563eb', padding: '4px 8px', fontSize: '11px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+                            className="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+                            style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: '600' }}
                           >
                             Select All
                           </button>
                           <button
                             type="button"
                             onClick={() => handleGroupToggle(groupName, false)}
-                            style={{ background: '#fef2f2', color: '#ef4444', padding: '4px 8px', fontSize: '11px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+                            className="bg-red-50 text-red-500 dark:bg-red-900/20 dark:text-red-400"
+                            style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: '600' }}
                           >
                             Clear
                           </button>
@@ -406,19 +410,18 @@ function RoleManagement() {
                           return (
                             <label 
                               key={item.key} 
+                              className={isChecked ? "bg-green-50 border-green-300 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400" : "bg-slate-50 border-slate-200 text-slate-700 dark:text-slate-300"}
                               style={{ 
                                 display: 'flex', 
                                 alignItems: 'center', 
                                 gap: '8px', 
                                 padding: '8px 12px', 
-                                background: isChecked ? '#f0fdf4' : '#f8fafc',
-                                border: isChecked ? '1px solid #86efac' : '1px solid #e2e8f0',
+                                borderWidth: '1px', borderStyle: 'solid',
                                 borderRadius: '6px',
                                 cursor: 'pointer',
                                 transition: 'all 0.15s ease',
                                 margin: 0,
                                 fontWeight: isChecked ? '500' : 'normal',
-                                color: isChecked ? '#166534' : 'var(--text-main)'
                               }}
                             >
                               <input 
@@ -441,29 +444,28 @@ function RoleManagement() {
 
               {/* Department Multi-Select Checklist */}
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', borderBottom: '2px solid #e2e8f0', paddingBottom: '6px' }}>
+                <label className="text-slate-900 border-slate-200" style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', borderBottomWidth: '2px', borderBottomStyle: 'solid', paddingBottom: '6px' }}>
                   Functional Departments Scope
                 </label>
-                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
+                <div className="bg-white border border-slate-200" style={{ borderRadius: '8px', padding: '16px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
                     {[{key: 'all', label: 'All Departments'}, ...departments].map(dept => {
                       const isChecked = form.departments.includes(dept.key);
                       return (
                         <label 
                           key={dept.key}
+                          className={isChecked ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400" : "bg-slate-50 border-slate-200 text-slate-700 dark:text-slate-300"}
                           style={{ 
                             display: 'flex', 
                             alignItems: 'center', 
                             gap: '8px', 
                             padding: '8px 12px', 
-                            background: isChecked ? '#f0f9ff' : '#f8fafc',
-                            border: isChecked ? '1px solid #7dd3fc' : '1px solid #e2e8f0',
+                            borderWidth: '1px', borderStyle: 'solid',
                             borderRadius: '6px',
                             cursor: 'pointer',
                             transition: 'all 0.15s ease',
                             margin: 0,
                             fontWeight: isChecked ? '500' : 'normal',
-                            color: isChecked ? '#0369a1' : 'var(--text-main)'
                           }}
                         >
                           <input 
@@ -494,7 +496,7 @@ function RoleManagement() {
                   </span>
                 </div>
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#fff', border: '1px solid #e2e8f0', padding: '14px 16px', borderRadius: '8px', cursor: 'pointer', height: '100%', margin: 0 }}>
+                  <label className="bg-white border border-slate-200" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px', borderRadius: '8px', cursor: 'pointer', height: '100%', margin: 0 }}>
                     <input 
                       type="checkbox" 
                       checked={form.can_assign_roles} 
@@ -521,23 +523,23 @@ function RoleManagement() {
           </div>
         )}
 
-        <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+        <div className="border border-slate-200" style={{ overflowX: 'auto', borderRadius: '8px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Role Slug</th>
-                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Display Name</th>
-                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Description</th>
-                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Scope Departments</th>
-                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Permissions Checklist</th>
-                <th style={{ padding: '14px 16px', fontWeight: '600', color: '#475569' }}>Actions</th>
+              <tr className="bg-slate-50 border-b border-slate-200" style={{ textAlign: 'left' }}>
+                <th className="text-slate-600" style={{ padding: '14px 16px', fontWeight: '600' }}>Role Slug</th>
+                <th className="text-slate-600" style={{ padding: '14px 16px', fontWeight: '600' }}>Display Name</th>
+                <th className="text-slate-600" style={{ padding: '14px 16px', fontWeight: '600' }}>Description</th>
+                <th className="text-slate-600" style={{ padding: '14px 16px', fontWeight: '600' }}>Scope Departments</th>
+                <th className="text-slate-600" style={{ padding: '14px 16px', fontWeight: '600' }}>Permissions Checklist</th>
+                <th className="text-slate-600" style={{ padding: '14px 16px', fontWeight: '600' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredRoles.map((r) => (
-                <tr key={r.role_id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.2s' }}>
+                <tr className="border-b border-slate-100" key={r.role_id} style={{ transition: 'background 0.2s' }}>
                   <td style={{ padding: '14px 16px' }}>
-                    <code style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', color: '#0f172a', fontWeight: '600' }}>
+                    <code className="bg-slate-100 text-slate-900" style={{ padding: '4px 8px', borderRadius: '4px', fontWeight: '600' }}>
                       {r.role_id}
                     </code>
                   </td>
