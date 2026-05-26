@@ -27,6 +27,11 @@ function MultiStepForm({ user }) {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
 
+  const isCSR = user?.type === 'admin' && user?.permissions?.includes('create_application');
+  const visibleServices = services;
+  const [citizenPhone, setCitizenPhone] = useState('');
+  const [citizenName, setCitizenName] = useState('');
+
   const authFetch = async (url, options = {}) => {
     const token = localStorage.getItem('token');
     const headers = { ...options.headers };
@@ -126,8 +131,16 @@ function MultiStepForm({ user }) {
 
       setFormData(initialData);
 
-      // Load initial hierarchy data
-      if (config.hierarchical_fields?.region) {
+      // Load initial hierarchy data for multi-step forms
+      // Check if any step has a hierarchical dropdown field
+      const hasRegionField = config.steps?.some(step => 
+        step.fields?.some(field => 
+          (typeof field === 'object' && field.type === 'hierarchical_dropdown' && field.source === 'regions') ||
+          (typeof field === 'object' && field.name === 'region')
+        )
+      );
+      
+      if (hasRegionField || config.hierarchical_fields?.region) {
         const regions = await loadHierarchyData('regions');
         setHierarchyData(prev => ({ ...prev, regions }));
       }
@@ -392,9 +405,16 @@ let visibleFields = (step.fields || []).map(f => typeof f === 'string' ? f : f.n
       const formDataObj = new FormData();
       formDataObj.append('service_type', selectedService.id);
       formDataObj.append('user_id', storedUser?.user_id || user?.user_id || `user_${Date.now()}`);
-      formDataObj.append('user_name', formData.full_name || formData.student_name || storedUser?.name || 'Citizen');
+      formDataObj.append('user_name', isCSR ? citizenName : (formData.full_name || formData.student_name || storedUser?.name || 'Citizen'));
       formDataObj.append('user_email', 'citizen@example.com');
-      formDataObj.append('user_phone', storedUser?.phone_number || '');
+      formDataObj.append('user_phone', isCSR ? citizenPhone : (storedUser?.phone_number || ''));
+      
+      // CSR proxy submission fields
+      if (isCSR) {
+        formDataObj.append('submitted_on_behalf', 'true');
+        formDataObj.append('citizen_phone_number', citizenPhone);
+        formDataObj.append('citizen_name', citizenName);
+      }
       
       // Include payment info if provided
       const formDataWithPayment = paymentInfo ? { ...formData, ...paymentInfo } : formData;
@@ -426,7 +446,7 @@ let visibleFields = (step.fields || []).map(f => typeof f === 'string' ? f : f.n
 
       const result = await response.json();
       
-      alert(`✅ Application Submitted!\nApplication ID: ${result.application_id}`);
+      alert(`✅ Application Submitted!\nApplication ID: ${result.application_id || result.id}`);
       
       setSelectedService(null);
       setCurrentStep(0);
@@ -481,6 +501,16 @@ const renderField = (field, step) => {
     const options = hierarchyData[hConfig.source] || {};
     const dependsOn = hConfig.depends_on;
     const isDisabled = dependsOn && !formData[dependsOn];
+
+    // If options are empty, try to load them
+    if (!options || Object.keys(options).length === 0) {
+      // Auto-load hierarchy data if not present
+      if (hConfig.source && !hierarchyData[hConfig.source]) {
+        loadHierarchyData(hConfig.source).then(data => {
+          setHierarchyData(prev => ({ ...prev, [hConfig.source]: data }));
+        });
+      }
+    }
 
     return (
       <div key={actualFieldName} className="form-group">
@@ -999,6 +1029,50 @@ const getFieldConfig = (fieldName, step) => {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* CSR: Citizen Information Section */}
+          {isCSR && (
+            <div className="bg-slate-50 border border-slate-200" style={{
+              marginBottom: '24px', padding: '20px',
+              borderRadius: '16px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <span style={{ fontSize: 22 }}>👤</span>
+                <h3 className="text-slate-900" style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Citizen Information</h3>
+              </div>
+              <p className="text-slate-600" style={{ fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>
+                You are submitting this application on behalf of a citizen. The citizen can track this application by logging in with their phone number using OTP.
+              </p>
+              <div className="form-group" style={{ marginBottom: 14 }}>
+                <label className="text-slate-900" style={{ fontWeight: 600, fontSize: 14 }}>
+                  Citizen Phone Number <span style={{ color: '#ef4444' }}>*</span>
+                  <span className="text-slate-600" style={{ fontSize: '0.85em', fontWeight: 400 }}> (10-digit, used for tracking)</span>
+                </label>
+                <input
+                  type="tel"
+                  value={citizenPhone}
+                  onChange={(e) => setCitizenPhone(e.target.value)}
+                  placeholder="e.g., 0911234567"
+                  required
+                  pattern="[0-9]{10}"
+                  title="Please enter a valid 10-digit phone number"
+                  style={{ borderColor: '#93c5fd' }}
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="text-slate-900" style={{ fontWeight: 600, fontSize: 14 }}>
+                  Citizen Full Name <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={citizenName}
+                  onChange={(e) => setCitizenName(e.target.value)}
+                  placeholder="Full name of the citizen"
+                  required
+                  style={{ borderColor: '#93c5fd' }}
+                />
+              </div>
+            </div>
+          )}
           {isMultiStep ? (
             <div className="step-content">
               <h3>{currentStepData.title}</h3>
@@ -1069,7 +1143,7 @@ const getFieldConfig = (fieldName, step) => {
       </div>
 
       <div className="grid">
-        {services.map(service => {
+        {visibleServices.map(service => {
           const getIcon = (category) => {
             const icons = {
               'document_replacement': FileText,
@@ -1113,9 +1187,9 @@ const getFieldConfig = (fieldName, step) => {
         })}
       </div>
 
-      {services.length === 0 && (
+      {visibleServices.length === 0 && (
         <div className="card" style={{ textAlign: 'center' }}>
-          <p>No services available.</p>
+          <p>{isProxyUser ? 'No proxy-enabled services are available for your role.' : 'No services available.'}</p>
         </div>
       )}
     </div>

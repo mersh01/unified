@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, status, Form, File, UploadFile
+from fastapi import FastAPI, HTTPException, Depends, status, Form, File, UploadFile, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional
@@ -171,6 +171,12 @@ def can_access_application_by_hierarchy(user: Dict[str, Any], application: Dict[
     assigned_to = application.get('assigned_to')
     if assigned_to and (assigned_to == user.get('user_id') or assigned_to == user.get('username')):
         return True
+    
+    # Check if user has country-level hierarchy (can see all applications)
+    user_country = user_hierarchy.get('country')
+    if user_country and not user_hierarchy.get('region'):
+        # User at country level can see all applications
+        return True
             
     # For admin users, check hierarchy
     service_level = application.get('service_level', 'zone')
@@ -247,6 +253,10 @@ class ApplicationCreate(BaseModel):
     user_email: str
     user_phone: Optional[str] = None
     form_data: Dict[str, Any]
+    # Proxy submission fields
+    submitted_on_behalf: Optional[bool] = False
+    citizen_phone_number: Optional[str] = None
+    citizen_name: Optional[str] = None
 
 class ApplicationUpdate(BaseModel):
     action: str
@@ -260,6 +270,7 @@ class ApplicationResponse(BaseModel):
     service_type: str
     user_name: str
     user_email: str
+    user_phone: Optional[str] = None
     form_data: Dict[str, Any]
     current_state: str
     status: str
@@ -524,6 +535,9 @@ async def create_application(
     user_phone: Optional[str] = Form(None),
     form_data: str = Form(...),
     multi_step_data: Optional[str] = Form(None),
+    submitted_on_behalf: Optional[bool] = Form(False),
+    citizen_phone_number: Optional[str] = Form(None),
+    citizen_name: Optional[str] = Form(None),
     uploaded_files: List[UploadFile] = File(None),
     current_user = Depends(AuthHandler.get_current_user_required)
 ):
@@ -552,6 +566,42 @@ async def create_application(
     service_config = config_engine.get_service_config(service_type)
     if not service_config:
         raise HTTPException(status_code=404, detail=f"Service '{service_type}' not found")
+    
+    # ========== PROXY SUBMISSION VALIDATION ==========
+    # Validate proxy submission if requested
+    if submitted_on_behalf:
+        # Check if the user has the 'create_application' permission
+        if not AuthHandler.check_permission(current_user, "create_application"):
+            raise HTTPException(
+                status_code=403,
+                detail="You do not have permission to submit applications on behalf of citizens."
+            )
+            
+        # Verify the service belongs to the user's department
+        department = current_user.get("department")
+        role_list = current_user.get("roles") or [current_user.get("role")]
+        
+        if "super_admin" not in role_list and department != "all":
+            svc_dept_map = role_manager.config.get("service_to_department_mapping", {})
+            svc_mapped_dept = svc_dept_map.get(service_type)
+            if service_config.get("category") != department and svc_mapped_dept != department:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"You can only submit applications for the {department} department."
+                )
+        
+        # Validate required fields for proxy submission
+        required_proxy_fields = service_config.get("required_fields_for_proxy", [])
+        if "citizen_phone" in required_proxy_fields and not citizen_phone_number:
+            raise HTTPException(
+                status_code=400,
+                detail="Citizen phone number is required for this service's proxy submission"
+            )
+        if "citizen_name" in required_proxy_fields and not citizen_name:
+            raise HTTPException(
+                status_code=400,
+                detail="Citizen name is required for this service's proxy submission"
+            )
     
     is_valid, errors = config_engine.validate_form_data(service_type, form_data_dict)
     if not is_valid:
@@ -641,17 +691,90 @@ async def create_application(
     # Determine the department that should handle this application
     department = role_manager.get_service_department(service_type)
     
+    # ========== PROXY SUBMISSION HANDLING & CITIZEN LINKING ==========
+    # Determine actual applicant details
+    if submitted_on_behalf:
+        actual_citizen_phone = citizen_phone_number
+        actual_citizen_name = citizen_name or user_name
+        actual_submitted_by_user_id = current_user.get("user_id")
+        submitted_type = "proxy"
+        submitter_user_name = current_user.get("name") or current_user.get("username") or "Unknown"
+        submitter_user_department = current_user.get("department", "")
+    else:
+        actual_citizen_phone = user_phone or current_user.get("phone_number")
+        actual_citizen_name = user_name or current_user.get("full_name") or current_user.get("name") or "Citizen"
+        actual_submitted_by_user_id = current_user.get("user_id")
+        submitted_type = "direct"
+        submitter_user_name = actual_citizen_name
+        submitter_user_department = ""
+
+    if not actual_citizen_phone:
+        actual_citizen_phone = current_user.get("phone_number")
+
+    if not actual_citizen_phone:
+        raise HTTPException(status_code=400, detail="Citizen phone number is required.")
+
+    # Look up or create the citizen user in the database by phone number
+    from .supabase_client import supabase
+    import time
+
+    try:
+        user_response = supabase.table("users").select("*").eq("phone_number", actual_citizen_phone).execute()
+        if user_response.data and len(user_response.data) > 0:
+            # User with phone number exists - link with the user and update the name
+            db_user = user_response.data[0]
+            linked_user_id = db_user["user_id"]
+            if db_user.get("full_name") != actual_citizen_name:
+                try:
+                    supabase.table("users").update({
+                        "full_name": actual_citizen_name,
+                        "updated_at": datetime.now().isoformat()
+                    }).eq("user_id", linked_user_id).execute()
+                except Exception as update_err:
+                    print(f"Warning: Failed to update citizen full_name: {update_err}")
+        else:
+            # User with phone number does not exist - add user as new citizen
+            linked_user_id = str(uuid.uuid4())
+            suffix = actual_citizen_phone[-4:] if len(actual_citizen_phone) >= 4 else actual_citizen_phone
+            timestamp_part = str(int(time.time()))[-4:]
+            username = f"citizen_{suffix}_{timestamp_part}"
+            now_str = datetime.now().isoformat()
+
+            new_citizen_record = {
+                "user_id": linked_user_id,
+                "username": username,
+                "phone_number": actual_citizen_phone,
+                "full_name": actual_citizen_name,
+                "role": "citizen",
+                "is_active": True,
+                "created_at": now_str,
+                "updated_at": now_str
+            }
+            supabase.table("users").insert(new_citizen_record).execute()
+    except Exception as db_err:
+        raise HTTPException(status_code=500, detail=f"Database query or register user failed: {db_err}")
+
     # Merge multi_step_data into form_data to fit within Supabase schema
     if multi_step_data_dict:
         form_data_dict["_multi_step_data"] = multi_step_data_dict
-        
+
+    # Store proxy/submitter metadata inside form_data JSONB
+    form_data_dict["_proxy_metadata"] = {
+        "submitted_by_user_id": actual_submitted_by_user_id,
+        "submitted_by_type": submitted_type,
+        "citizen_phone_number": actual_citizen_phone,
+        "citizen_user_id": linked_user_id,
+        "submitter_name": submitter_user_name,
+        "submitter_department": submitter_user_department
+    }
+
     db_application = {
         "application_id": app_id,
         "document_type": service_type,
-        "user_id": user_id,
-        "user_name": user_name,
+        "user_id": linked_user_id,
+        "user_name": actual_citizen_name,
         "user_email": user_email,
-        "user_phone": user_phone,
+        "user_phone": actual_citizen_phone,
         "form_data": form_data_dict,
         "current_state": "SUBMITTED",
         "status": "PENDING",
@@ -677,7 +800,7 @@ async def create_application(
             "state": "SUBMITTED",
             "action": "APPLICATION_SUBMITTED",
             "comment": "Application submitted",
-            "actor_name": user_name
+            "actor_name": submitter_user_name
         }]
     }
     
@@ -722,12 +845,91 @@ async def get_application(application_id: str, current_user = Depends(AuthHandle
         
     return application
 
-@app.get("/api/applications/user/{user_id}")
-async def get_user_applications(user_id: str, current_user = Depends(AuthHandler.get_current_user_required)):
-    """Get applications for a user with hierarchy filtering"""
+@app.get("/api/applications/track/phone/{phone_number}")
+async def track_applications_by_phone(phone_number: str):
+    """Track applications by phone number (public endpoint for proxy submissions).
     
-    # Get all applications for this citizen
-    citizen_apps = get_applications_by_user(user_id)
+    Citizens can track applications submitted on their behalf using their phone number.
+    No authentication required for public tracking.
+    """
+    try:
+        from .supabase_client import supabase
+        
+        # Query applications where user_phone matches
+        result = supabase.table("applications")\
+            .select("application_id, document_type, current_state, status, user_name, created_at, updated_at, form_data")\
+            .eq("user_phone", phone_number)\
+            .order("created_at", desc=True)\
+            .execute()
+        
+        raw_apps = result.data or []
+        applications = []
+        for app in raw_apps:
+            proxy_meta = app.get("form_data", {}).get("_proxy_metadata", {})
+            track_app = {
+                "application_id": app.get("application_id"),
+                "document_type": app.get("document_type"),
+                "current_state": app.get("current_state"),
+                "status": app.get("status"),
+                "user_name": app.get("user_name"),
+                "created_at": app.get("created_at"),
+                "updated_at": app.get("updated_at"),
+                "submitter_name": proxy_meta.get("submitter_name") or app.get("user_name"),
+                "submitted_by_type": proxy_meta.get("submitted_by_type") or "direct"
+            }
+            applications.append(track_app)
+        
+        return {
+            "phone_number": phone_number,
+            "total_applications": len(applications),
+            "applications": applications
+        }
+    except Exception as e:
+        print(f"Error tracking applications by phone: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve applications")
+
+
+@app.get("/api/applications/user/{user_id}")
+async def get_user_applications(
+    user_id: str,
+    status: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    current_user = Depends(AuthHandler.get_current_user_required)
+):
+    """Get applications for a user with hierarchy filtering and proxy submission support"""
+    
+    # Get all direct applications for this citizen
+    citizen_apps = get_applications_by_user(user_id, status=status, start_date=start_date, end_date=end_date, search=search)
+    
+    # If the requesting user is a citizen, also get proxy applications (applications submitted on their behalf)
+    if current_user.get('type') == 'user':
+        # Citizen can see applications submitted on their behalf using their phone number
+        citizen_phone = current_user.get('phone_number')
+        if citizen_phone:
+            try:
+                from .supabase_client import supabase, apply_filters
+                
+                # Get proxy submissions for this citizen by checking the user_phone column
+                query = supabase.table("applications").select("*").eq("user_phone", citizen_phone)
+                query = apply_filters(query, status, start_date, end_date, search)
+                proxy_result = query.execute()
+                
+                raw_proxy_apps = proxy_result.data or []
+                # Filter for proxy submissions (submitted by someone else)
+                proxy_apps = [
+                    app for app in raw_proxy_apps
+                    if app.get("form_data", {}).get("_proxy_metadata", {}).get("submitted_by_type") == "proxy"
+                ]
+                
+                # Merge with citizen's direct applications, avoiding duplicates
+                existing_ids = {app.get("application_id") for app in citizen_apps}
+                for p_app in proxy_apps:
+                    if p_app.get("application_id") not in existing_ids:
+                        citizen_apps.append(p_app)
+            except Exception as e:
+                print(f"Error fetching proxy applications: {e}")
     
     # If the requesting user is the citizen themselves, they can see their own apps
     if current_user.get('user_id') == user_id or current_user.get('username') == user_id:
@@ -1077,7 +1279,13 @@ async def admin_dashboard(current_user = Depends(AuthHandler.get_current_user_re
     }
     
 @app.get("/api/admin/dashboard/department")
-async def get_department_dashboard(current_user = Depends(AuthHandler.get_current_user_required)):
+async def get_department_dashboard(
+    status: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    current_user = Depends(AuthHandler.get_current_user_required)
+):
     """Get department-specific dashboard data with hierarchy filtering"""
     if current_user["type"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -1086,24 +1294,43 @@ async def get_department_dashboard(current_user = Depends(AuthHandler.get_curren
     user_role = current_user.get("role")
     user_department = current_user.get("department")
     user_hierarchy = current_user.get("hierarchy", {})
+    user_id = current_user.get("user_id")
+    
+    # Check if user is a proxy/CSR user
+    proxy_roles = {"citizen_service_rep", "csr"}
+    is_proxy_user = user_has_any_role(current_user, *proxy_roles)
     
     # First, filter by department (if not super_admin)
     if user_has_any_role(current_user, "super_admin"):
-        dept_filtered_apps = get_all_applications()
+        dept_filtered_apps = get_all_applications(status=status, start_date=start_date, end_date=end_date, search=search)
     else:
-        dept_filtered_apps = get_applications_by_department(user_department) if user_department and user_department != "all" else get_all_applications()
+        dept_filtered_apps = get_applications_by_department(user_department, status=status, start_date=start_date, end_date=end_date, search=search) if user_department and user_department != "all" else get_all_applications(status=status, start_date=start_date, end_date=end_date, search=search)
     
-    # Second, filter by hierarchy (geographic jurisdiction)
+    # Second, if CSR/proxy user, filter to only show applications they submitted
+    if is_proxy_user:
+        def _proxy_matches(app):
+            proxy_meta = app.get("form_data", {}).get("_proxy_metadata", {})
+            submitted_by = proxy_meta.get("submitted_by_user_id") or app.get("submitted_by_user_id")
+            if submitted_by == user_id:
+                return True
+            # Fallback: legacy rows may not have submitted_by_user_id; match by submitter name/username
+            submitter_un = (proxy_meta.get("submitter_name") or app.get("submitter_user_name") or app.get("submitter_name") or "").strip().lower()
+            current_un = (current_user.get("username") or current_user.get("name") or "").strip().lower()
+            if submitter_un and current_un and submitter_un == current_un:
+                return True
+            return False
+
+        dept_filtered_apps = [app for app in dept_filtered_apps if _proxy_matches(app)]
+    
+    # Third, filter by hierarchy (geographic jurisdiction)
     hierarchy_filtered_apps = []
     for app in dept_filtered_apps:
         if can_access_application_by_hierarchy(current_user, app):
             hierarchy_filtered_apps.append(app)
     
     print(f"User: {current_user.get('username')}")
-    print(f"Role: {user_role}, Department: {user_department}")
+    print(f"Role: {user_role}, Department: {user_department}, IsProxyUser: {is_proxy_user}")
     print(f"User hierarchy: {user_hierarchy}")
-    all_apps = get_all_applications()
-    print(f"Total apps: {len(all_apps)}")
     print(f"After department filter: {len(dept_filtered_apps)}")
     print(f"After hierarchy filter: {len(hierarchy_filtered_apps)}")
     
@@ -1115,17 +1342,23 @@ async def get_department_dashboard(current_user = Depends(AuthHandler.get_curren
     }
 
 @app.get("/api/admin/dashboard/stats")
-async def get_dashboard_stats(current_user = Depends(AuthHandler.get_current_user_required)):
+async def get_dashboard_stats(
+    status: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    current_user = Depends(AuthHandler.get_current_user_required)
+):
     """Get dashboard statistics for the current user"""
     if current_user["type"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
     # Get user's accessible applications
     if user_has_any_role(current_user, "super_admin"):
-        all_apps = get_all_applications()
+        all_apps = get_all_applications(status=status, start_date=start_date, end_date=end_date, search=search)
     else:
         user_department = current_user.get("department")
-        all_apps = get_applications_by_department(user_department) if user_department and user_department != "all" else get_all_applications()
+        all_apps = get_applications_by_department(user_department, status=status, start_date=start_date, end_date=end_date, search=search) if user_department and user_department != "all" else get_all_applications(status=status, start_date=start_date, end_date=end_date, search=search)
 
     # Filter by hierarchy
     accessible_apps = []
@@ -1133,15 +1366,41 @@ async def get_dashboard_stats(current_user = Depends(AuthHandler.get_current_use
         if can_access_application_by_hierarchy(current_user, app):
             accessible_apps.append(app)
 
+    # If the user is a proxy/CSR, only include applications they submitted
+    proxy_roles = {"citizen_service_rep", "csr"}
+    is_proxy_user = user_has_any_role(current_user, *proxy_roles)
+    if is_proxy_user:
+        uid = current_user.get("user_id")
+        def _proxy_matches_stats(a):
+            proxy_meta = a.get("form_data", {}).get("_proxy_metadata", {})
+            submitted_by = proxy_meta.get("submitted_by_user_id") or a.get("submitted_by_user_id")
+            if submitted_by == uid:
+                return True
+            # Fallback
+            submitter_un = (proxy_meta.get("submitter_name") or a.get("submitter_user_name") or a.get("submitter_name") or "").strip().lower()
+            current_un = (current_user.get("username") or current_user.get("name") or "").strip().lower()
+            if submitter_un and current_un and submitter_un == current_un:
+                return True
+            return False
+
+        accessible_apps = [a for a in accessible_apps if _proxy_matches_stats(a)]
+
     return calculate_application_stats(accessible_apps)
 
 @app.get("/api/applications/user/{user_id}/stats")
-async def get_user_applications_stats(user_id: str, current_user = Depends(AuthHandler.get_current_user_required)):
+async def get_user_applications_stats(
+    user_id: str,
+    status: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    current_user = Depends(AuthHandler.get_current_user_required)
+):
     """Get statistics of applications for a specific citizen user"""
     if current_user.get('user_id') != user_id and current_user.get('username') != user_id and current_user.get('type') != "admin":
         raise HTTPException(status_code=403, detail="Not authorized to view these stats")
         
-    citizen_apps = get_applications_by_user(user_id)
+    citizen_apps = get_applications_by_user(user_id, status=status, start_date=start_date, end_date=end_date, search=search)
     return calculate_application_stats(citizen_apps)
 
 @app.get("/api/admin/dashboard/verification")
@@ -1246,6 +1505,7 @@ class UserCreate(BaseModel):
     full_name: str
     role: str
     department: Optional[str] = None
+    hierarchy: Optional[Dict[str, Any]] = None
     hierarchy_country: Optional[str] = None
     hierarchy_region: Optional[str] = None
     hierarchy_zone: Optional[str] = None
@@ -1259,6 +1519,7 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     role: Optional[str] = None
     department: Optional[str] = None
+    hierarchy: Optional[Dict[str, Any]] = None
     hierarchy_country: Optional[str] = None
     hierarchy_region: Optional[str] = None
     hierarchy_zone: Optional[str] = None
@@ -1279,6 +1540,7 @@ class UserResponse(BaseModel):
     created_at: str
     updated_at: str
     last_login: Optional[str] = None
+    hierarchy: Optional[Dict[str, Any]] = None
     hierarchy_country: Optional[str] = None
     hierarchy_region: Optional[str] = None
     hierarchy_zone: Optional[str] = None
@@ -1481,7 +1743,7 @@ async def create_user(user_data: UserCreate, current_user = Depends(AuthHandler.
         if user_data.department != current_user.get("department"):
             raise HTTPException(status_code=403, detail="Regional admins can only assign users to their own department")
 
-    target_hierarchy = {
+    target_hierarchy = user_data.hierarchy or {
         "country": user_data.hierarchy_country,
         "region": user_data.hierarchy_region,
         "zone": user_data.hierarchy_zone,
@@ -1502,7 +1764,7 @@ async def create_user(user_data: UserCreate, current_user = Depends(AuthHandler.
             "phone_number": user_data.phone_number,
             "role": user_data.role,
             "department": user_data.department,
-            "hierarchy": {
+            "hierarchy": user_data.hierarchy or {
                 "country": user_data.hierarchy_country,
                 "region": user_data.hierarchy_region,
                 "zone": user_data.hierarchy_zone,
@@ -1560,7 +1822,7 @@ async def get_users(
         if not user_has_any_role(current_user, "super_admin"):
             filtered_users = []
             for u in users:
-                target_hierarchy = {
+                target_hierarchy = u.get("hierarchy") or {
                     "country": u.get("hierarchy_country"),
                     "region": u.get("hierarchy_region"),
                     "zone": u.get("hierarchy_zone"),
@@ -1632,7 +1894,7 @@ async def get_user(user_id: str, current_user = Depends(AuthHandler.get_current_
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
             
-        target_hierarchy = {
+        target_hierarchy = user.get("hierarchy") or {
             "country": user.get("hierarchy_country"),
             "region": user.get("hierarchy_region"),
             "zone": user.get("hierarchy_zone"),
@@ -2070,7 +2332,7 @@ async def get_frontend_config(current_user = Depends(AuthHandler.get_current_use
             "sections": dashboard_sections
         },
         "features": {
-            "can_apply": not is_admin,
+            "can_apply": not is_admin or AuthHandler.check_permission(current_user, "create_application"),
             "can_track": True,
             "can_manage_applications": is_admin,
             "can_manage_users": "*" in permissions or "manage_users" in permissions,
@@ -2144,19 +2406,44 @@ async def get_frontend_services(current_user = Depends(AuthHandler.get_current_u
     """Get services that this user can see/apply for"""
     
     is_admin = current_user["type"] == "admin"
+    all_services = config_engine.get_all_services()
     
-    if is_admin:
+    if not is_admin:
+        # Citizens can see all services
+        return {
+            "can_apply": len(all_services) > 0,
+            "services": all_services,
+            "categories": config_engine.get_categories()
+        }
+    
+    # For employees, check if they have permission to create applications
+    can_create = AuthHandler.check_permission(current_user, "create_application")
+    
+    if not can_create:
         return {
             "can_apply": False,
             "services": [],
-            "message": "Admins cannot apply for services. Please login as citizen to apply."
+            "message": "You do not have permission to submit applications."
         }
+        
+    # If they can create, filter services by their department
+    department = current_user.get("department")
+    role_list = current_user.get("roles") or [current_user.get("role")]
     
-    all_services = config_engine.get_all_services()
-    
+    if "super_admin" in role_list or department == "all":
+        visible_services = all_services
+    else:
+        # Filter services matching their department using both category and service_to_department_mapping
+        svc_dept_map = role_manager.config.get("service_to_department_mapping", {})
+        visible_services = [
+            s for s in all_services
+            if s.get("category") == department
+            or svc_dept_map.get(s.get("service_id")) == department
+        ]
+        
     return {
-        "can_apply": True,
-        "services": all_services,
+        "can_apply": len(visible_services) > 0,
+        "services": visible_services,
         "categories": config_engine.get_categories()
     }
 
