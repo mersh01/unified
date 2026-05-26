@@ -54,19 +54,45 @@ class WorkflowEngine:
             return False
     
     def _load_workflows(self) -> Dict[str, Any]:
-        """Load workflows from configuration file"""
+        """Load workflows from configuration file and individual workflow JSON files"""
+        workflows = {}
+        
+        # Load from main workflows.json file
         try:
             with open(self.config_path, 'r') as f:
                 config = json.load(f)
-                workflows = config.get('workflows', {})
+                workflows.update(config.get('workflows', {}))
                 print(f"WorkflowEngine: Loaded {len(workflows)} workflows from {self.config_path}")
-                return workflows
         except FileNotFoundError:
             print(f"Workflow config not found at {self.config_path}")
-            return self._get_default_workflows()
         except json.JSONDecodeError as e:
             print(f"Error parsing workflow config: {e}")
+        
+        # Load individual workflow JSON files (wf_*.json)
+        config_dir = self.config_path.parent
+        try:
+            import glob
+            workflow_files = glob.glob(str(config_dir / "wf_*.json"))
+            for workflow_file in workflow_files:
+                try:
+                    with open(workflow_file, 'r') as f:
+                        workflow_data = json.load(f)
+                        workflow_name = workflow_data.get('workflow_name')
+                        if workflow_name and workflow_data.get('definition'):
+                            workflows[workflow_name] = workflow_data['definition']
+                            print(f"WorkflowEngine: Loaded workflow '{workflow_name}' from {workflow_file}")
+                except Exception as e:
+                    print(f"WorkflowEngine: Failed to load {workflow_file}: {e}")
+            
+            print(f"WorkflowEngine: Total workflows loaded: {len(workflows)}")
+        except Exception as e:
+            print(f"WorkflowEngine: Failed to load individual workflow files: {e}")
+        
+        if not workflows:
+            print(f"WorkflowEngine: No workflows found, using defaults")
             return self._get_default_workflows()
+        
+        return workflows
     
     def _load_hierarchy_config(self) -> Dict[str, Any]:
         """Load hierarchy configuration"""
