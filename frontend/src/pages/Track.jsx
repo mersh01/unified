@@ -705,8 +705,10 @@ function Track() {
       {/* Action Modal */}
       {showModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--card-bg)', padding: '24px', borderRadius: '12px', width: '400px', maxWidth: '90%' }}>
-            <h3 style={{ marginTop: 0 }}>Action: {getActionLabel(selectedAction)}</h3>
+          <div style={{ background: 'var(--card-bg)', padding: '24px', borderRadius: '12px', width: '500px', maxWidth: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ marginTop: 0, flexShrink: 0 }}>Action: {getActionLabel(selectedAction)}</h3>
+            
+            <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px', marginTop: '16px' }}>
             
             {/* Special handling for RESUBMIT action - show form data for editing */}
             {selectedAction === 'RESUBMIT' && application?.form_data && (
@@ -848,19 +850,25 @@ function Track() {
               </div>
             )}
             
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px', flexShrink: 0 }}>
               <button 
-                onClick={() => setShowModal(false)}
-                style={{ padding: '8px 16px', background: 'var(--surface-alt-2)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                onClick={() => {
+                  setShowModal(false);
+                  setResubmitFiles({});
+                }}
+                disabled={actionLoading}
+                style={{ padding: '8px 16px', background: '#6b7280', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
               >
                 Cancel
               </button>
               <button 
                 onClick={submitAction}
                 disabled={actionLoading}
-                style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
               >
-                {actionLoading ? 'Processing...' : 'Confirm'}
+                {actionLoading ? 'Processing...' : 'Submit'}
               </button>
             </div>
           </div>
